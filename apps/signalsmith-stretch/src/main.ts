@@ -57,9 +57,16 @@ interface Elements {
   readonly tonalityHzValue: HTMLElement;
 }
 
-interface LoadedSource {
-  readonly buffer: AudioBuffer;
+interface DecodedPcmSource {
   readonly channelData: readonly Float32Array[];
+  readonly duration: number;
+  readonly length: number;
+  readonly numberOfChannels: number;
+  readonly sampleRate: number;
+}
+
+interface LoadedSource {
+  readonly decoded: DecodedPcmSource;
   readonly fileName: string;
   readonly label: string;
 }
@@ -363,20 +370,28 @@ async function loadDefaultSource(): Promise<void> {
     if (!response.ok) {
       throw new Error(`Unable to fetch ${DEFAULT_SOURCE.url}: ${response.status.toString()}`);
     }
-    return runtime.audioContext.decodeAudioData(await response.arrayBuffer());
+    const arrayBuffer = await response.arrayBuffer();
+    const audioBuffer = await runtime.audioContext.decodeAudioData(
+      arrayBuffer.slice(0),
+    );
+    return createDecodedPcmSource(audioBuffer);
   });
 }
 
 async function loadSourceFromFile(file: File): Promise<void> {
   await loadSource(file.name, "local browser-decoded source", async (runtime) => {
-    return runtime.audioContext.decodeAudioData(await file.arrayBuffer());
+    const arrayBuffer = await file.arrayBuffer();
+    const audioBuffer = await runtime.audioContext.decodeAudioData(
+      arrayBuffer.slice(0),
+    );
+    return createDecodedPcmSource(audioBuffer);
   });
 }
 
 async function loadSource(
   fileName: string,
   label: string,
-  decode: (runtime: Runtime) => Promise<AudioBuffer>,
+  decode: (runtime: Runtime) => Promise<DecodedPcmSource>,
 ): Promise<void> {
   const request = state.loadRequest + 1;
   state.loadRequest = request;
@@ -384,22 +399,21 @@ async function loadSource(
 
   try {
     const runtime = await ensureRuntime();
-    const buffer = await decode(runtime);
+    const decoded = await decode(runtime);
 
     if (request !== state.loadRequest) {
       return;
     }
 
-    const channelData = extractChannelData(buffer);
     await runtime.node.dropBuffers();
-    await runtime.node.addBuffers(channelData);
+    await runtime.node.addBuffers(decoded.channelData);
 
-    state.loadedSource = { buffer, channelData, fileName, label };
+    state.loadedSource = { decoded, fileName, label };
     state.playheadSeconds = 0;
     state.playing = false;
     await configureNode(runtime.node, state.controls);
     await scheduleNode({ active: false, inputSeconds: 0, reason: "Source ready." });
-    drawWaveform(buffer);
+    drawWaveform(decoded);
     render();
   } catch (error) {
     setError(error);
@@ -554,19 +568,27 @@ async function currentRuntime(): Promise<Runtime | null> {
   return { audioContext: state.audioContext, node: state.node };
 }
 
-function extractChannelData(buffer: AudioBuffer): readonly Float32Array[] {
+function createDecodedPcmSource(buffer: AudioBuffer): DecodedPcmSource {
   const channels: Float32Array[] = [];
   const channelCount = Math.max(1, Math.min(2, buffer.numberOfChannels));
 
   for (let index = 0; index < channelCount; index += 1) {
-    channels.push(buffer.getChannelData(index));
+    const channel = new Float32Array(buffer.length);
+    buffer.copyFromChannel(channel, index);
+    channels.push(channel);
   }
 
   if (channels.length === 1) {
-    channels.push(channels[0] ?? new Float32Array(buffer.length));
+    channels.push((channels[0] ?? new Float32Array(buffer.length)).slice());
   }
 
-  return channels;
+  return {
+    channelData: channels,
+    duration: buffer.duration,
+    length: buffer.length,
+    numberOfChannels: buffer.numberOfChannels,
+    sampleRate: buffer.sampleRate,
+  };
 }
 
 function readControlsFromDom(): StretchControls {
@@ -640,9 +662,9 @@ function render(): void {
 
   elements.fileName.textContent = loaded.fileName;
   elements.loadedSource.textContent = loaded.label;
-  elements.seek.max = loaded.buffer.duration.toFixed(2);
-  elements.durationFact.textContent = formatSeconds(loaded.buffer.duration);
-  elements.sampleFact.textContent = `${loaded.buffer.numberOfChannels.toString()} ch, ${loaded.buffer.sampleRate.toString()} Hz, browser decoded`;
+  elements.seek.max = loaded.decoded.duration.toFixed(2);
+  elements.durationFact.textContent = formatSeconds(loaded.decoded.duration);
+  elements.sampleFact.textContent = `${loaded.decoded.numberOfChannels.toString()} ch, ${loaded.decoded.sampleRate.toString()} Hz, browser decoded`;
   renderPlayhead();
 }
 
@@ -660,7 +682,7 @@ function renderPlayhead(): void {
   }
 }
 
-function drawWaveform(buffer: AudioBuffer): void {
+function drawWaveform(source: DecodedPcmSource): void {
   const context = elements.canvas.getContext("2d");
   if (!context) {
     return;
@@ -668,7 +690,7 @@ function drawWaveform(buffer: AudioBuffer): void {
 
   const width = elements.canvas.width;
   const height = elements.canvas.height;
-  const data = buffer.getChannelData(0);
+  const data = source.channelData[0] ?? new Float32Array(source.length);
   const step = Math.max(1, Math.floor(data.length / width));
   const center = height / 2;
 
@@ -704,7 +726,7 @@ function normalizePlayhead(value: number): number {
 }
 
 function sourceDuration(): number {
-  return state.loadedSource?.buffer.duration ?? 0;
+  return state.loadedSource?.decoded.duration ?? 0;
 }
 
 function setBusy(message: string): void {
