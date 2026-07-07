@@ -24,7 +24,11 @@ interface SourceReferenceAudioParam {
 
 interface SourceReferenceGainParam {
   value: number;
-  setTargetAtTime(value: number, startTime: number, timeConstant: number): unknown;
+  setTargetAtTime(
+    value: number,
+    startTime: number,
+    timeConstant: number,
+  ): unknown;
 }
 
 interface SourceReferenceGainNode {
@@ -226,9 +230,7 @@ export class SourceReferenceMonitor {
         Math.max(
           1,
           Math.floor(
-            source.sampleRate *
-              PREVIEW_CHUNK_WALL_SECONDS *
-              this.playbackRate,
+            source.sampleRate * PREVIEW_CHUNK_WALL_SECONDS * this.playbackRate,
           ),
         ),
         source.durationFrames - startFrame,

@@ -1,8 +1,8 @@
 # ADRs – Architecture Decision Records
 
-This folder contains **Architecture Decision Records (ADRs)** and related design docs for Exclave Boundary.
+This folder contains **Architecture Decision Records (ADRs)** and related design docs for Seqlok.
 
-Older ADRs may retain the Seqlok prototype name in titles or historical context. Current package references should use Exclave Boundary and `@exclave/boundary`.
+Older ADRs may retain the Seqlok prototype name in titles or historical context. Current package references should use Seqlok and `@exclave/seqlok`.
 
 An ADR is a small, permanent note that captures a **specific architectural decision**:
 

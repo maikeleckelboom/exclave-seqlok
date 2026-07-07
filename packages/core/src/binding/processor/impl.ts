@@ -276,7 +276,10 @@ function meterArrayViewFor(
       detail: slot.plane,
     },
   );
-  return meterArrayView(views, meterArraySlotFor(slot)) as Ephemeral<MeterArray>;
+  return meterArrayView(
+    views,
+    meterArraySlotFor(slot),
+  ) as Ephemeral<MeterArray>;
 }
 
 function meterArraySlotFor(

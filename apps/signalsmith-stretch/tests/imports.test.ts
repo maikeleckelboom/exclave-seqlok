@@ -9,19 +9,18 @@ const SOURCE_EXTENSIONS = new Set([".css", ".html", ".json", ".mts", ".ts"]);
 const AUTHORED_JAVASCRIPT_EXTENSIONS = new Set([".cjs", ".js", ".mjs"]);
 
 describe("Stage B app import and language guards", () => {
-  it("uses the current boundary package and no stale prototype package names", () => {
+  it("uses the current Seqlok package and no stale prototype package names", () => {
     const files = collectFiles(APP_ROOT);
     const contents = files.map((file) => readFileSync(file, "utf8")).join("\n");
     const forbidden = [
       "@" + "seqlok/core",
       "@" + "exclave/core",
       "@" + "seqlok/",
-      "Seq" + "lok",
       "rename" + "-status",
       "rename" + " status",
     ];
 
-    expect(contents).toContain("@exclave/boundary");
+    expect(contents).toContain("@exclave/seqlok");
 
     for (const pattern of forbidden) {
       expect(contents.includes(pattern)).toBe(false);

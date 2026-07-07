@@ -2,7 +2,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@exclave/boundary": ["packages/core/src/index.ts"]
+      "@exclave/seqlok": ["packages/core/src/index.ts"]
     },
     "target": "ES2022",
     "lib": ["ESNext", "DOM", "DOM.Iterable", "WebWorker"],

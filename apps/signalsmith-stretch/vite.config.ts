@@ -16,8 +16,7 @@ const generatedModuleEntry = join(
 const workletEntry = join(appRoot, "src", "worklet", "stretch-processor.ts");
 const workletUrlId = "virtual:signalsmith-stretch/worklet-url";
 const resolvedWorkletUrlId = `\0${workletUrlId}`;
-const generatedModuleUrlId =
-  "virtual:signalsmith-stretch/generated-module-url";
+const generatedModuleUrlId = "virtual:signalsmith-stretch/generated-module-url";
 const resolvedGeneratedModuleUrlId = `\0${generatedModuleUrlId}`;
 const devWorkletPath = "/__signalsmith-stretch/stretch-processor.js";
 const devGeneratedModulePath =
@@ -110,7 +109,7 @@ async function bundleWorklet(realAdapterEnabled: boolean): Promise<string> {
     publicDir: false,
     resolve: {
       alias: {
-        "@exclave/boundary": boundarySource,
+        "@exclave/seqlok": boundarySource,
       },
     },
     root: appRoot,
@@ -265,7 +264,7 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        "@exclave/boundary": boundarySource,
+        "@exclave/seqlok": boundarySource,
       },
     },
     server: {

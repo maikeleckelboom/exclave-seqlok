@@ -48,7 +48,7 @@ export interface DiagnosticsExportOptions {
  * Defensive layer that catches corrupted introspection state before it
  * hits external systems.
  *
- * @throws BoundaryError<'diagnostics.counterInvalid'>
+ * @throws SeqlokError<'diagnostics.counterInvalid'>
  */
 function assertValidCounterSnapshot(
   snapshot: DiagnosticsCountersSnapshot,
@@ -152,7 +152,7 @@ function exportToCsv(
  * Validates the snapshot first; suitable for CLIs, metrics pollers, or
  * dev tooling that periodically scrapes diagnostics.
  *
- * @throws BoundaryError<'diagnostics.counterInvalid'>
+ * @throws SeqlokError<'diagnostics.counterInvalid'>
  */
 export function exportDiagnosticsCounters(
   snapshot: DiagnosticsCountersSnapshot,

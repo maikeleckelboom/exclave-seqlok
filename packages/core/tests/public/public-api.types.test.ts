@@ -29,8 +29,8 @@ describe("Public API Surface (Runtime Exports)", () => {
       "verifyHandoff",
 
       // ERRORS + HEALTH
-      "BoundaryError",
-      "isBoundaryError",
+      "SeqlokError",
+      "isSeqlokError",
       "getErrorMeta",
       "getErrorMessage",
       "isErrorCode",
@@ -53,7 +53,6 @@ describe("Public API Surface (Runtime Exports)", () => {
       "allocateSwsrRing",
       "bindSwsrRingProducer",
       "bindSwsrRingConsumer",
-
     ].sort();
 
     expect(runtimeExports).toEqual(expectedExports);

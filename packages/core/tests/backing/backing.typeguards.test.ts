@@ -55,8 +55,7 @@ describe("Backing Type Guards: Runtime Identification", () => {
 
     expect(isWasmBacking(b)).toBe(true);
     expect(
-      (b satisfies WasmBacking).memory.buffer instanceof
-        SharedArrayBuffer,
+      (b satisfies WasmBacking).memory.buffer instanceof SharedArrayBuffer,
     ).toBe(true);
   });
 });

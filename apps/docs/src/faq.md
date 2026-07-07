@@ -1,8 +1,8 @@
 # FAQ
 
-## Is This Still Seqlok?
+## What Does the Exclave Scope Mean?
 
-No. The public package is `@exclave/boundary`. Historical prototype docs may remain in the repository, but current integration should target Exclave Boundary. Use Seqlok only in migration or history notes.
+`@exclave` is only the npm scope. The package and product name are Seqlok, and current integrations should target `@exclave/seqlok`.
 
 ## Is This AudioWorklet-Only?
 
@@ -10,7 +10,7 @@ No. Audio is a useful first example because it makes timing sensitivity obvious.
 
 ## Does It Replace Message Passing?
 
-No. Message passing can carry a handoff. Exclave Boundary defines the shared-memory contract that the handoff represents.
+No. Message passing can carry a handoff. Seqlok defines the shared-memory contract that the handoff represents.
 
 ## Why Dot Keys?
 
@@ -30,4 +30,4 @@ No. Use the root package and diagnostics subpath. Internal modules can change wi
 
 ## Are Domain Semantics Built In?
 
-No. Exclave Boundary provides typed params, meters, plans, backings, handoff validation, bindings, diagnostics, and structured errors. Domain commands and higher-level orchestration belong outside the package.
+No. Seqlok provides typed params, meters, plans, backings, handoff validation, bindings, diagnostics, and structured errors. Domain commands and higher-level orchestration belong outside the package.

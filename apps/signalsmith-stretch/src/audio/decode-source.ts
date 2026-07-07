@@ -13,7 +13,7 @@ import {
   type DecodedWavSource,
 } from "./wav-decoder";
 
-import type { StretchBoundarySession } from "../boundary/session";
+import type { StretchSeqlokSession } from "../boundary/session";
 
 export const SOURCE_ERROR_CODES = {
   decodeFailed: 1_002,
@@ -49,7 +49,7 @@ export interface DecodeFileSourceOptions {
   readonly file: File;
   readonly loadSequence: number;
   readonly previousFacts: PcmSourceFacts | null;
-  readonly session: StretchBoundarySession;
+  readonly session: StretchSeqlokSession;
   readonly sourceRevision: number;
 }
 
@@ -218,7 +218,7 @@ export function pcmSourceFromWav(
 }
 
 export function publishSourceStatus(
-  session: StretchBoundarySession,
+  session: StretchSeqlokSession,
   state: SourceState,
   loadSequence: number,
   sourceRevision: number,

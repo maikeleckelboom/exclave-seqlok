@@ -66,7 +66,7 @@ import {
   planLayout,
   allocatePacked,
   bindController,
-} from "@exclave/boundary";
+} from "@exclave/seqlok";
 
 const spec = defineSpec(/* ... */);
 const plan = planLayout(spec);
@@ -99,7 +99,7 @@ The **Processor** lives in a Worker, AudioWorklet, WASM-backed engine, or some o
 Example (engine-side binding already constructed via `acceptHandoff` → `bindProcessor`):
 
 ```ts
-import type { ProcessorBinding } from "@exclave/boundary";
+import type { ProcessorBinding } from "@exclave/seqlok";
 import type { DemoSpec } from "./spec";
 
 class MyProcessor {
@@ -538,7 +538,7 @@ import {
   allocatePacked,
   buildHandoff,
   bindController,
-} from "@exclave/boundary";
+} from "@exclave/seqlok";
 
 const spec = defineSpec(/* ... */);
 const plan = planLayout(spec);
@@ -579,7 +579,7 @@ import {
   acceptHandoff,
   bindProcessor,
   type ProcessorBinding,
-} from "@exclave/boundary";
+} from "@exclave/seqlok";
 import type { DemoSpec } from "./spec";
 
 class MyProcessor extends AudioWorkletProcessor {

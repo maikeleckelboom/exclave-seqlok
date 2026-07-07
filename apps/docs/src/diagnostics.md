@@ -1,6 +1,6 @@
 # Diagnostics
 
-Diagnostics live at `@exclave/boundary/diagnostics`. They are for integration work, support checks, counters, and view inspection. They are not meant to become part of a processor hot path.
+Diagnostics live at `@exclave/seqlok/diagnostics`. They are for integration work, support checks, counters, and view inspection. They are not meant to become part of a processor hot path.
 
 ## Environment Probe
 
@@ -8,7 +8,7 @@ Diagnostics live at `@exclave/boundary/diagnostics`. They are for integration wo
 import {
   assertSabSupportFromSummary,
   probeEnv,
-} from "@exclave/boundary/diagnostics";
+} from "@exclave/seqlok/diagnostics";
 
 const summary = probeEnv();
 assertSabSupportFromSummary("docs.integration", summary);
@@ -19,7 +19,7 @@ Use this before constructing shared backing in browser integrations. A browser p
 ## Counters
 
 ```ts
-import { resetCounters, snapshotCounters } from "@exclave/boundary/diagnostics";
+import { resetCounters, snapshotCounters } from "@exclave/seqlok/diagnostics";
 
 resetCounters();
 const counters = snapshotCounters();
@@ -31,6 +31,6 @@ Counters are useful for tests, stress harnesses, and support reports. Treat them
 
 `describeViews(...)` summarizes mapped backing views for diagnostics. Use it to confirm an integration is interpreting the expected plan/backing pair.
 
-## Diagnostics Boundary
+## Diagnostics Scope
 
 Diagnostics can report what the package can observe: environment support, internal counters, and mapped view shape. They do not manage worker lifecycle, application health policy, or UI alerting.

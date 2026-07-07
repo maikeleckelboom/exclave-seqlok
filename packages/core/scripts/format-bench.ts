@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 /**
  * @fileoverview
  * Format Vitest benchmark JSON into Markdown + ASCII charts
- * for Exclave Boundary documentation.
+ * for Seqlok documentation.
  *
  * This version introspects the benchmark structure dynamically
  * and derives markdown tables + console-friendly ASCII charts.

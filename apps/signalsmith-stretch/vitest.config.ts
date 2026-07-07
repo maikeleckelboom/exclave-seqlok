@@ -9,7 +9,7 @@ const boundarySource = fileURLToPath(
 export default defineConfig({
   resolve: {
     alias: {
-      "@exclave/boundary": boundarySource,
+      "@exclave/seqlok": boundarySource,
     },
   },
   test: {

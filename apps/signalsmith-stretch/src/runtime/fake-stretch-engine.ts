@@ -2,7 +2,7 @@ import {
   readProcessedLevels,
   readRuntimeStatus,
   readSourceStatus,
-  type StretchBoundarySession,
+  type StretchSeqlokSession,
 } from "../boundary/session";
 import {
   normalizeSeekFrameIntoLoopRange,
@@ -54,7 +54,7 @@ export class FakeStretchEngine {
   private readonly applyDelayTicks: number;
   private readonly historyPeak = new Float32Array(64);
   private readonly historyRms = new Float32Array(64);
-  private readonly session: StretchBoundarySession;
+  private readonly session: StretchSeqlokSession;
   private readonly sessionId: number;
   private readonly transport: StretchCommandTransport;
 
@@ -90,7 +90,7 @@ export class FakeStretchEngine {
   private unsupportedChannelBlockTotal = 0;
 
   constructor(
-    session: StretchBoundarySession,
+    session: StretchSeqlokSession,
     transport: StretchCommandTransport,
     options: FakeStretchEngineOptions = {},
   ) {

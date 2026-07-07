@@ -9,7 +9,7 @@ import {
   acceptHandoff,
 } from "../../src";
 import { mapViews } from "../../src/backing/map-views";
-import { isBoundaryError, type BoundaryError } from "../../src/errors/error";
+import { isSeqlokError, type SeqlokError } from "../../src/errors/error";
 
 describe("Processor Params: Coherent Read Transaction", () => {
   it("propagates binding.coherentRetryExhausted when lock contention exceeds budget", () => {
@@ -57,13 +57,13 @@ describe("Processor Params: Coherent Read Transaction", () => {
     }
 
     // Verify the error structure matches the expected contract
-    if (!isBoundaryError(thrown)) {
+    if (!isSeqlokError(thrown)) {
       throw new Error(
-        "Expected processor.params.within to throw a BoundaryError",
+        "Expected processor.params.within to throw a SeqlokError",
       );
     }
 
-    const err = thrown as BoundaryError<"binding.coherentRetryExhausted">;
+    const err = thrown as SeqlokError<"binding.coherentRetryExhausted">;
 
     expect(err.code).toBe("binding.coherentRetryExhausted");
     expect(err.details.where).toBe("processor.params.within");

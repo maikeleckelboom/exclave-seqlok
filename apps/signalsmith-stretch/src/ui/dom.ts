@@ -83,7 +83,7 @@ export function renderAppShell(root: HTMLElement): AppElements {
     <div id="appShell" class="app-shell is-unloaded">
       <header class="app-header">
         <div>
-          <p class="eyebrow">Exclave Boundary</p>
+          <p class="eyebrow">Seqlok</p>
           <h1>Signalsmith Stretch</h1>
         </div>
         <div class="header-facts" aria-label="Runtime facts">
@@ -311,11 +311,11 @@ export function renderAppShell(root: HTMLElement): AppElements {
         <summary>
           <span>
             <span class="section-label">Advanced proof inspector</span>
-            <strong>Boundary runtime proof</strong>
+            <strong>Seqlok runtime proof</strong>
           </span>
           <span class="details-hint" aria-hidden="true"></span>
         </summary>
-        <section class="inspector-grid" aria-label="Boundary inspector">
+        <section class="inspector-grid" aria-label="Seqlok inspector">
           <div class="inspector-panel">
             <p class="section-label">Runtime</p>
             <dl class="runtime-facts">
@@ -334,7 +334,7 @@ export function renderAppShell(root: HTMLElement): AppElements {
           </div>
 
           <div class="inspector-panel">
-            <p class="section-label">Boundary inspector</p>
+            <p class="section-label">Seqlok inspector</p>
             <div id="inspector" class="inspector"></div>
           </div>
         </section>
@@ -426,7 +426,7 @@ export function renderAppShell(root: HTMLElement): AppElements {
 export function renderUnsupported(root: HTMLElement, message: string): void {
   root.innerHTML = `
     <div class="unsupported-shell">
-      <p class="eyebrow">Exclave Boundary</p>
+      <p class="eyebrow">Seqlok</p>
       <h1>Signalsmith Stretch</h1>
       <p class="mode-badge">Unsupported browser context</p>
       <p>${escapeHtml(message)}</p>

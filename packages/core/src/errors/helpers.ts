@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Convenience helpers for constructing and throwing BoundaryError instances.
+ * Convenience helpers for constructing and throwing SeqlokError instances.
  *
  * @remarks
  * - Wraps {@link createError} for common, cross-cutting error patterns.

@@ -8,14 +8,14 @@ import type {
   StretchCommand,
   StretchCommandTransport,
 } from "../boundary/commands";
-import type { StretchBoundarySession } from "../boundary/session";
+import type { StretchSeqlokSession } from "../boundary/session";
 
 export interface StretchWorkletRuntimeOptions {
   readonly audioContext: AudioContext;
   readonly commands: StretchCommandTransport;
   readonly generatedModuleUrl: string;
   readonly initialChunk: PlanarFrameChunk;
-  readonly session: StretchBoundarySession;
+  readonly session: StretchSeqlokSession;
   readonly source: ChunkedWavPcmSource;
 }
 
@@ -143,9 +143,8 @@ export class StretchWorkletRuntime {
 
     return new Promise<boolean>((resolve) => {
       let settled = false;
-      let listener:
-        | ((status: StretchWorkletRuntimeStatus) => void)
-        | null = null;
+      let listener: ((status: StretchWorkletRuntimeStatus) => void) | null =
+        null;
       let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
       const finish = (ready: boolean): void => {

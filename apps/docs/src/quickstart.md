@@ -1,8 +1,8 @@
 # Quickstart
 
-This is the smallest complete Exclave Boundary flow: one spec defines the boundary contract, layout is planned once, backing is allocated once, and the runtime side binds from a handoff.
+This is the smallest complete Seqlok flow: one spec defines the boundary contract, layout is planned once, backing is allocated once, and the runtime side binds from a handoff.
 
-## Boundary Flow
+## Seqlok Flow
 
 `defineSpec`, `planLayout`, `allocatePacked`, and `buildHandoff` happen before the runtime side binds. The controller can already exist on the main side while a handoff is bound in a worker, an AudioWorklet, or another timing-sensitive runtime.
 
@@ -40,7 +40,7 @@ import {
   buildHandoff,
   defineSpec,
   planLayout,
-} from "@exclave/boundary";
+} from "@exclave/seqlok";
 
 const spec = defineSpec((api) => ({
   id: "quickstart/control",
@@ -101,7 +101,7 @@ const meterSnapshot = controller.meters.snapshot({
 
 Authored namespaces flatten to canonical dotted keys for writes. `update(...)` is scalar-only and cheap. `stage(...)` is the explicit hot-path array write window. `hydrate(...)` is for cold-path preset or restore loading and may copy arrays. Processor reads expose nested views derived from the same spec, such as `params.runtime.enabled` inside `within(...)`. `snapshot({ into })` reuses caller-provided typed array buffers for array values.
 
-## What Crosses the Boundary
+## What Crosses at Runtime
 
 The handoff is the boundary artifact. It carries the plan and backing descriptor. It can be moved with a worker message, an AudioWorklet port message, or another host transport, but the transport is not the contract.
 
@@ -112,7 +112,7 @@ worker.postMessage({ type: "boundary-handoff", handoff });
 When the transport value is `unknown`, treat it as untrusted until `acceptHandoff(...)` validates the protocol version, plan shape, packing mode, and backing sizes.
 
 ```ts
-import { acceptHandoff, bindProcessor } from "@exclave/boundary";
+import { acceptHandoff, bindProcessor } from "@exclave/seqlok";
 
 declare const message: MessageEvent;
 

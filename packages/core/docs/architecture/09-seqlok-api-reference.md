@@ -1,6 +1,6 @@
 # API Reference
 
-Complete API documentation for `@exclave/boundary`.
+Complete API documentation for `@exclave/seqlok`.
 
 This file is about **shape and signatures**. For rationale and design notes, see:
 
@@ -308,7 +308,7 @@ verifyHandoff(plan, accepted.plan); // throws on mismatch
   - per-plane byte lengths,
   - plan `version`.
 
-- Throws `BoundaryError` on mismatch:
+- Throws `SeqlokError` on mismatch:
 
   - `handoff.specHashMismatch`
   - `handoff.versionMismatch`
@@ -356,7 +356,7 @@ import {
   buildHandoff,
   bindController,
   type Handoff,
-} from "@exclave/boundary";
+} from "@exclave/seqlok";
 
 export const spec = defineSpec(/* ... */);
 const plan = planLayout(spec);
@@ -397,8 +397,8 @@ declare function bindProcessor<S extends SpecInput>(
 Typical usage (worker / AudioWorklet):
 
 ```ts
-import { acceptHandoff, bindProcessor } from "@exclave/boundary";
-import type { Handoff } from "@exclave/boundary";
+import { acceptHandoff, bindProcessor } from "@exclave/seqlok";
+import type { Handoff } from "@exclave/seqlok";
 import type { Spec } from "./spec";
 
 self.onmessage = (

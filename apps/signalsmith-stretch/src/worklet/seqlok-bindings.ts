@@ -1,10 +1,10 @@
-import { acceptHandoff, bindProcessor } from "@exclave/boundary";
+import { acceptHandoff, bindProcessor } from "@exclave/seqlok";
 
 import type { signalsmithStretchSpec } from "../boundary/specs";
-import type { Handoff } from "@exclave/boundary";
+import type { Handoff } from "@exclave/seqlok";
 
 export type StretchWorkletHandoff = Handoff<typeof signalsmithStretchSpec>;
 
-export function bindStretchWorkletBoundary(handoff: StretchWorkletHandoff) {
+export function bindStretchWorkletSeqlok(handoff: StretchWorkletHandoff) {
   return bindProcessor(acceptHandoff(handoff));
 }

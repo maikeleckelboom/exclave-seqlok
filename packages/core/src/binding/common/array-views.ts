@@ -82,9 +82,7 @@ export function meterArrayCtor(slot: MeterArraySlot): MeterArrayCtor {
   }
 }
 
-export function meterArrayValueCtor(
-  slot: MeterArraySlot,
-): MeterArrayValueCtor {
+export function meterArrayValueCtor(slot: MeterArraySlot): MeterArrayValueCtor {
   switch (slot.kind) {
     case "f32.array":
       return Float32Array;

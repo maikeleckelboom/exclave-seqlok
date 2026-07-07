@@ -15,7 +15,7 @@ import {
   summarizeEnv,
 } from "../../src/diagnostics/env";
 
-import type { BoundaryError } from "../../src/errors/error";
+import type { SeqlokError } from "../../src/errors/error";
 
 function fakeEnv(
   globalLike: Partial<EnvGlobal> & Record<string, unknown>,
@@ -72,14 +72,11 @@ describe("env.weird-global", () => {
     try {
       assertSabSupportFromSummary("weird-global.test", summary);
     } catch (error) {
-      const boundaryError = error as BoundaryError<"env.unsupported">;
-      expect(boundaryError.code).toBe("env.unsupported");
-      expect(boundaryError.message).toContain("SharedArrayBuffer");
-      expect(boundaryError.details).toBeDefined();
-      expect(boundaryError.details).toHaveProperty(
-        "where",
-        "weird-global.test",
-      );
+      const seqlokError = error as SeqlokError<"env.unsupported">;
+      expect(seqlokError.code).toBe("env.unsupported");
+      expect(seqlokError.message).toContain("SharedArrayBuffer");
+      expect(seqlokError.details).toBeDefined();
+      expect(seqlokError.details).toHaveProperty("where", "weird-global.test");
     }
   });
 
@@ -170,8 +167,8 @@ describe("env.weird-global", () => {
     try {
       assertSabSupportFromSummary("partial-global.test", summary);
     } catch (error) {
-      const boundaryError = error as BoundaryError<"env.unsupported">;
-      expect(boundaryError.code).toBe("env.unsupported");
+      const seqlokError = error as SeqlokError<"env.unsupported">;
+      expect(seqlokError.code).toBe("env.unsupported");
     }
   });
 

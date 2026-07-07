@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { allocateWasm } from "../../src/backing/allocate-wasm";
-import { isBoundaryError } from "../../src/errors/error";
+import { isSeqlokError } from "../../src/errors/error";
 import { planLayout } from "../../src/plan/layout";
 import { defineSpec } from "../../src/spec/define";
 
@@ -40,8 +40,8 @@ describe("allocateWasm: shared memory validation", () => {
     }
 
     // Verify the error is strictly typed and contains the expected diagnostic details
-    if (!isBoundaryError(thrown)) {
-      throw new Error("Expected allocateWasm to throw a BoundaryError");
+    if (!isSeqlokError(thrown)) {
+      throw new Error("Expected allocateWasm to throw a SeqlokError");
     }
 
     expect(thrown.code).toBe("backing.wasmMemoryNotShared");

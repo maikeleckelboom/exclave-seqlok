@@ -19,9 +19,8 @@ function escapeHtml(value: string): string {
 }
 
 export default defineConfig({
-  title: "Exclave Boundary",
-  description:
-    "typed shared-memory boundary substrate for coherent state, deterministic layout, explicit handoff, and timing-sensitive runtimes.",
+  title: "Seqlok",
+  description: "Typed shared-memory contracts for coherent runtime state.",
   cleanUrls: true,
   lastUpdated: true,
   markdown: {
@@ -47,8 +46,8 @@ export default defineConfig({
             moduleResolution: ts.ModuleResolutionKind.Bundler,
             noUncheckedIndexedAccess: true,
             paths: {
-              "@exclave/boundary": ["packages/core/src/index.ts"],
-              "@exclave/boundary/diagnostics": [
+              "@exclave/seqlok": ["packages/core/src/index.ts"],
+              "@exclave/seqlok/diagnostics": [
                 "packages/core/src/diagnostics.ts",
               ],
             },
@@ -110,7 +109,7 @@ export default defineConfig({
       {
         text: "Concepts",
         items: [
-          { text: "Boundary Flow", link: "/core-flow" },
+          { text: "Seqlok Flow", link: "/core-flow" },
           { text: "Authored AST vs Runtime", link: "/authoring-contract" },
           { text: "Handoff and Acceptance", link: "/handoff-acceptance" },
           { text: "Controller, Processor, Observer", link: "/roles" },
@@ -141,12 +140,12 @@ export default defineConfig({
         items: [
           { text: "Blog Index", link: "/blog/" },
           {
-            text: "Why Exclave Boundary exists",
-            link: "/blog/why-exclave-boundary-exists",
+            text: "Why Seqlok exists",
+            link: "/blog/why-seqlok-exists",
           },
           {
             text: "Specs, layout, and handoff",
-            link: "/blog/specs-layout-handoff-boundary-contract",
+            link: "/blog/specs-layout-handoff-runtime-contract",
           },
         ],
       },

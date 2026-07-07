@@ -1,4 +1,4 @@
-import { SWSR_HEADER_DROPPED, type SwsrRingBacking } from "@exclave/boundary";
+import { SWSR_HEADER_DROPPED, type SwsrRingBacking } from "@exclave/seqlok";
 
 import {
   normalizeSeekFrameIntoLoopRange,
@@ -16,15 +16,15 @@ import {
   type RuntimeState,
   type StretchPreset,
 } from "../types";
-import {
-  bindStretchWorkletBoundary,
-  type StretchWorkletHandoff,
-} from "./boundary-bindings";
 import { bindWorkletCommandRing } from "./command-ring";
 import { LevelProbe } from "./level-probe";
 import { STRETCH_PROCESSOR_NAME } from "./processor-name";
 import { publishRuntimeMeters } from "./runtime-meters";
 import { ScheduledCommandQueue } from "./scheduled-commands";
+import {
+  bindStretchWorkletSeqlok,
+  type StretchWorkletHandoff,
+} from "./seqlok-bindings";
 import { loadSignalsmithStretchModule } from "./signalsmith-module";
 import { SourceWindow } from "./source-window";
 import {
@@ -86,7 +86,7 @@ type HostMessage =
     };
 
 class SignalsmithStretchProcessor extends AudioWorkletProcessor {
-  private readonly binding: ReturnType<typeof bindStretchWorkletBoundary>;
+  private readonly binding: ReturnType<typeof bindStretchWorkletSeqlok>;
   private readonly commandConsumer;
   private readonly commandRingBacking: SwsrRingBacking;
   private readonly levelProbe = new LevelProbe();
@@ -149,7 +149,7 @@ class SignalsmithStretchProcessor extends AudioWorkletProcessor {
 
     const processorOptions =
       options.processorOptions as StretchProcessorOptions;
-    this.binding = bindStretchWorkletBoundary(processorOptions.handoff);
+    this.binding = bindStretchWorkletSeqlok(processorOptions.handoff);
     this.commandRingBacking = processorOptions.commandRing;
     this.commandConsumer = bindWorkletCommandRing(processorOptions.commandRing);
     this.loadSequence = processorOptions.loadSequence;

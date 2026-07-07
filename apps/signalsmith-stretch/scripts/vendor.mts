@@ -314,7 +314,7 @@ async function download(
       {
         headers: {
           accept: "application/octet-stream,application/gzip,*/*",
-          "user-agent": "exclave-boundary-vendor-sync",
+          "user-agent": "exclave-seqlok-vendor-sync",
         },
         signal: controller.signal,
       },

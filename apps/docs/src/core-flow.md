@@ -1,6 +1,6 @@
-# Boundary Flow
+# Seqlok Flow
 
-Exclave Boundary has one explicit flow. The steps are intentionally separate so layout ownership, backing allocation, and runtime capability transfer remain visible.
+Seqlok has one explicit flow. The steps are intentionally separate so layout ownership, backing allocation, and runtime capability transfer remain visible.
 
 ## Shared Backing Model
 
@@ -28,7 +28,7 @@ Controller code writes params and reads meters. Processor code reads params and 
 
 ## Stages
 
-| Stage | Responsibility | Boundary value |
+| Stage | Responsibility | Runtime value |
 | --- | --- | --- |
 | `defineSpec` | Author params and meters as a typed contract. | Canonical spec with dot keys. |
 | `planLayout` | Compute deterministic plane sizes, offsets, and hash identity. | Plan. |

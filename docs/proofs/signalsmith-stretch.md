@@ -1,10 +1,10 @@
-# Exclave Boundary Signalsmith Stretch — Current Implementation Specification
+# Seqlok Signalsmith Stretch — Current Implementation Specification
 
 - **Status:** current implementation authority for the demo/proof; not package API authority
 - **Date:** 2026-06-29
 - **Product:** Signalsmith Stretch
-- **Boundary package:** `@exclave/boundary`
-- **Repository:** `maikeleckelboom/exclave-boundary`
+- **Seqlok package:** `@exclave/seqlok`
+- **Repository:** `maikeleckelboom/exclave-seqlok`
 - **Supersedes:** `Seqlok v0 Signalsmith Stretch Proof — Final Implementation Specification.md` for demo/proof planning only
 - **Preserves:** the product thesis, runtime proof intent, Signalsmith adapter direction, waveform/A-B/output-level requirements, failure model, and staged delivery discipline from the original Seqlok document
 
@@ -12,21 +12,21 @@
 
 ## 0. Current update
 
-This document updates the old Seqlok Signalsmith Stretch proof specification to the current Exclave Boundary reality.
+This document updates the earlier Signalsmith Stretch proof specification to the current Seqlok package and runtime proof.
 
 The original document remains valuable as the product and runtime proof source. Its package architecture is obsolete.
 
-This document describes how a private Signalsmith Stretch demo/proof should use the current package. The package API itself remains governed by the `@exclave/boundary` source, tests, release docs, and public documentation.
+This document describes how a private Signalsmith Stretch demo/proof should use the current package. The package API itself remains governed by the `@exclave/seqlok` source, tests, release docs, and public documentation.
 
 The old document assumed a future package and package-subpath architecture that is no longer the active release path.
 
 The active release path is:
 
 ```text
-@exclave/boundary
+@exclave/seqlok
 ```
 
-`@exclave/boundary` is the public package. It currently exposes the role-based boundary API that the demo must use rather than redesign:
+`@exclave/seqlok` is the public package. It currently exposes the role-based boundary API that the demo must use rather than redesign:
 
 ```ts
 import {
@@ -41,16 +41,16 @@ import {
   defineSpec,
   planLayout,
   verifyHandoff,
-  BoundaryError,
-  isBoundaryError,
-} from "@exclave/boundary";
+  SeqlokError,
+  isSeqlokError,
+} from "@exclave/seqlok";
 ```
 
-The demo must therefore sit **on top of** Exclave Boundary. It must not pull the package back toward the old prototype reset architecture.
+The demo must therefore sit **on top of** Seqlok. It must not pull the package back toward the old prototype reset architecture.
 
 ### 0.1 Current authority order
 
-1. Current `@exclave/boundary` package surface and tests.
+1. Current `@exclave/seqlok` package surface and tests.
 2. This updated specification, for Signalsmith Stretch demo/proof work only.
 3. Original Seqlok Signalsmith Stretch proof document, for product/runtime requirements only.
 4. Implementation tests.
@@ -60,27 +60,27 @@ The demo must therefore sit **on top of** Exclave Boundary. It must not pull the
 
 | Old term in source document | Current term |
 | --- | --- |
-| Seqlok | Exclave Boundary, except in historical notes |
-| old prototype package name | `@exclave/boundary` |
-| old prototype package subpaths | Current `@exclave/boundary` public API surface |
-| Seqlok proof path | Exclave Boundary proof path |
-| Seqlok publication | Exclave Boundary param/meter or publication-like boundary flow, depending on current package API |
-| Seqlok command queue | Demo-private command transport using current SWSR primitives, if required |
-| Seqlok meter | Product-level output-level publication/display; do not call it a package “meter” unless referring to current API meters |
-| Seqlok prototype | Historical source/prototype name |
+| Current package | `@exclave/seqlok` |
+| Current product identity | Seqlok |
+| Earlier prototype package subpaths | Current `@exclave/seqlok` public API surface |
+| Proof path | Seqlok proof path |
+| Publication-like state | Seqlok param/meter or publication-like boundary flow, depending on current package API |
+| Command queue | Demo-private command transport using current SWSR primitives, if required |
+| Product-level meter | Product-level output-level publication/display; do not call it a package “meter” unless referring to current API meters |
+| Prototype architecture | Historical source/prototype context |
 | seqlock | Keep as the real synchronization primitive term |
 
 ### 0.3 Hard corrections from the old document
 
 The following old positions are now superseded:
 
-1. **Do not implement a new public package under the old prototype name.** The package is `@exclave/boundary`.
+1. **Do not implement a new public package under the old prototype name.** The package is `@exclave/seqlok`.
 2. **Do not implement old prototype package subpaths.** The current package already exposes its chosen surface.
 3. **Do not run the old Stage 0/1A prompt.** It bans `controller`, `processor`, `observer`, `params`, `meters`, and `Handoff`, which are current public API concepts.
 4. **Do not use the old export firewall as current authority.** The current package intentionally exports role bindings, params/meters types, handoff, diagnostics, and SWSR primitives.
 5. **Do not publish a public Signalsmith adapter yet.** The Signalsmith adapter remains demo-private until the proof earns a package boundary.
 6. **Do not claim zero-copy audio.** The proof targets deterministic ownership, bounded control/status, and no per-quantum metadata messaging.
-7. **Do not overfit the name or docs to AudioWorklet.** Audio is the first and clearest proof. Exclave Boundary remains a general typed shared-memory boundary substrate for timing-sensitive systems.
+7. **Do not overfit the name or docs to AudioWorklet.** Audio is the first and clearest proof. Seqlok remains a general typed shared-memory contract for timing-sensitive systems.
 
 ### 0.4 Runtime policy
 
@@ -185,7 +185,7 @@ It is materially superior to the official Signalsmith demo when it proves:
 
 The integration route remains a custom private Signalsmith C++/WASM/AudioWorklet adapter. The official Signalsmith web package remains an oracle, smoke path, and audible comparison reference. It is not the canonical runtime bundle.
 
-The first implementation slice may use a demo-private fake/stretch simulator to prove the Exclave Boundary integration before the full custom WASM adapter exists.
+The first implementation slice may use a demo-private fake/stretch simulator to prove the Seqlok integration before the full custom WASM adapter exists.
 
 ### 1.1 The core promise
 
@@ -211,7 +211,7 @@ The demo does not attempt to become:
 
 The following original conclusions remain load-bearing:
 
-1. The official Signalsmith package is useful but not enough. It owns the worklet, scheduling, MessagePort protocol, buffers, and WASM lifetime, so it cannot prove the Exclave Boundary runtime path.
+1. The official Signalsmith package is useful but not enough. It owns the worklet, scheduling, MessagePort protocol, buffers, and WASM lifetime, so it cannot prove the Seqlok runtime path.
 2. The true proof path is a custom Signalsmith adapter that reaches the actual realtime boundary.
 3. The output-level probe must be separate from the stretch runtime status writer. Engine status and processed-output levels are separate status surfaces.
 4. The browser render quantum must be read dynamically. A permanent 128-frame assumption is invalid.
@@ -227,7 +227,7 @@ The following original conclusions remain load-bearing:
 
 ---
 
-## 3. Current Exclave Boundary mapping
+## 3. Current Seqlok mapping
 
 ### 3.1 Current package flow
 
@@ -334,7 +334,7 @@ Fields:
 
 ### 3.3 Commands
 
-The original spec describes ordered command queues. Current `@exclave/boundary` exports SWSR ring primitives, but the demo should keep command vocabulary demo-private.
+The original spec describes ordered command queues. Current `@exclave/seqlok` exports SWSR ring primitives, but the demo should keep command vocabulary demo-private.
 
 Allowed in demo-private code:
 
@@ -349,7 +349,7 @@ Not allowed in the public package during this demo work:
 - new public Signalsmith command package;
 - new public Worklet helper package;
 - generic command bus revival;
-- product command names exported from `@exclave/boundary`.
+- product command names exported from `@exclave/seqlok`.
 
 ---
 
@@ -433,7 +433,7 @@ The first demo slice should be impressive even before real Signalsmith WASM land
 
 It must include:
 
-- branded Exclave Boundary + Signalsmith Stretch shell;
+- branded Seqlok + Signalsmith Stretch shell;
 - local file drop/chooser surface;
 - decoded metadata mock/real display;
 - waveform overview panel;
@@ -519,7 +519,7 @@ It must eventually:
 - preallocate all slabs and typed views;
 - avoid ordinary MessagePort control/status traffic;
 - perform no render-path allocation after prewarm;
-- publish runtime status and output-level facts through Exclave Boundary surfaces;
+- publish runtime status and output-level facts through Seqlok surfaces;
 - use official Signalsmith package as oracle and smoke reference only.
 
 No public adapter package is created in the first demo slice.
@@ -599,7 +599,7 @@ The example page must explain:
 - what Signalsmith Stretch proves;
 - what is real in the first slice;
 - what is simulated;
-- how `@exclave/boundary` is used;
+- how `@exclave/seqlok` is used;
 - why the real adapter remains private/deferred;
 - how this differs from the official Signalsmith demo.
 
@@ -611,18 +611,18 @@ The blog post must be technical and restrained. It should not oversell the demo 
 
 ### Stage A — Spec refresh and docs handoff
 
-Purpose: create this updated Exclave Boundary specification and remove old Seqlok package assumptions.
+Purpose: create this updated Seqlok specification and remove obsolete package assumptions.
 
 Exit criteria:
 
-- current package name is `@exclave/boundary` throughout;
+- current package name is `@exclave/seqlok` throughout;
 - old Stage 0/1A Seqlok prompt is removed or quarantined as historical;
 - demo prompt targets `apps/signalsmith-stretch` or equivalent;
 - no instruction asks Codex to redesign the public package.
 
-### Stage B — Boundary simulator proof
+### Stage B — Runtime simulator proof
 
-Purpose: prove the product control/status loop with current `@exclave/boundary` APIs before real audio.
+Purpose: prove the product control/status loop with current `@exclave/seqlok` APIs before real audio.
 
 Files likely touched:
 
@@ -635,7 +635,7 @@ apps/docs/src/blog/signalsmith-stretch-boundary-proof.md
 Exit criteria:
 
 - app builds;
-- fake runtime uses real `@exclave/boundary` specs/backings/bindings;
+- fake runtime uses real `@exclave/seqlok` specs/backings/bindings;
 - pending/applied state works;
 - output-level display works;
 - docs explain simulation boundary;
@@ -688,16 +688,16 @@ Use `docs/proofs/signalsmith-stretch.md` as the Stage B proof authority after th
 
 Definition of done:
 
-1. Scope: add a private demo app, preferably `apps/signalsmith-stretch`. Do not redesign `@exclave/boundary`. Do not rename package APIs. Do not publish a Signalsmith adapter package.
-2. Naming: public/demo language says Exclave Boundary and Signalsmith Stretch. Keep "Seqlok" only in historical migration notes if needed. Keep "seqlock" only as the primitive term.
+1. Scope: add a private demo app, preferably `apps/signalsmith-stretch`. Do not redesign `@exclave/seqlok`. Do not rename package APIs. Do not publish a Signalsmith adapter package.
+2. Naming: public/demo language says Seqlok and Signalsmith Stretch. Keep "Seqlok" only in historical migration notes if needed. Keep "seqlock" only as the primitive term.
 3. Demo thesis: build a desktop-first browser demo shell for loading a local track, viewing waveform/navigation state, controlling rate/pitch/tonality/formant-like desired state, seeing pending vs applied state, showing runtime status, and displaying processed-output RMS/peak/full-scale facts. Audio can be simulated in this first slice if full Signalsmith WASM/AudioWorklet integration is too large.
-4. Boundary proof: use real `@exclave/boundary` APIs. Define the four app-private specs: desired stretch state, runtime status, source status, and processed output levels. Use `defineSpec`, `planLayout`, `allocatePacked`, `buildHandoff`/`acceptHandoff`, `bindController`, `bindProcessor`, and `bindObserver` where appropriate.
+4. Runtime proof: use real `@exclave/seqlok` APIs. Define the four app-private specs: desired stretch state, runtime status, source status, and processed output levels. Use `defineSpec`, `planLayout`, `allocatePacked`, `buildHandoff`/`acceptHandoff`, `bindController`, `bindProcessor`, and `bindObserver` where appropriate.
 5. Engine strategy: implement a demo-private fake/stretch simulator first. The fake engine should model applied sequence, source frame, output frame, rate, pitch, status, levels, clipping counters, stale/pending state, and failure modes. Leave TODO docs for the later custom C++/WASM/AudioWorklet adapter.
 6. UI: make it visually impressive but truthful. Include load/drop surface, waveform panel, transport row, rate and pitch controls, loop region mock/preview, A/B selector mock, processed output level display, status/latency inspector, and persistent error/status area. Prioritize a clean instrument-panel feel, not a generic playground.
-7. Docs integration: add a docs page and blog post for Signalsmith Stretch under the VitePress docs site only when the demo is ready for public proof framing. Explain what the demo proves, what is simulated, what becomes the real custom adapter later, and how `@exclave/boundary` is used.
-8. Tests: add unit/component tests for demo boundary specs and simulator state transitions. Add smoke tests that the demo imports `@exclave/boundary` and does not import stale prototype package names. Existing package tests must remain green.
+7. Docs integration: add a docs page and blog post for Signalsmith Stretch under the VitePress docs site only when the demo is ready for public proof framing. Explain what the demo proves, what is simulated, what becomes the real custom adapter later, and how `@exclave/seqlok` is used.
+8. Tests: add unit/component tests for demo boundary specs and simulator state transitions. Add smoke tests that the demo imports `@exclave/seqlok` and does not import stale prototype package names. Existing package tests must remain green.
 9. Scripts: add root/demo scripts only if needed. Keep `pnpm verify`, `pnpm run docs`, `pnpm docs:build`, `pnpm test:types`, `pnpm test`, `pnpm build`, and `pnpm test:pack` passing.
-10. Validation: run `pnpm install` if needed, `pnpm format`, `pnpm lint`, `pnpm test:types`, `pnpm test`, `pnpm build`, `pnpm run docs`, `pnpm docs:build`, `pnpm test:pack`, and `pnpm --filter @exclave/boundary pack`.
+10. Validation: run `pnpm install` if needed, `pnpm format`, `pnpm lint`, `pnpm test:types`, `pnpm test`, `pnpm build`, `pnpm run docs`, `pnpm docs:build`, `pnpm test:pack`, and `pnpm --filter @exclave/seqlok pack`.
 11. Commit/push: commit and push on the active feature branch. Do not target `main` unless a later task explicitly says to do so.
 12. Final report: include branch, commit SHA, push status, files changed, what from the old spec was preserved, what was intentionally deferred, commands run/results, and remaining risks.
 
@@ -706,7 +706,7 @@ Definition of done:
 This section is the concrete Stage B app contract for
 `apps/signalsmith-stretch`. It is still proof/demo authority only. It does
 not promote Signalsmith, audio, Worklet, WASM, or command concepts into
-`@exclave/boundary` package API authority.
+`@exclave/seqlok` package API authority.
 
 #### App package shape
 
@@ -719,8 +719,8 @@ Stage B adds one private workspace app:
   framework dependency for this app surface;
 - no React, Vue, Svelte, or similar UI framework dependency added only for this
   proof slice;
-- workspace dependency on `@exclave/boundary`;
-- no publication path, and no inclusion in the `@exclave/boundary` package
+- workspace dependency on `@exclave/seqlok`;
+- no publication path, and no inclusion in the `@exclave/seqlok` package
   files.
 
 #### Exact Stage B file map
@@ -756,7 +756,7 @@ Define the four Stage B specs in `src/boundary/specs.ts` with
 should be tested exactly.
 
 ```ts
-import { defineSpec } from "@exclave/boundary";
+import { defineSpec } from "@exclave/seqlok";
 
 import {
   ADAPTER_MODES,
@@ -895,9 +895,9 @@ Rules for these specs:
   visualization facts that demonstrate array-meter publication with
   `meter.stage`. They are not package API.
 
-#### Boundary usage requirements
+#### Seqlok usage requirements
 
-The app must visibly exercise the current `@exclave/boundary` surface:
+The app must visibly exercise the current `@exclave/seqlok` surface:
 
 - `defineSpec`;
 - `planLayout`;
@@ -908,7 +908,7 @@ The app must visibly exercise the current `@exclave/boundary` surface:
 - `bindController`;
 - `bindProcessor`;
 - `bindObserver`;
-- `BoundaryError` and `isBoundaryError` where useful;
+- `SeqlokError` and `isSeqlokError` where useful;
 - `allocateSwsrRing`, `bindSwsrRingProducer`, and `bindSwsrRingConsumer` if the
   demo-private command ring is implemented in Stage B.
 
@@ -918,7 +918,7 @@ that stays simple. Do not require `allocateWasm` in Stage B because
 wasm handoff is not the first-slice path.
 
 Do not create public Signalsmith, Worklet, WASM, audio, or command exports from
-`@exclave/boundary`.
+`@exclave/seqlok`.
 
 #### Demo-private command transport
 
@@ -959,7 +959,7 @@ Rules:
 
 The Stage B app must show:
 
-- Exclave Boundary + Signalsmith Stretch branded shell;
+- Seqlok + Signalsmith Stretch branded shell;
 - simulation mode badge;
 - load/drop surface;
 - metadata panel with truthful simulated or decoded status;
@@ -971,7 +971,7 @@ The Stage B app must show:
 - processed/aligned source selector, marked as a truthful mock when no real
   audio exists;
 - processed output RMS, peak, and full-scale panel;
-- Boundary Inspector showing plan IDs, spec hashes, `bytesTotal`, plane byte
+- Seqlok inspector showing plan IDs, spec hashes, `bytesTotal`, plane byte
   lengths, lock stride, handoff versions, applied sequence, command drops, stale
   reads, and latest error code;
 - persistent error/status area.
@@ -1017,7 +1017,7 @@ pnpm signalsmith:test:browser:real
 The package pack gate remains:
 
 ```sh
-pnpm --filter @exclave/boundary pack
+pnpm --filter @exclave/seqlok pack
 ```
 
 The older direct package-filter form is equivalent to `pnpm signalsmith:check`
@@ -1049,8 +1049,8 @@ Stage B remains under these guardrails:
 
 Before any demo is treated as public proof:
 
-- `@exclave/boundary` package tests must remain green.
-- The demo must not introduce public Signalsmith, audio, Worklet, or product exports from `@exclave/boundary`.
+- `@exclave/seqlok` package tests must remain green.
+- The demo must not introduce public Signalsmith, audio, Worklet, or product exports from `@exclave/seqlok`.
 - The demo must not use stale import paths.
 - The demo must distinguish simulated behavior from real adapter behavior.
 - The docs must not claim the real custom WASM/AudioWorklet adapter is complete until it exists.
@@ -1058,7 +1058,7 @@ Before any demo is treated as public proof:
 - The docs must not claim sample-accurate automation.
 - The docs must not claim standards-compliant VU/LUFS measurement.
 - The demo must be usable without a pointer for the primary workflow before public launch.
-- The packed `@exclave/boundary` tarball must remain free of demo app code, worklets, WASM, fixtures, and private proof assets.
+- The packed `@exclave/seqlok` tarball must remain free of demo app code, worklets, WASM, fixtures, and private proof assets.
 
 ---
 

@@ -1,4 +1,4 @@
-# Specs, Layout, and Handoff: The Boundary Contract
+# Specs, Layout, and Handoff: The Runtime Contract
 
 The boundary contract has three durable parts: the authored spec, the planned layout, and the handoff.
 

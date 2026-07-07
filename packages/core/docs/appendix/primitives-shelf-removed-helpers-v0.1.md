@@ -1,13 +1,13 @@
 # Primitives Shelf: Removed Helpers in v0.1.0 (with Code Reference)
 
 > Status: Accepted
-> Scope: `src/primitives/*` in `@exclave/boundary`
+> Scope: `src/primitives/*` in `@exclave/seqlok`
 > Intent: Record the intent and **exact implementations** of primitives that were removed from the runtime, so they can
 > be resurrected or reused without spelunking history.
 
 ## 1. Context
 
-`@exclave/boundary` deliberately exposes **only** the high-level flow:
+`@exclave/seqlok` deliberately exposes **only** the high-level flow:
 
 - `defineSpec` → `planLayout` → `allocatePacked` → `buildHandoff` / `acceptHandoff` → `bindController` /
   `bindProcessor`

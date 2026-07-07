@@ -293,9 +293,7 @@ describe("ChunkedWavSource", () => {
     window.addChunk(await source.readFrames(loop.endFrame - 2, 2));
     window.addChunk(await source.readFrames(loop.startFrame, 2));
 
-    expect(normalizeSeekFrameIntoLoopRange(5_000, loop)).toBe(
-      loop.startFrame,
-    );
+    expect(normalizeSeekFrameIntoLoopRange(5_000, loop)).toBe(loop.startFrame);
     expect(normalizeSeekFrameIntoLoopRange(35_123, loop)).toBe(15_123);
     expect(
       window.fillInputWindow([target], loop.endFrame - 2, 4, {

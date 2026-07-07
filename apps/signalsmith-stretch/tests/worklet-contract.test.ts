@@ -15,11 +15,11 @@ const WORKLET_PROCESSOR = join(
   "worklet",
   "stretch-processor.ts",
 );
-const BOUNDARY_BINDINGS = join(
+const SEQLOK_BINDINGS = join(
   APP_ROOT,
   "src",
   "worklet",
-  "boundary-bindings.ts",
+  "seqlok-bindings.ts",
 );
 const WORKLET_MODULE = join(
   APP_ROOT,
@@ -84,8 +84,8 @@ describe("Signalsmith real Worklet contract", () => {
     expect(moduleLoader).toContain("__SIGNALSMITH_STRETCH_MODULE_FACTORY__");
   });
 
-  it("binds one accepted Exclave handoff for the proof runtime", () => {
-    const source = readFileSync(BOUNDARY_BINDINGS, "utf8");
+  it("binds one accepted Seqlok handoff for the proof runtime", () => {
+    const source = readFileSync(SEQLOK_BINDINGS, "utf8");
 
     expect(source).toContain("acceptHandoff(handoff)");
     expect(source).toContain("bindProcessor");

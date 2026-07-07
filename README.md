@@ -1,12 +1,14 @@
-# Exclave Boundary
+# Seqlok
 
-This repository contains `@exclave/boundary`, a typed shared-memory boundary substrate for coherent state, deterministic layout, explicit handoff, and timing-sensitive runtimes. It demonstrates authored contracts, deterministic layout planning, backing allocation, explicit handoff artifacts, role-specific bindings, diagnostics, tests, benchmarks, and release smoke checks.
+Seqlok is a typed shared-memory contract for coherent runtime state. It uses a seqlock-backed shared-memory protocol internally, while exposing higher-level spec, layout, handoff, controller, processor, and observer bindings.
 
-Exclave Boundary is the public package. Integration code should import `@exclave/boundary`.
+This repository contains the `@exclave/seqlok` package, docs, tests, benchmarks, support tooling, and release smoke checks. Integration code should import `@exclave/seqlok`.
 
 ## What This Is
 
-Exclave Boundary makes a runtime boundary explicit:
+Seqlok lets you define a runtime state contract once, plan its shared-memory layout, hand it across a worker, worklet, or WASM-oriented boundary, and read or write coherent state through role-specific bindings.
+
+It makes a runtime boundary explicit:
 
 - what fields exist across the boundary
 - where they live in shared memory
@@ -15,15 +17,15 @@ Exclave Boundary makes a runtime boundary explicit:
 - how readers avoid half-written state
 - how a runtime receives its memory contract without hidden process state
 
-The current vocabulary is controller, processor, observer, params, and meters. Those names describe roles in the boundary substrate, not a complete application framework.
+The current vocabulary is controller, processor, observer, params, and meters. Those names describe roles in the shared-memory contract, not a complete application framework.
 
 ## Install
 
 ```sh
-pnpm add @exclave/boundary
+pnpm add @exclave/seqlok
 ```
 
-`@exclave/boundary` is ESM-only, typed, and published as one package. Internal base, schema, and primitive layers are kept inside the package rather than exposed as workspace runtime dependencies.
+`@exclave/seqlok` is ESM-only, typed, and published as one package. Internal base, schema, and primitive layers are kept inside the package rather than exposed as workspace runtime dependencies.
 
 ## Quickstart
 
@@ -35,7 +37,7 @@ import {
   buildHandoff,
   defineSpec,
   planLayout,
-} from "@exclave/boundary";
+} from "@exclave/seqlok";
 
 const spec = defineSpec(({ param, meter }) => ({
   params: {
@@ -118,12 +120,12 @@ Grouped keys are unprefixed under the exact schema group, so `delta` maps to
 `runtime.delta` in the `runtime` group. `publishGroup()` is the convenience
 path. Hard hot paths should benchmark it against direct `writer.set()` calls.
 
-## Package Boundary
+## Package Surface
 
-- `packages/core` publishes `@exclave/boundary`.
+- `packages/core` publishes `@exclave/seqlok`.
 - The package is MIT licensed, ESM, typed, and marked `sideEffects: false`.
 - The packed output includes built `dist` files, `README.md`, `LICENSE`, and `package.json`.
-- The release smoke test packs the package, installs the tarball into a fresh consumer, imports `@exclave/boundary`, and verifies there are no `workspace:*` runtime dependencies.
+- The release smoke test packs the package, installs the tarball into a fresh consumer, imports `@exclave/seqlok`, and verifies there are no `workspace:*` runtime dependencies.
 
 ## Documentation
 

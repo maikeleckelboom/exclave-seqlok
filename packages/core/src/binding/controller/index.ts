@@ -34,7 +34,7 @@ import type { ControllerBinding, ControllerOptions } from "../common/types";
  * @returns A typed controller binding for the given spec/plan/backing triple.
  *
  * @remarks
- * - This is the canonical controller API in `@exclave/boundary`.
+ * - This is the canonical controller API in `@exclave/seqlok`.
  * - The caller is responsible for:
  *   - Computing the plan once via `planLayout(spec)`.
  *   - Allocating a compatible backing via `allocatePacked(plan)` (or a

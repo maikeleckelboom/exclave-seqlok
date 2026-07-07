@@ -1,17 +1,17 @@
 {
-  "name": "@exclave/boundary",
-  "title": "Exclave Boundary",
+  "name": "@exclave/seqlok",
+  "title": "Seqlok",
   "version": "0.3.0-next.0",
-  "description": "typed shared-memory boundary substrate for coherent state, deterministic layout, explicit handoff, and timing-sensitive runtimes.",
+  "description": "Typed shared-memory contracts for coherent runtime state.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/maikeleckelboom/exclave-boundary.git",
+    "url": "git+https://github.com/maikeleckelboom/exclave-seqlok.git",
     "directory": "packages/core"
   },
-  "homepage": "https://github.com/maikeleckelboom/exclave-boundary#readme",
+  "homepage": "https://github.com/maikeleckelboom/exclave-seqlok#readme",
   "bugs": {
-    "url": "https://github.com/maikeleckelboom/exclave-boundary/issues"
+    "url": "https://github.com/maikeleckelboom/exclave-seqlok/issues"
   },
   "keywords": [
     "exclave",

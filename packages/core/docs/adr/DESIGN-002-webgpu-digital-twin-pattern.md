@@ -2,7 +2,7 @@
 
 **Context**: High-performance visualization
 **Target**: 10k+ entities, waveforms, analyzers
-**Tech**: `@exclave/boundary`, WebGPU, WGSL
+**Tech**: `@exclave/seqlok`, WebGPU, WGSL
 
 ---
 

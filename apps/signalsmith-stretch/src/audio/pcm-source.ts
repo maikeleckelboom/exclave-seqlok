@@ -57,7 +57,9 @@ export function createChunkedWavPcmSource(
   };
 }
 
-export function simulatedSourceFromPcm(source: ProofPcmSource): SimulatedSource {
+export function simulatedSourceFromPcm(
+  source: ProofPcmSource,
+): SimulatedSource {
   return {
     channels: source.channels,
     durationSeconds: source.durationSeconds,

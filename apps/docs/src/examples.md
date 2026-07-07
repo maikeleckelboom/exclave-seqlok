@@ -5,7 +5,7 @@ These examples show the public contract in code. The prose names the boundary gu
 ## Spec Inference and Canonical Keys
 
 ```ts twoslash
-import { defineSpec } from "@exclave/boundary";
+import { defineSpec } from "@exclave/seqlok";
 
 const spec = defineSpec((api) => ({
   id: "examples/transport",
@@ -36,7 +36,7 @@ import {
   bindController,
   defineSpec,
   planLayout,
-} from "@exclave/boundary";
+} from "@exclave/seqlok";
 
 const spec = defineSpec((api) => ({
   id: "examples/controller",
@@ -75,7 +75,7 @@ import {
   buildHandoff,
   defineSpec,
   planLayout,
-} from "@exclave/boundary";
+} from "@exclave/seqlok";
 
 const spec = defineSpec((api) => ({
   id: "examples/processor",
@@ -127,7 +127,7 @@ import {
   buildHandoff,
   defineSpec,
   planLayout,
-} from "@exclave/boundary";
+} from "@exclave/seqlok";
 
 const spec = defineSpec((api) => ({
   id: "examples/observer",
@@ -161,13 +161,13 @@ observer.meters.snapshot("transport.state", "transport.drift");
 
 The observer receives enum param labels in snapshots, including when it binds from a handoff.
 
-## BoundaryError Narrowing
+## SeqlokError Narrowing
 
 ```ts twoslash
-import { isBoundaryError } from "@exclave/boundary";
+import { isSeqlokError } from "@exclave/seqlok";
 
 export function summarizeError(error: unknown) {
-  if (isBoundaryError(error)) {
+  if (isSeqlokError(error)) {
     error.code;
 
     return error.toJSON();
@@ -179,4 +179,4 @@ export function summarizeError(error: unknown) {
 
 ## Pack Smoke Shape
 
-The release smoke test installs the packed tarball in a fresh consumer and imports from `@exclave/boundary`. That catches missing files, workspace-only dependencies, and broken export maps before publish.
+The release smoke test installs the packed tarball in a fresh consumer and imports from `@exclave/seqlok`. That catches missing files, workspace-only dependencies, and broken export maps before publish.

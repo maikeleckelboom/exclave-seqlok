@@ -13,7 +13,10 @@ import type { ChunkedWavPcmSource } from "../src/audio/pcm-source";
 describe("SourceReferenceMonitor", () => {
   it("predicts preview frames using the active source sample rate", async () => {
     const context = new FakeAudioContext(48_000);
-    const source = await createSource({ frameCount: 44_100 * 8, sampleRate: 44_100 });
+    const source = await createSource({
+      frameCount: 44_100 * 8,
+      sampleRate: 44_100,
+    });
     const monitor = new SourceReferenceMonitor(context);
 
     monitor.sync(source, 0, 1);
@@ -29,7 +32,10 @@ describe("SourceReferenceMonitor", () => {
 
   it("keeps matched-sample-rate prediction behavior unchanged", async () => {
     const context = new FakeAudioContext(48_000);
-    const source = await createSource({ frameCount: 48_000 * 8, sampleRate: 48_000 });
+    const source = await createSource({
+      frameCount: 48_000 * 8,
+      sampleRate: 48_000,
+    });
     const monitor = new SourceReferenceMonitor(context);
 
     monitor.sync(source, 0, 1);
@@ -44,7 +50,10 @@ describe("SourceReferenceMonitor", () => {
 
   it("disconnects ended preview source nodes and keeps stop idempotent", async () => {
     const context = new FakeAudioContext(48_000);
-    const source = await createSource({ frameCount: 48_000 * 8, sampleRate: 48_000 });
+    const source = await createSource({
+      frameCount: 48_000 * 8,
+      sampleRate: 48_000,
+    });
     const monitor = new SourceReferenceMonitor(context);
 
     monitor.sync(source, 0, 1);
@@ -115,7 +124,11 @@ class FakeAudioBuffer {
 class FakeAudioParam {
   value = 1;
 
-  setTargetAtTime(value: number, _startTime: number, _timeConstant: number): void {
+  setTargetAtTime(
+    value: number,
+    _startTime: number,
+    _timeConstant: number,
+  ): void {
     this.value = value;
   }
 

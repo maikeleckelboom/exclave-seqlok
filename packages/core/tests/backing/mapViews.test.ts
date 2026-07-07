@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { allocatePacked } from "../../src/backing/allocate-packed";
 import { mapViews } from "../../src/backing/map-views";
-import { type BoundaryError } from "../../src/errors/error";
+import { type SeqlokError } from "../../src/errors/error";
 import { planLayout } from "../../src/plan/layout";
 import { defineSpec } from "../../src/spec/define";
 
@@ -10,13 +10,13 @@ import { defineSpec } from "../../src/spec/define";
  * Type guard to identify Seqlok specific errors.
  * Validates the presence of `name`, `message`, and `code` properties.
  */
-export function isBoundaryError(x: unknown): x is BoundaryError {
+export function isSeqlokError(x: unknown): x is SeqlokError {
   if (typeof x !== "object" || x === null) {
     return false;
   }
   const obj = x as Record<string, unknown>;
   return (
-    obj.name === "BoundaryError" &&
+    obj.name === "SeqlokError" &&
     typeof obj.message === "string" &&
     "code" in obj
   );
@@ -72,13 +72,13 @@ describe("Map Views: Runtime Behavior & Validation", () => {
       thrown = e;
     }
 
-    expect(isBoundaryError(thrown)).toBe(true);
+    expect(isSeqlokError(thrown)).toBe(true);
 
-    if (isBoundaryError(thrown)) {
+    if (isSeqlokError(thrown)) {
       expect(thrown.code).toBe("backing.allocUndersized");
       expect(thrown.message).toMatch(/smaller than required|undersized/i);
     } else {
-      throw new Error("Expected mapViews to throw a BoundaryError");
+      throw new Error("Expected mapViews to throw a SeqlokError");
     }
   });
 });

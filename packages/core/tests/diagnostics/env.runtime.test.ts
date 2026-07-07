@@ -5,7 +5,7 @@ import {
   summarizeEnv,
   type EnvGlobal,
 } from "../../src/diagnostics/env";
-import { BoundaryError } from "../../src/errors/error";
+import { SeqlokError } from "../../src/errors/error";
 
 describe("Environment Diagnostics & Compatibility", () => {
   it("correctly identifies a Node.js-like environment based on process globals", () => {
@@ -50,9 +50,9 @@ describe("Environment Diagnostics & Compatibility", () => {
       thrown = error;
     }
 
-    expect(thrown).toBeInstanceOf(BoundaryError);
+    expect(thrown).toBeInstanceOf(SeqlokError);
 
-    const err = thrown as BoundaryError<"env.unsupported">;
+    const err = thrown as SeqlokError<"env.unsupported">;
     expect(err.code).toBe("env.unsupported");
     expect(err.details.feature).toBe("SharedArrayBuffer");
     expect(err.details.where).toBe("test.env.unsupported");
@@ -77,9 +77,9 @@ describe("Environment Diagnostics & Compatibility", () => {
       thrown = error;
     }
 
-    expect(thrown).toBeInstanceOf(BoundaryError);
+    expect(thrown).toBeInstanceOf(SeqlokError);
 
-    const err = thrown as BoundaryError<"env.coopCoepRequired">;
+    const err = thrown as SeqlokError<"env.coopCoepRequired">;
     expect(err.code).toBe("env.coopCoepRequired");
     expect(err.details.context).toBe("browser");
     expect(err.details.where).toBe("test.env.coop-coep");

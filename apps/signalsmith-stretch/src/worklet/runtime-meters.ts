@@ -6,7 +6,7 @@ import {
 } from "../types";
 
 import type { signalsmithStretchSpec } from "../boundary/specs";
-import type { MeterGroupValues, ProcessorBinding } from "@exclave/boundary";
+import type { MeterGroupValues, ProcessorBinding } from "@exclave/seqlok";
 
 export interface RuntimeMeterInput {
   readonly audioWorkletFrame: number;
@@ -137,7 +137,10 @@ export function publishRuntimeMeters(
     writer.set("runtime.adapterMode", adapterMode);
     writer.set("runtime.audioWorkletFrameHi", frame.hi);
     writer.set("runtime.audioWorkletFrameLo", frame.lo);
-    writer.set("runtime.audioWorkletTimeSeconds", input.audioWorkletTimeSeconds);
+    writer.set(
+      "runtime.audioWorkletTimeSeconds",
+      input.audioWorkletTimeSeconds,
+    );
     writer.set("runtime.blockSamples", input.blockSamples);
     writer.set("runtime.bufferLengthFrames", input.bufferLengthFrames);
     writer.set("runtime.bufferReadyFrames", input.bufferReadyFrames);
@@ -175,7 +178,10 @@ export function publishRuntimeMeters(
     writer.set("runtime.loopSourceFrameInside", input.loopSourceFrameInside);
     writer.set("runtime.loopStartFrame", input.loopStartFrame);
     writer.set("runtime.loopStartMissingFrames", input.loopStartMissingFrames);
-    writer.set("runtime.maxObservedRenderQuantum", input.maxObservedRenderQuantum);
+    writer.set(
+      "runtime.maxObservedRenderQuantum",
+      input.maxObservedRenderQuantum,
+    );
     writer.set("runtime.outputFrame", input.outputFrame);
     writer.set("runtime.outputLatencyFrames", input.outputLatencyFrames);
     writer.set("runtime.outputLatencySeconds", outputLatencySeconds);

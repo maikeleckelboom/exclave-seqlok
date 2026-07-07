@@ -1,8 +1,8 @@
-# Exclave Boundary
+# Seqlok
 
 ## 0.3.0-next.0
 
-- Rename public package metadata to `@exclave/boundary`.
+- Rename public package metadata to `@exclave/seqlok`.
 - Compile authored nested spec ASTs to canonical dot-key runtime specs.
 - Add deterministic anonymous spec ids derived from canonical contents.
 - Add `CanonicalSpec` and `CanonicalSpecFromAst` type exports.
@@ -39,4 +39,4 @@
 - Finalize public flow: `defineSpec` → `planLayout` → `allocatePacked` → `buildHandoff` → `acceptHandoff` →
   `bindController` / `bindProcessor`.
 - Ship SWMR seqlock primitives, backing/mapViews/handoff pipeline, diagnostics entrypoint
-  (`@exclave/boundary/diagnostics`), and error system with tests.
+  (`@exclave/seqlok/diagnostics`), and error system with tests.

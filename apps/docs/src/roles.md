@@ -1,6 +1,6 @@
 # Controller, Processor, and Observer Roles
 
-Exclave Boundary exposes separate role bindings because each side has different authority and timing pressure.
+Seqlok exposes separate role bindings because each side has different authority and timing pressure.
 
 ## Controller
 

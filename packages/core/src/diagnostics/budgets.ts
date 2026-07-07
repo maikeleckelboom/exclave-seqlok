@@ -61,7 +61,7 @@ export const DEFAULT_DIAGNOSTICS_BUDGETS: DiagnosticsBudgets = {
 /**
  * Validate an individual diagnostics budget value.
  *
- * @throws BoundaryError<'diagnostics.counterInvalid'>
+ * @throws SeqlokError<'diagnostics.counterInvalid'>
  */
 function assertValidBudgetValue(
   name: keyof DiagnosticsBudgets,
@@ -130,7 +130,7 @@ function assertValidBudgetValue(
 /**
  * Validate a complete diagnostics budget object.
  *
- * @throws BoundaryError<'diagnostics.counterInvalid'>
+ * @throws SeqlokError<'diagnostics.counterInvalid'>
  */
 export function validateDiagnosticsBudgets(budgets: DiagnosticsBudgets): void {
   assertValidBudgetValue("spinLimit", budgets.spinLimit);
@@ -148,7 +148,7 @@ export function validateDiagnosticsBudgets(budgets: DiagnosticsBudgets): void {
  * - validates the result,
  * - returns an immutable budget object.
  *
- * @throws BoundaryError<'diagnostics.counterInvalid'>
+ * @throws SeqlokError<'diagnostics.counterInvalid'>
  */
 export function createDiagnosticsBudgets(
   overrides: Partial<DiagnosticsBudgets> = {},

@@ -14,7 +14,7 @@
 import type { PlaneKey } from "../primitives/planes";
 
 /**
- * Supported memory backing strategies for Exclave Boundary's memory planes.
+ * Supported memory backing strategies for Seqlok's memory planes.
  *
  * @remarks
  * - `packed`: single SharedArrayBuffer for all planes.

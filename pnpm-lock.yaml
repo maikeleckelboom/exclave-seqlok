@@ -163,7 +163,7 @@ importers:
 
   apps/signalsmith-stretch:
     dependencies:
-      "@exclave/boundary":
+      "@exclave/seqlok":
         specifier: workspace:*
         version: link:../../packages/core
     devDependencies:

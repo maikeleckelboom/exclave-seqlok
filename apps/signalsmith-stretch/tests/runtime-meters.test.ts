@@ -5,7 +5,7 @@ import {
   bindProcessor,
   buildHandoff,
   planLayout,
-} from "@exclave/boundary";
+} from "@exclave/seqlok";
 import { describe, expect, it } from "vitest";
 
 import { signalsmithStretchSpec } from "../src/boundary/specs";

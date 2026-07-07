@@ -4,12 +4,12 @@ import {
   buildHandoff,
   planLayout,
   verifyHandoff,
-} from "@exclave/boundary";
+} from "@exclave/seqlok";
 import { describe, expect, it } from "vitest";
 
 import {
-  createStretchBoundarySession,
-  disposeStretchBoundarySession,
+  createStretchSeqlokSession,
+  disposeStretchSeqlokSession,
   initializeDesiredControls,
   writeDesiredControls,
 } from "../src/boundary/session";
@@ -133,9 +133,7 @@ const LEVEL_METER_KEYS = [
 
 describe("Signalsmith Stretch boundary spec", () => {
   it("defines one exact app-private spec id", () => {
-    expect(signalsmithStretchSpec.id).toBe(
-      "signalsmith-stretch/runtime",
-    );
+    expect(signalsmithStretchSpec.id).toBe("signalsmith-stretch/runtime");
   });
 
   it("defines the required canonical dot keys", () => {
@@ -172,9 +170,7 @@ describe("Signalsmith Stretch boundary spec", () => {
       max: 48,
       min: -48,
     });
-    expect(
-      signalsmithStretchSpec.params["control.tonalityHz"],
-    ).toMatchObject({
+    expect(signalsmithStretchSpec.params["control.tonalityHz"]).toMatchObject({
       kind: "f32",
       max: TONALITY_LIMIT_MAX_HZ,
       min: TONALITY_LIMIT_MIN_HZ,
@@ -256,17 +252,17 @@ describe("Signalsmith Stretch boundary spec", () => {
   });
 
   it("creates one app-private stretch session surface", () => {
-    const session = createStretchBoundarySession();
+    const session = createStretchSeqlokSession();
 
     try {
       expect(Object.keys(session)).toEqual(["stretch"]);
     } finally {
-      disposeStretchBoundarySession(session);
+      disposeStretchSeqlokSession(session);
     }
   });
 
   it("lets the controller write params and the processor read nested aliases", () => {
-    const session = createStretchBoundarySession();
+    const session = createStretchSeqlokSession();
 
     try {
       initializeDesiredControls(session);
@@ -307,7 +303,7 @@ describe("Signalsmith Stretch boundary spec", () => {
       expect(observedRate).toBeCloseTo(1.5);
       expect(observedPitch).toBeCloseTo(-3);
     } finally {
-      disposeStretchBoundarySession(session);
+      disposeStretchSeqlokSession(session);
     }
   });
 });

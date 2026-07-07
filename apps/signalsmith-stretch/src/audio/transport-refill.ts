@@ -331,7 +331,10 @@ function createDecision(input: {
   readonly targetAheadFrames: number;
 }): TransportRefillDecision | null {
   const startFrame = clampFrame(input.startFrame, 0, input.sourceFrameCount);
-  const chunkFrames = calculateChunkFrames(input.runtime, input.sourceSampleRate);
+  const chunkFrames = calculateChunkFrames(
+    input.runtime,
+    input.sourceSampleRate,
+  );
   const maxEndFrame = clampFrame(
     input.maxEndFrame ?? input.sourceFrameCount,
     startFrame,

@@ -1,15 +1,15 @@
-# Exclave Boundary
+# Seqlok
 
-`@exclave/boundary` is a typed shared-memory boundary substrate for coherent state, deterministic layout, explicit handoff, and timing-sensitive runtimes. It provides authored spec compilation, deterministic memory planning, backing allocation, explicit handoff artifacts, controller/processor/observer bindings, diagnostics, and structured errors.
+Seqlok is a typed shared-memory contract for coherent runtime state. It uses a seqlock-backed shared-memory protocol internally, while exposing higher-level spec, layout, handoff, controller, processor, and observer bindings.
 
-Exclave is the ecosystem. Boundary is this package.
+The npm org `@exclave` stays the package scope. `@exclave/seqlok` is the package name and Seqlok is the standalone product identity.
 
 The package is ESM-only, typed, MIT licensed, and marked `sideEffects: false`.
 
 ## Install
 
 ```sh
-pnpm add @exclave/boundary
+pnpm add @exclave/seqlok
 ```
 
 ## Flow
@@ -36,7 +36,7 @@ import {
   buildHandoff,
   defineSpec,
   planLayout,
-} from "@exclave/boundary";
+} from "@exclave/seqlok";
 
 const spec = defineSpec(({ param, meter }) => ({
   params: {
@@ -92,23 +92,23 @@ Use `processor.meters.publishGroup("runtime", values)` when a processor already 
 
 Grouped publishing maps unprefixed keys under one exact schema group; it is not arbitrary object flattening. Build derived values such as enum indices, split frame counters, and latency seconds explicitly before publishing the group. `publishGroup(...)` is convenience-oriented, so benchmark it before using it in a hard hot path.
 
-## Package Boundary
+## Package Surface
 
-This package publishes one runtime package: `@exclave/boundary`. Internal base, schema, and primitive layers are implementation details unless exported from the root package or `@exclave/boundary/diagnostics`.
+This package publishes one runtime package: `@exclave/seqlok`. Internal base, schema, and primitive layers are implementation details unless exported from the root package or `@exclave/seqlok/diagnostics`.
 
 The packed package must not contain `workspace:*` runtime dependencies. Run:
 
 ```sh
-pnpm -F @exclave/boundary run test:pack
+pnpm -F @exclave/seqlok run test:pack
 ```
 
 ## Development
 
 ```sh
-pnpm -F @exclave/boundary run build
-pnpm -F @exclave/boundary run test
-pnpm -F @exclave/boundary run test:types
-pnpm -F @exclave/boundary run bench
+pnpm -F @exclave/seqlok run build
+pnpm -F @exclave/seqlok run test
+pnpm -F @exclave/seqlok run test:types
+pnpm -F @exclave/seqlok run bench
 ```
 
 ## Documentation

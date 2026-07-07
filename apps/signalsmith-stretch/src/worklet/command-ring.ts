@@ -3,7 +3,7 @@ import {
   type StretchCommand,
 } from "../boundary/commands";
 
-import type { SwsrRingBacking, SwsrRingConsumer } from "@exclave/boundary";
+import type { SwsrRingBacking, SwsrRingConsumer } from "@exclave/seqlok";
 
 export function bindWorkletCommandRing(
   backing: SwsrRingBacking,

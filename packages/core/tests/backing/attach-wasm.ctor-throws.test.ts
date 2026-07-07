@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 
 import { allocateWasm } from "../../src/backing/allocate-wasm";
-import { isBoundaryError } from "../../src/errors/error";
+import { isSeqlokError } from "../../src/errors/error";
 import { planLayout } from "../../src/plan/layout";
 import { defineSpec } from "../../src/spec/define";
 
@@ -10,7 +10,7 @@ afterEach(() => {
 });
 
 describe("allocateWasm: memory constructor failure path", () => {
-  it("throws a typed BoundaryError when WebAssembly.Memory constructor throws", () => {
+  it("throws a typed SeqlokError when WebAssembly.Memory constructor throws", () => {
     // Arrange
     const spec = defineSpec(({ param, meter }) => ({
       id: "test",
@@ -42,7 +42,7 @@ describe("allocateWasm: memory constructor failure path", () => {
       expect(false).toBe(true);
     } catch (e: unknown) {
       // Narrow using our official guard, no unsafe casts
-      if (!isBoundaryError(e)) {
+      if (!isSeqlokError(e)) {
         throw e;
       }
       // Code path caught by allocateWasm when ctor fails

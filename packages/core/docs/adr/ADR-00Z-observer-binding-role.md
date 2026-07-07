@@ -1,4 +1,4 @@
-# ADR-00Z: Observer Binding Role in `@exclave/boundary`
+# ADR-00Z: Observer Binding Role in `@exclave/seqlok`
 
 **Status**: Proposed
 **Date**: 2025-11-18
@@ -46,7 +46,7 @@ We want a first-class **observer** role with:
 
 ## 2. Decision
 
-We add `bindObserver` to `@exclave/boundary` as the standard read-only binding.
+We add `bindObserver` to `@exclave/seqlok` as the standard read-only binding.
 
 ### 2.1 API surface (conceptual)
 

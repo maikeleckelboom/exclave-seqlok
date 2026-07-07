@@ -8,7 +8,7 @@ import {
   type SwsrRingBacking,
   type SwsrRingConsumer,
   type SwsrRingProducer,
-} from "@exclave/boundary";
+} from "@exclave/seqlok";
 
 export const STRETCH_COMMAND_WORDS_PER_SLOT = 24;
 export const DEFAULT_COMMAND_RING_CAPACITY = 16;

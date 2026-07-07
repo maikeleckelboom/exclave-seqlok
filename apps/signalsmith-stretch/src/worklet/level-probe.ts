@@ -1,7 +1,7 @@
 import { enumIndex, PROBE_STATES } from "../types";
 
 import type { signalsmithStretchSpec } from "../boundary/specs";
-import type { ProcessorBinding } from "@exclave/boundary";
+import type { ProcessorBinding } from "@exclave/seqlok";
 
 export class LevelProbe {
   private readonly historyPeak = new Float32Array(64);

@@ -1,4 +1,4 @@
-import { defineSpec } from "@exclave/boundary";
+import { defineSpec } from "@exclave/seqlok";
 
 import {
   ADAPTER_MODES,

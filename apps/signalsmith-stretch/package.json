@@ -21,7 +21,7 @@
     "vendor": "tsx scripts/vendor.mts"
   },
   "dependencies": {
-    "@exclave/boundary": "workspace:*"
+    "@exclave/seqlok": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "catalog:",

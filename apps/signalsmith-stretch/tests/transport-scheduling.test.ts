@@ -9,10 +9,7 @@ import {
   speculativeTransportBufferEndFrame,
 } from "../src/audio/transport-refill";
 
-import type {
-  RuntimeStatusSnapshot,
-  SourceStatusSnapshot,
-} from "../src/types";
+import type { RuntimeStatusSnapshot, SourceStatusSnapshot } from "../src/types";
 
 const SAMPLE_RATE = 48_000;
 
@@ -55,8 +52,7 @@ describe("audio transport scheduling", () => {
 
   it("does not request source data beyond EOF at the playable end", () => {
     const sourceFrameCount = SAMPLE_RATE * 2;
-    const playableEndFrame =
-      sourceFrameCount - (5_760 + 1_440);
+    const playableEndFrame = sourceFrameCount - (5_760 + 1_440);
     const decision = chooseTransportRefill({
       active: true,
       runtime: runtimeStatus({

@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { createStretchCommandTransport } from "../src/boundary/commands";
 import {
-  createStretchBoundarySession,
-  disposeStretchBoundarySession,
+  createStretchSeqlokSession,
+  disposeStretchSeqlokSession,
   initializeDesiredControls,
   readProcessedLevels,
   readRuntimeStatus,
@@ -14,7 +14,7 @@ import { FakeStretchEngine } from "../src/runtime/fake-stretch-engine";
 import { defaultDesiredControls, defaultSimulatedSource } from "../src/types";
 
 function setup(capacity = 16) {
-  const session = createStretchBoundarySession();
+  const session = createStretchSeqlokSession();
   const transport = createStretchCommandTransport(capacity);
   initializeDesiredControls(session);
   const engine = new FakeStretchEngine(session, transport, {
@@ -56,7 +56,7 @@ describe("FakeStretchEngine", () => {
       expect(source.durationFrames).toBe(engine.currentSource.frames);
       expect(source.bufferEndFrame).toBe(engine.currentSource.frames);
     } finally {
-      disposeStretchBoundarySession(session);
+      disposeStretchSeqlokSession(session);
     }
   });
 
@@ -80,7 +80,7 @@ describe("FakeStretchEngine", () => {
       expect(applied.runtime.adapterMode).toBe("simulator");
       expect(applied.runtime.effectiveRate).toBeCloseTo(2);
     } finally {
-      disposeStretchBoundarySession(session);
+      disposeStretchSeqlokSession(session);
     }
   });
 
@@ -108,7 +108,7 @@ describe("FakeStretchEngine", () => {
       expect(source.durationFrames).toBe(480_000);
       expect(source.droppedBufferTotal).toBe(0);
     } finally {
-      disposeStretchBoundarySession(session);
+      disposeStretchSeqlokSession(session);
     }
   });
 
@@ -149,7 +149,7 @@ describe("FakeStretchEngine", () => {
       );
       expect(readRuntimeStatus(session).lastErrorCode).toBe(0);
     } finally {
-      disposeStretchBoundarySession(session);
+      disposeStretchSeqlokSession(session);
     }
   });
 
@@ -173,7 +173,7 @@ describe("FakeStretchEngine", () => {
       expect(recovered.sourceFrame).toBeGreaterThan(0);
       expect(recovered.sourceFrame).toBeLessThan(1_024);
     } finally {
-      disposeStretchBoundarySession(session);
+      disposeStretchSeqlokSession(session);
     }
   });
 
@@ -198,7 +198,7 @@ describe("FakeStretchEngine", () => {
       expect(recovered.sourceFrame).toBeLessThan(36_000);
       expect(recovered.state).not.toBe("ended");
     } finally {
-      disposeStretchBoundarySession(session);
+      disposeStretchSeqlokSession(session);
     }
   });
 
@@ -230,7 +230,7 @@ describe("FakeStretchEngine", () => {
       expect(playing.sourceFrame).toBeGreaterThanOrEqual(10_000);
       expect(playing.sourceFrame).toBeLessThan(20_000);
     } finally {
-      disposeStretchBoundarySession(session);
+      disposeStretchSeqlokSession(session);
     }
   });
 
@@ -254,7 +254,7 @@ describe("FakeStretchEngine", () => {
       expect(levels.referenceBranchActive).toBe(true);
       expect(historyPeak.some((value) => value > 0)).toBe(true);
     } finally {
-      disposeStretchBoundarySession(session);
+      disposeStretchSeqlokSession(session);
     }
   });
 
@@ -276,7 +276,7 @@ describe("FakeStretchEngine", () => {
       const pending = engine.tick({ renderQuantum: 128 });
       expect(pending.pendingDesiredSequence).toBe(2);
     } finally {
-      disposeStretchBoundarySession(session);
+      disposeStretchSeqlokSession(session);
     }
   });
 
@@ -290,7 +290,7 @@ describe("FakeStretchEngine", () => {
       engine.tick({ renderQuantum: 128 });
       expect(readRuntimeStatus(session).commandDroppedTotal).toBe(1);
     } finally {
-      disposeStretchBoundarySession(session);
+      disposeStretchSeqlokSession(session);
     }
   });
 
@@ -305,7 +305,7 @@ describe("FakeStretchEngine", () => {
       expect(levels.probeState).toBe("failed");
       expect(levels.lastErrorCode).toBe(7);
     } finally {
-      disposeStretchBoundarySession(session);
+      disposeStretchSeqlokSession(session);
     }
   });
 });

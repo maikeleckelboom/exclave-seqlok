@@ -34,7 +34,7 @@ function isSharedArrayBuffer(value: unknown): value is SharedArrayBuffer {
  * - `wasm`: Returns the WebAssembly.Memory buffer
  * - `partitioned`: Throws (use {@link getPlaneBuffer} instead)
  *
- * @throws {BoundaryError<'internal.assertionFailed'>}
+ * @throws {SeqlokError<'internal.assertionFailed'>}
  * If called with a partitioned backing
  *
  * @example

@@ -44,9 +44,9 @@ import {
   type StretchCommandName,
 } from "./boundary/commands";
 import {
-  createStretchBoundarySession,
-  describeBoundaryError,
-  disposeStretchBoundarySession,
+  createStretchSeqlokSession,
+  describeSeqlokError,
+  disposeStretchSeqlokSession,
   initializeDesiredControls,
   readDesiredControls,
   readPlanSummaries,
@@ -267,7 +267,7 @@ function startSignalsmithStretch(appRoot: HTMLElement): void {
     const elements = renderAppShell(appRoot);
     const signalsmithAssets = readSignalsmithWorkletAssets();
     const runtimeSupport = detectAudioRuntimeSupport();
-    const session = createStretchBoundarySession();
+    const session = createStretchSeqlokSession();
     const commands = createStretchCommandTransport();
     let audioContext: AudioContext | null = null;
     let acceptedSource: ProofPcmSource | null = null;
@@ -486,10 +486,10 @@ function startSignalsmithStretch(appRoot: HTMLElement): void {
       updateLoopDraftFromInputs("end");
     });
     elements.markLoopStartButton.addEventListener("click", () => {
-      markLoopBoundary("start");
+      markLoopEdge("start");
     });
     elements.markLoopEndButton.addEventListener("click", () => {
-      markLoopBoundary("end");
+      markLoopEdge("end");
     });
     elements.setLoopButton.addEventListener("click", () => {
       applyDraftLoop();
@@ -560,12 +560,9 @@ function startSignalsmithStretch(appRoot: HTMLElement): void {
       }
       window.requestAnimationFrame(animate);
     };
-    const transportPumpTimer = window.setInterval(
-      () => {
-        runTransportPump("interval");
-      },
-      TRANSPORT_PUMP_INTERVAL_MS,
-    );
+    const transportPumpTimer = window.setInterval(() => {
+      runTransportPump("interval");
+    }, TRANSPORT_PUMP_INTERVAL_MS);
     window.requestAnimationFrame(animate);
     runTransportPump("startup");
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -573,7 +570,7 @@ function startSignalsmithStretch(appRoot: HTMLElement): void {
       window.clearInterval(transportPumpTimer);
       referenceMonitor?.dispose();
       realRuntime?.dispose();
-      disposeStretchBoundarySession(session);
+      disposeStretchSeqlokSession(session);
     });
     void loadDefaultSource();
 
@@ -671,7 +668,7 @@ function startSignalsmithStretch(appRoot: HTMLElement): void {
       render();
     }
 
-    function markLoopBoundary(boundary: "end" | "start"): void {
+    function markLoopEdge(boundary: "end" | "start"): void {
       const runtime = readRuntimeStatus(session);
       const frame = clamp(
         recentSeekFrameForMark(runtime) ?? runtime.sourceFrame,
@@ -1888,9 +1885,7 @@ function startSignalsmithStretch(appRoot: HTMLElement): void {
         ],
         [
           "Reference preview",
-          referenceStatus
-            ? referencePreviewFact(referenceStatus)
-            : "inactive",
+          referenceStatus ? referencePreviewFact(referenceStatus) : "inactive",
         ],
         ["PU/MU versions", versionFact(plans)],
         [
@@ -1981,7 +1976,7 @@ function startSignalsmithStretch(appRoot: HTMLElement): void {
       );
     }
   } catch (error) {
-    renderUnsupported(appRoot, describeBoundaryError(error));
+    renderUnsupported(appRoot, describeSeqlokError(error));
   }
 }
 
@@ -2660,15 +2655,14 @@ function writeTransportBufferExpectationDiagnostics(
   sourceStatus?: SourceStatusSnapshot,
 ): void {
   diagnostics.expectedBufferEndFrame = expectation.endFrame;
-  diagnostics.expectedBufferObservedEndFrame = sourceStatus?.bufferEndFrame ?? 0;
+  diagnostics.expectedBufferObservedEndFrame =
+    sourceStatus?.bufferEndFrame ?? 0;
   diagnostics.expectedBufferState = expectation.state;
   diagnostics.expectedBufferUnconfirmedPumpCount =
     expectation.unconfirmedPumpCount;
 }
 
-function referencePreviewFact(
-  status: SourceReferenceMonitorStatus,
-): string {
+function referencePreviewFact(status: SourceReferenceMonitorStatus): string {
   return `${status.active ? "active" : "idle"}; t ${status.currentTimeSeconds.toFixed(3)}s; frame ${formatFrame(status.lastFrame)} predicted ${formatFrame(status.predictedFrame)} drift ${formatFrame(status.driftFrames)}; rate ${status.playbackRate.toFixed(3)}x; queued ${status.scheduledSourceCount.toString()} until ${formatFrame(status.scheduledUntilFrame)}; resyncs ${status.resyncTotal.toString()}; pending ${status.pending ? "true" : "false"}`;
 }
 

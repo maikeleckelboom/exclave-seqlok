@@ -2,7 +2,7 @@
 
 **Context**: hardware / out-of-process consumers
 **Target**: drones, lights, robots, mixers
-**Tech**: Node.js, UDP/TCP, `@exclave/boundary`
+**Tech**: Node.js, UDP/TCP, `@exclave/seqlok`
 
 ---
 
@@ -39,7 +39,7 @@ Steps:
 ```ts
 import dgram from "node:dgram";
 import { setTimeout as sleep } from "node:timers/promises";
-import { bindObserver } from "@exclave/boundary";
+import { bindObserver } from "@exclave/seqlok";
 
 // 1. Setup
 const socket = dgram.createSocket("udp4");

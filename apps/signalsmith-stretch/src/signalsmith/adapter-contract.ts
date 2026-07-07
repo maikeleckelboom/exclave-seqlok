@@ -5,7 +5,7 @@ import {
 import { signalsmithStretchSpec } from "../boundary/specs";
 
 export const SIGNALSMITH_ADAPTER_CONTRACT = {
-  stretchBoundary: {
+  stretchSeqlok: {
     handoffs: 1,
     reader: "AudioWorklet processor and host observer",
     specId: signalsmithStretchSpec.id,

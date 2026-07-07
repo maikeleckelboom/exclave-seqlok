@@ -4,9 +4,9 @@ import {
   bindController,
   bindObserver,
   bindProcessor,
-  BoundaryError,
+  SeqlokError,
   buildHandoff,
-  isBoundaryError,
+  isSeqlokError,
   planLayout,
   verifyHandoff,
   type ControllerBinding,
@@ -14,7 +14,7 @@ import {
   type ObserverBinding,
   type ProcessorBinding,
   type SpecInput,
-} from "@exclave/boundary";
+} from "@exclave/seqlok";
 
 import {
   ADAPTER_MODES,
@@ -30,7 +30,7 @@ import {
 } from "../types";
 import { signalsmithStretchSpec } from "./specs";
 
-export interface BoundaryPlanSummary {
+export interface SeqlokPlanSummary {
   readonly bytesTotal: number;
   readonly handoffPacking: "packed" | "partitioned";
   readonly handoffVersion: number;
@@ -39,10 +39,10 @@ export interface BoundaryPlanSummary {
   readonly lockStrideBytes: number;
   readonly meterVersion: number;
   readonly paramVersion: number;
-  readonly planes: BoundaryPlaneByteLengths;
+  readonly planes: SeqlokPlaneByteLengths;
 }
 
-export interface BoundaryPlaneByteLengths {
+export interface SeqlokPlaneByteLengths {
   readonly MF32: number;
   readonly MF64: number;
   readonly MU: number;
@@ -53,7 +53,7 @@ export interface BoundaryPlaneByteLengths {
   readonly PU: number;
 }
 
-interface AppBoundarySession<S extends SpecInput> {
+interface AppSeqlokSession<S extends SpecInput> {
   readonly controller: ControllerBinding<S>;
   readonly handoff: Handoff<S>;
   readonly observer: ObserverBinding<S>;
@@ -61,13 +61,13 @@ interface AppBoundarySession<S extends SpecInput> {
   readonly processor: ProcessorBinding<S>;
 }
 
-export interface StretchBoundarySession {
-  readonly stretch: AppBoundarySession<typeof signalsmithStretchSpec>;
+export interface StretchSeqlokSession {
+  readonly stretch: AppSeqlokSession<typeof signalsmithStretchSpec>;
 }
 
-function createAppBoundarySession<const S extends SpecInput>(
+function createAppSeqlokSession<const S extends SpecInput>(
   spec: S,
-): AppBoundarySession<S> {
+): AppSeqlokSession<S> {
   const plan = planLayout(spec);
   const backing = allocatePacked(plan);
   const controller = bindController(spec, plan, backing, {
@@ -84,14 +84,14 @@ function createAppBoundarySession<const S extends SpecInput>(
   return { controller, handoff, observer, plan, processor };
 }
 
-export function createStretchBoundarySession(): StretchBoundarySession {
+export function createStretchSeqlokSession(): StretchSeqlokSession {
   return {
-    stretch: createAppBoundarySession(signalsmithStretchSpec),
+    stretch: createAppSeqlokSession(signalsmithStretchSpec),
   };
 }
 
-export function disposeStretchBoundarySession(
-  session: StretchBoundarySession,
+export function disposeStretchSeqlokSession(
+  session: StretchSeqlokSession,
 ): void {
   session.stretch.controller.dispose();
   session.stretch.processor.dispose();
@@ -99,14 +99,14 @@ export function disposeStretchBoundarySession(
 }
 
 export function initializeDesiredControls(
-  session: StretchBoundarySession,
+  session: StretchSeqlokSession,
   controls: DesiredStretchControls = defaultDesiredControls(),
 ): void {
   writeDesiredControls(session, controls);
 }
 
 export function writeDesiredControls(
-  session: StretchBoundarySession,
+  session: StretchSeqlokSession,
   controls: DesiredStretchControls,
 ): void {
   session.stretch.controller.params.update({
@@ -129,7 +129,7 @@ export function writeDesiredControls(
 }
 
 export function readDesiredControls(
-  session: StretchBoundarySession,
+  session: StretchSeqlokSession,
 ): DesiredStretchControls {
   const snapshot = session.stretch.observer.params.snapshot();
 
@@ -153,7 +153,7 @@ export function readDesiredControls(
 }
 
 export function readRuntimeStatus(
-  session: StretchBoundarySession,
+  session: StretchSeqlokSession,
 ): RuntimeStatusSnapshot {
   const snapshot = session.stretch.observer.meters.snapshot();
   const stateIndex = snapshot["runtime.state"];
@@ -210,7 +210,7 @@ export function readRuntimeStatus(
 }
 
 export function readSourceStatus(
-  session: StretchBoundarySession,
+  session: StretchSeqlokSession,
 ): SourceStatusSnapshot {
   const snapshot = session.stretch.observer.meters.snapshot();
   const stateIndex = snapshot["source.state"];
@@ -234,7 +234,7 @@ export function readSourceStatus(
 }
 
 export function readProcessedLevels(
-  session: StretchBoundarySession,
+  session: StretchSeqlokSession,
 ): ProcessedLevelsSnapshot {
   const snapshot = session.stretch.observer.meters.snapshot();
   const probeStateIndex = snapshot["levels.probeState"];
@@ -266,8 +266,8 @@ export function readProcessedLevels(
 }
 
 function summarizePlan<S extends SpecInput>(
-  session: AppBoundarySession<S>,
-): BoundaryPlanSummary {
+  session: AppSeqlokSession<S>,
+): SeqlokPlanSummary {
   return {
     bytesTotal: session.plan.bytesTotal,
     handoffPacking: session.handoff.packing,
@@ -291,15 +291,15 @@ function summarizePlan<S extends SpecInput>(
 }
 
 export function readPlanSummaries(
-  session: StretchBoundarySession,
-): Readonly<Record<"stretch", BoundaryPlanSummary>> {
+  session: StretchSeqlokSession,
+): Readonly<Record<"stretch", SeqlokPlanSummary>> {
   return {
     stretch: summarizePlan(session.stretch),
   };
 }
 
-export function describeBoundaryError(error: unknown): string {
-  if (error instanceof BoundaryError || isBoundaryError(error)) {
+export function describeSeqlokError(error: unknown): string {
+  if (error instanceof SeqlokError || isSeqlokError(error)) {
     return `${String(error.code)}: ${error.message}`;
   }
 

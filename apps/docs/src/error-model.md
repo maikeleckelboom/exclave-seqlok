@@ -1,12 +1,12 @@
 # Error Model
 
-Exclave Boundary throws `BoundaryError` for structured library errors. Each error has a code, message, and typed details payload. Use `isBoundaryError(...)` when catching unknown values at an application boundary.
+Seqlok throws `SeqlokError` for structured library errors. Each error has a code, message, and typed details payload. Use `isSeqlokError(...)` when catching unknown values at an application boundary.
 
 ```ts twoslash
-import { getErrorMeta, interpretHealth, isBoundaryError } from "@exclave/boundary";
+import { getErrorMeta, interpretHealth, isSeqlokError } from "@exclave/seqlok";
 
 export function classify(error: unknown) {
-  if (!isBoundaryError(error)) {
+  if (!isSeqlokError(error)) {
     return { status: "unknown" };
   }
 

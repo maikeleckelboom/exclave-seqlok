@@ -1,6 +1,6 @@
 # Release Checklist
 
-Run these checks before publishing `@exclave/boundary`.
+Run these checks before publishing `@exclave/seqlok`.
 
 ```sh
 pnpm install
@@ -12,15 +12,15 @@ pnpm build
 pnpm run docs
 pnpm docs:build
 pnpm test:pack
-pnpm --filter @exclave/boundary pack
+pnpm --filter @exclave/seqlok pack
 ```
 
 ## Package Checks
 
-- `packages/core/package.json` is named `@exclave/boundary`.
+- `packages/core/package.json` is named `@exclave/seqlok`.
 - `private` is absent from `packages/core/package.json`.
 - `license`, `repository`, `keywords`, `publishConfig`, `sideEffects`, `exports`, and `files` are correct.
-- `pnpm --filter @exclave/boundary pack` includes only release files.
+- `pnpm --filter @exclave/seqlok pack` includes only release files.
 - The packed package installs in a fresh consumer.
 - The installed package has no `workspace:*` runtime dependencies.
 
@@ -31,11 +31,11 @@ pnpm --filter @exclave/boundary pack
 - Anonymous ids are deterministic.
 - Expanded param and meter kinds are covered by tests.
 - Binding factories return structured errors for invalid call shapes.
-- `BoundaryError` narrowing works for unknown catches.
+- `SeqlokError` narrowing works for unknown catches.
 
 ## Documentation Review
 
-- Install and quickstart import `@exclave/boundary`.
+- Install and quickstart import `@exclave/seqlok`.
 - Twoslash examples compile against workspace source or built declarations.
 - Blog and concept pages describe the current API, not the old prototype branch.
 - Audio examples are framed as the clearest first use case, not the only domain.
@@ -44,7 +44,7 @@ pnpm --filter @exclave/boundary pack
 ## Publish Steps
 
 ```sh
-pnpm --filter @exclave/boundary pack
-pnpm --filter @exclave/boundary publish --access public --dry-run
-pnpm --filter @exclave/boundary publish --access public
+pnpm --filter @exclave/seqlok pack
+pnpm --filter @exclave/seqlok publish --access public --dry-run
+pnpm --filter @exclave/seqlok publish --access public
 ```

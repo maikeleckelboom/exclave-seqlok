@@ -1,4 +1,4 @@
-# Enum Helpers & UI Wiring (`@exclave/boundary`)
+# Enum Helpers & UI Wiring (`@exclave/seqlok`)
 
 This guide shows practical patterns for using the enum helpers in Seqlok
 to drive real UI controls, fixtures, and tools.
@@ -20,7 +20,7 @@ import {
   enumLabelFromIndex,
   type EnumLabel,
   type EnumKeyOf,
-} from "@exclave/boundary";
+} from "@exclave/seqlok";
 ```
 
 Core shape:
@@ -49,8 +49,8 @@ Requirements:
 ## 1. Classic `<select>` bound to an enum param
 
 ```ts
-import type { ControllerBinding } from "@exclave/boundary";
-import { enumValues } from "@exclave/boundary";
+import type { ControllerBinding } from "@exclave/seqlok";
+import { enumValues } from "@exclave/seqlok";
 import { spec } from "./spec";
 
 type DemoSpec = typeof spec;
@@ -89,7 +89,7 @@ Use case: simple mode switcher with no hard-coded vocabulary.
 ## 2. Localized labels / pretty names with `enumPaletteFor`
 
 ```ts
-import { enumPaletteFor, type ControllerBinding } from "@exclave/boundary";
+import { enumPaletteFor, type ControllerBinding } from "@exclave/seqlok";
 import { spec } from "./spec";
 
 type DemoSpec = typeof spec;
@@ -140,7 +140,7 @@ Use case: segmented controls / buttons with localized labels.
 ## 3. Decode `Int32Array` indices → labels (`enum.array`)
 
 ```ts
-import { enumArrayToLabels } from "@exclave/boundary";
+import { enumArrayToLabels } from "@exclave/seqlok";
 import { spec } from "./spec";
 
 type DemoSpec = typeof spec;
@@ -163,7 +163,7 @@ Out-of-range index → `spec.enumInvalid` with `{ key, values, invalidIndex }`.
 ## 4. Encode labels → `Int32Array` indices
 
 ```ts
-import { enumLabelsToArray } from "@exclave/boundary";
+import { enumLabelsToArray } from "@exclave/seqlok";
 import { spec } from "./spec";
 
 type DemoSpec = typeof spec;
@@ -193,7 +193,7 @@ Typo in a label → `spec.enumInvalid` with `{ key, values, received }`.
 ## 5. Enum labels to colors/icons (HUD / legend)
 
 ```ts
-import { enumPaletteFor } from "@exclave/boundary";
+import { enumPaletteFor } from "@exclave/seqlok";
 import { spec } from "./spec";
 
 type DemoSpec = typeof spec;
@@ -245,7 +245,7 @@ import {
   enumIndexFromLabel,
   enumLabelFromIndex,
   enumValues,
-} from "@exclave/boundary";
+} from "@exclave/seqlok";
 import { spec } from "./spec";
 
 type DemoSpec = typeof spec;
@@ -277,7 +277,7 @@ import {
   enumPaletteFor,
   type ControllerBinding,
   type SpecInput,
-} from "@exclave/boundary";
+} from "@exclave/seqlok";
 
 export type EnumParamKey<S extends SpecInput> = Extract<
   keyof S["params"],
