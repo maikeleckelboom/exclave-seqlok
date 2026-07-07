@@ -1,6 +1,6 @@
 import meterWorkletUrl from "./meter-worklet.ts?worker&url";
 
-import type { StretchMeterHandoff } from "./seqlok-spec";
+import type { SignalsmithStretchHandoff } from "./seqlok-spec";
 
 const PROCESSOR_NAME = "seqlok-meter";
 const loadedWorklets = new WeakMap<BaseAudioContext, Promise<void>>();
@@ -9,7 +9,7 @@ export type SeqlokMeterWorkletNode = AudioWorkletNode;
 
 export async function createSeqlokMeterNode(
   audioContext: AudioContext,
-  handoff: StretchMeterHandoff,
+  handoff: SignalsmithStretchHandoff,
 ): Promise<SeqlokMeterWorkletNode> {
   await loadMeterWorklet(audioContext);
 

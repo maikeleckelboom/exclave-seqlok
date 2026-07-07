@@ -4,8 +4,8 @@ import {
 } from "@exclave/seqlok";
 
 import type {
-  StretchMeterHandoff,
-  StretchMeterSpec,
+  SignalsmithStretchHandoff,
+  SignalsmithStretchSpec,
 } from "./seqlok-spec";
 
 interface AudioWorkletProcessor {
@@ -29,7 +29,7 @@ declare function registerProcessor(
 
 type MeterMessage =
   | { readonly type: "dispose" }
-  | { readonly handoff: StretchMeterHandoff; readonly type: "init" };
+  | { readonly handoff: SignalsmithStretchHandoff; readonly type: "init" };
 
 const PROCESSOR_NAME = "seqlok-meter";
 const TARGET_PUBLISH_HZ = 60;
@@ -49,7 +49,7 @@ class SeqlokMeterProcessor extends AudioWorkletProcessor {
   private holdR = 0;
   private peakL = 0;
   private peakR = 0;
-  private processor: ProcessorBinding<StretchMeterSpec> | null = null;
+  private processor: ProcessorBinding<SignalsmithStretchSpec> | null = null;
   private publishCount = 0;
   private sumSquaresL = 0;
   private sumSquaresR = 0;

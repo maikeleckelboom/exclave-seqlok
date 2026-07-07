@@ -11,15 +11,15 @@ import {
   type SeqlokMeterWorkletNode,
 } from "./meter-node";
 import {
-  createStretchMeterSession,
+  createSignalsmithStretchSession,
   defaultStretchControls,
-  disposeStretchMeterSession,
+  disposeSignalsmithStretchSession,
   readPublishedMeters,
   readStretchControls,
-  summarizeStretchMeterPlan,
+  summarizeSignalsmithStretchPlan,
   writeStretchControls,
+  type SignalsmithStretchSession,
   type StretchControls,
-  type StretchMeterSession,
 } from "./seqlok-spec";
 import {
   createSignalsmithStretch,
@@ -64,12 +64,12 @@ interface DemoState {
   node: SignalsmithStretchNode | null;
   playheadSeconds: number;
   playing: boolean;
-  session: StretchMeterSession;
+  session: SignalsmithStretchSession;
 }
 
 const appRoot = getAppRoot();
 
-const session = createStretchMeterSession();
+const session = createSignalsmithStretchSession();
 const state: DemoState = {
   audioContext: null,
   configuredKey: null,
@@ -131,7 +131,7 @@ startMeterUiLoop();
 void loadDefaultSource();
 
 window.addEventListener("beforeunload", () => {
-  disposeStretchMeterSession(state.session);
+  disposeSignalsmithStretchSession(state.session);
   if (state.meterUiFrame !== null) {
     cancelAnimationFrame(state.meterUiFrame);
   }
@@ -666,7 +666,7 @@ function syncControlsToDom(controls: StretchControls): void {
 function render(): void {
   const loaded = state.loadedSource;
   const hasSource = Boolean(loaded);
-  const plan = summarizeStretchMeterPlan(state.session);
+  const plan = summarizeSignalsmithStretchPlan(state.session);
 
   elements.playButton.disabled = !hasSource;
   elements.pauseButton.disabled = !hasSource;

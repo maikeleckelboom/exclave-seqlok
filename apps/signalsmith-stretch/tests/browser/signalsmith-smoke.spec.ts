@@ -14,7 +14,7 @@ test("loads the Signalsmith Stretch meter demo", async ({ page }) => {
   await expect(page.locator("#durationFact")).not.toHaveText("none");
   await expect(page.locator("#sampleFact")).toContainText("browser decoded");
   await expect(page.locator("#planFact")).toContainText(
-    "signalsmith-stretch/meter-boundary",
+    "signalsmith-stretch/control-meter-boundary",
   );
   await expect(page.locator("#playButton")).toBeEnabled();
   await expect(page.locator("#seek")).toBeEnabled();

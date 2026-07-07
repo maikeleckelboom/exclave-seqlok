@@ -41,7 +41,7 @@ export interface PublishedMeters {
 }
 
 export const signalsmithStretchSpecAst = {
-  id: "signalsmith-stretch/meter-boundary",
+  id: "signalsmith-stretch/control-meter-boundary",
   params: {
     config: {
       blockMs: { kind: "f32", min: 50, max: 240 },
@@ -79,10 +79,10 @@ export const signalsmithStretchSpecAst = {
   },
 } as const satisfies SpecAstInput;
 
-export const stretchMeterSpec = defineSpec(signalsmithStretchSpecAst);
+export const signalsmithStretchSpec = defineSpec(signalsmithStretchSpecAst);
 
-export type StretchMeterSpec = typeof stretchMeterSpec;
-export type StretchMeterHandoff = Handoff<StretchMeterSpec>;
+export type SignalsmithStretchSpec = typeof signalsmithStretchSpec;
+export type SignalsmithStretchHandoff = Handoff<SignalsmithStretchSpec>;
 
 const STRETCH_CONTROL_PARAM_KEYS = [
   "config.blockMs",
@@ -113,14 +113,14 @@ const STRETCH_METER_KEYS = [
   "runtime.publishCount",
 ] as const;
 
-export interface StretchMeterSession {
-  readonly controller: ControllerBinding<StretchMeterSpec>;
-  readonly handoff: StretchMeterHandoff;
-  readonly observer: ObserverBinding<StretchMeterSpec>;
-  readonly plan: ReturnType<typeof planLayout<StretchMeterSpec>>;
+export interface SignalsmithStretchSession {
+  readonly controller: ControllerBinding<SignalsmithStretchSpec>;
+  readonly handoff: SignalsmithStretchHandoff;
+  readonly observer: ObserverBinding<SignalsmithStretchSpec>;
+  readonly plan: ReturnType<typeof planLayout<SignalsmithStretchSpec>>;
 }
 
-export interface StretchMeterPlanSummary {
+export interface SignalsmithStretchPlanSummary {
   readonly bytesTotal: number;
   readonly hash: string;
   readonly id: string;
@@ -143,13 +143,13 @@ export function defaultStretchControls(): StretchControls {
   };
 }
 
-export function createStretchMeterSession(): StretchMeterSession {
-  const plan = planLayout(stretchMeterSpec);
+export function createSignalsmithStretchSession(): SignalsmithStretchSession {
+  const plan = planLayout(signalsmithStretchSpec);
   const backing = allocatePacked(plan);
-  const controller = bindController(stretchMeterSpec, plan, backing, {
+  const controller = bindController(signalsmithStretchSpec, plan, backing, {
     params: { rangePolicy: "clamp" },
   });
-  const observer = bindObserver(stretchMeterSpec, plan, backing);
+  const observer = bindObserver(signalsmithStretchSpec, plan, backing);
   const handoff = buildHandoff(plan, backing);
   const session = { controller, handoff, observer, plan };
 
@@ -158,15 +158,15 @@ export function createStretchMeterSession(): StretchMeterSession {
   return session;
 }
 
-export function disposeStretchMeterSession(
-  session: StretchMeterSession,
+export function disposeSignalsmithStretchSession(
+  session: SignalsmithStretchSession,
 ): void {
   session.controller.dispose();
   session.observer.dispose();
 }
 
 export function writeStretchControls(
-  session: StretchMeterSession,
+  session: SignalsmithStretchSession,
   controls: StretchControls,
 ): void {
   session.controller.params.update({
@@ -186,7 +186,7 @@ export function writeStretchControls(
 }
 
 export function readStretchControls(
-  session: StretchMeterSession,
+  session: SignalsmithStretchSession,
 ): StretchControls {
   const {
     "config.blockMs": blockMs,
@@ -220,7 +220,7 @@ export function readStretchControls(
 }
 
 export function readPublishedMeters(
-  session: StretchMeterSession,
+  session: SignalsmithStretchSession,
 ): PublishedMeters {
   const {
     "levels.clippedL": clippedL,
@@ -251,9 +251,9 @@ export function readPublishedMeters(
   };
 }
 
-export function summarizeStretchMeterPlan(
-  session: StretchMeterSession,
-): StretchMeterPlanSummary {
+export function summarizeSignalsmithStretchPlan(
+  session: SignalsmithStretchSession,
+): SignalsmithStretchPlanSummary {
   return {
     bytesTotal: session.plan.bytesTotal,
     hash: session.plan.hash,

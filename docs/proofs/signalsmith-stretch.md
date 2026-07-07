@@ -1,25 +1,30 @@
 # Seqlok Signalsmith Stretch Demo
 
-- **Status:** slim demo authority; not package API authority
+- **Status:** proof demo authority; not package API authority
 - **Date:** 2026-07-08
 - **Product:** Signalsmith Stretch
 - **Seqlok package:** `@exclave/seqlok`
-- **Contract id:** `signalsmith-stretch/meter-boundary`
+- **Contract id:** `signalsmith-stretch/control-meter-boundary`
 
 ## Current Scope
 
-`apps/signalsmith-stretch` is a compact browser demo proving a full
-Signalsmith control plus meter boundary in Seqlok while the official
-Signalsmith Web Audio wrapper owns the real DSP, WASM AudioWorklet, buffering,
-scheduling, and playback behavior.
+`apps/signalsmith-stretch` proves that Seqlok can model the full typed control
+and telemetry contract around a real DSP engine. Signalsmith remains the DSP
+engine. Seqlok owns the control and meter contract. The adapter applies
+canonical Seqlok snapshots to the upstream Signalsmith Web API, and the
+downstream meter Worklet proves realtime Seqlok reads and published telemetry
+across the audio boundary.
 
-Seqlok owns the typed engine-control and meter contract. The app writes the full
-Signalsmith control state into Seqlok, reads back the canonical Seqlok control
-snapshot, and applies that snapshot to the upstream Signalsmith API from the
-main thread. The custom AudioWorklet in this demo is only a downstream
-Seqlok-backed meter/gain proof node.
+The full Signalsmith control surface is mapped into Seqlok rather than held as
+plain local state. The app writes the UI control state into Seqlok, reads back
+the canonical Seqlok control snapshot, and applies that snapshot to the upstream
+Signalsmith API from the main thread. The custom AudioWorklet is a downstream
+realtime Seqlok audio-boundary proof node that reads `control.outputGain` and
+publishes live meters back through Seqlok.
 
-The demo intentionally does not contain a custom Signalsmith DSP Worklet, custom
+This is not a fake DSP demo, not a custom Signalsmith fork, and not a claim that
+the internal upstream Signalsmith DSP Worklet reads Seqlok memory directly. The
+demo intentionally does not contain a custom Signalsmith DSP Worklet, custom
 Signalsmith transport, command ring, streaming source state, custom WAV parser,
 source prefetcher, fake engine, private C++ build, generated WASM module, or
 production runtime monitor.
@@ -46,15 +51,15 @@ The active path is:
 4. Reset and load the upstream node with `dropBuffers()` and `addBuffers(...)`.
 5. Write the UI control state into Seqlok.
 6. Read the canonical Seqlok control snapshot.
-7. Apply that snapshot to the upstream node with `configure(...)`,
-   `schedule(...)`, `start(...)`, and `stop(...)`.
+7. Apply that canonical Seqlok snapshot to the upstream node with
+   `configure(...)`, `schedule(...)`, `start(...)`, and `stop(...)`.
 8. Read `control.outputGain` from Seqlok inside `SeqlokMeterWorkletNode`.
 9. Publish RMS, sample peak, peak hold, clip flags, frame count, publish count,
    and dropped publish count back through Seqlok.
 
 ## Seqlok Boundary
 
-The control surface remains modeled in Seqlok rather than plain local state:
+The full Signalsmith control surface remains modeled in Seqlok:
 
 - `config.blockMs`
 - `config.intervalMs`
@@ -69,7 +74,7 @@ The control surface remains modeled in Seqlok rather than plain local state:
 - `control.formantBaseHz`
 - `control.outputGain`
 
-The published meter surface is:
+The downstream Worklet publishes this meter surface back through Seqlok:
 
 - `levels.rmsL`
 - `levels.rmsR`
@@ -93,7 +98,7 @@ pnpm signalsmith:test:browser
 ```
 
 There is no simulator mode, real-adapter mode, `signalsmith:prepare`, or local
-WASM build step in this slim demo.
+WASM build step in this proof demo.
 
 ## Guardrails
 
@@ -101,6 +106,8 @@ WASM build step in this slim demo.
 - Keep Signalsmith-specific code private to the demo app.
 - Do not claim custom Signalsmith DSP, custom Signalsmith transport, or
   zero-copy audio behavior.
+- Do not claim the internal upstream Signalsmith DSP Worklet reads Seqlok memory
+  directly.
 - Do not reintroduce a fake engine or streaming source architecture unless the
   work is explicitly re-scoped as an integration lab.
 - Keep the bundled source labeled as the official Signalsmith demo loop unless
