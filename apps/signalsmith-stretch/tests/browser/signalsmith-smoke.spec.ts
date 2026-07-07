@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-test("loads the slim Signalsmith Stretch demo", async ({ page }) => {
+test("loads the Signalsmith Stretch meter demo", async ({ page }) => {
   await installAudioProbe(page);
   await page.goto("/");
 
@@ -14,7 +14,7 @@ test("loads the slim Signalsmith Stretch demo", async ({ page }) => {
   await expect(page.locator("#durationFact")).not.toHaveText("none");
   await expect(page.locator("#sampleFact")).toContainText("browser decoded");
   await expect(page.locator("#planFact")).toContainText(
-    "signalsmith-stretch/slim-controls",
+    "signalsmith-stretch/meter-boundary",
   );
   await expect(page.locator("#playButton")).toBeEnabled();
   await expect(page.locator("#seek")).toBeEnabled();
@@ -38,6 +38,18 @@ test("loads the slim Signalsmith Stretch demo", async ({ page }) => {
   await expect
     .poll(async () => (await page.locator("#playheadFact").textContent()) ?? "")
     .not.toMatch(/^0:00\.0/u);
+  await expect
+    .poll(() => publishCount(page), { timeout: 10_000 })
+    .toBeGreaterThan(0);
+  await expect
+    .poll(() => meterReadout(page, "#meterReadoutL"), { timeout: 10_000 })
+    .not.toContain("RMS -inf");
+
+  await setRange(page, "#outputGain", "0");
+  await expect(page.locator("#outputGainValue")).toHaveText("0.000x");
+  await expect
+    .poll(() => meterReadout(page, "#meterReadoutL"), { timeout: 10_000 })
+    .toContain("RMS -inf");
 
   await page.locator("#pauseButton").click();
   await expect(page.locator("#runtimeFact")).toHaveText("ready");
@@ -135,6 +147,15 @@ async function canvasHasPaint(
 
     return false;
   });
+}
+
+async function publishCount(page: Page): Promise<number> {
+  const text = (await page.locator("#publishFact").textContent()) ?? "";
+  return Number.parseInt(text, 10) || 0;
+}
+
+async function meterReadout(page: Page, selector: string): Promise<string> {
+  return (await page.locator(selector).textContent()) ?? "";
 }
 
 declare global {

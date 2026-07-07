@@ -1,15 +1,26 @@
 import "./styles.css";
 
 import {
-  createStretchControlSession,
+  createMeterUi,
+  renderMeterPanel,
+  renderMeterUi,
+} from "./meter-ui";
+import {
+  createSeqlokMeterNode,
+  disposeSeqlokMeterNode,
+  type SeqlokMeterWorkletNode,
+} from "./meter-node";
+import {
+  createStretchMeterSession,
   defaultStretchControls,
-  disposeStretchControlSession,
+  disposeStretchMeterSession,
+  readPublishedMeters,
   readStretchControls,
-  summarizeStretchControlPlan,
+  summarizeStretchMeterPlan,
   writeStretchControls,
   type StretchControls,
-  type StretchControlSession,
-} from "./seqlok-controls";
+  type StretchMeterSession,
+} from "./seqlok-spec";
 import {
   createSignalsmithStretch,
   type SignalsmithSchedule,
@@ -21,41 +32,6 @@ const DEFAULT_SOURCE = {
   label: "official Signalsmith demo loop",
   url: "/audio/signalsmith-demo-loop.wav",
 } as const;
-
-interface Elements {
-  readonly blockMs: HTMLInputElement;
-  readonly blockMsNumber: HTMLInputElement;
-  readonly canvas: HTMLCanvasElement;
-  readonly chooseFile: HTMLInputElement;
-  readonly durationFact: HTMLElement;
-  readonly fileName: HTMLElement;
-  readonly formantBase: HTMLInputElement;
-  readonly formantBaseAuto: HTMLInputElement;
-  readonly formantBaseValue: HTMLElement;
-  readonly formantCompensation: HTMLInputElement;
-  readonly formantShift: HTMLInputElement;
-  readonly formantShiftValue: HTMLElement;
-  readonly loadedSource: HTMLElement;
-  readonly overlap: HTMLInputElement;
-  readonly overlapNumber: HTMLInputElement;
-  readonly pauseButton: HTMLButtonElement;
-  readonly pitch: HTMLInputElement;
-  readonly pitchValue: HTMLElement;
-  readonly planFact: HTMLElement;
-  readonly playButton: HTMLButtonElement;
-  readonly playheadFact: HTMLElement;
-  readonly rate: HTMLInputElement;
-  readonly rateValue: HTMLElement;
-  readonly resetButton: HTMLButtonElement;
-  readonly runtimeFact: HTMLElement;
-  readonly sampleFact: HTMLElement;
-  readonly seek: HTMLInputElement;
-  readonly status: HTMLElement;
-  readonly stopButton: HTMLButtonElement;
-  readonly tonalityEnabled: HTMLInputElement;
-  readonly tonalityHz: HTMLInputElement;
-  readonly tonalityHzValue: HTMLElement;
-}
 
 interface DecodedPcmSource {
   readonly channelData: readonly Float32Array[];
@@ -73,6 +49,7 @@ interface LoadedSource {
 
 interface Runtime {
   readonly audioContext: AudioContext;
+  readonly meterNode: SeqlokMeterWorkletNode;
   readonly node: SignalsmithStretchNode;
 }
 
@@ -82,21 +59,25 @@ interface DemoState {
   controls: StretchControls;
   loadRequest: number;
   loadedSource: LoadedSource | null;
+  meterNode: SeqlokMeterWorkletNode | null;
+  meterUiFrame: number | null;
   node: SignalsmithStretchNode | null;
   playheadSeconds: number;
   playing: boolean;
-  session: StretchControlSession;
+  session: StretchMeterSession;
 }
 
 const appRoot = getAppRoot();
 
-const session = createStretchControlSession();
+const session = createStretchMeterSession();
 const state: DemoState = {
   audioContext: null,
   configuredKey: null,
   controls: defaultStretchControls(),
   loadRequest: 0,
   loadedSource: null,
+  meterNode: null,
+  meterUiFrame: null,
   node: null,
   playheadSeconds: 0,
   playing: false,
@@ -104,8 +85,9 @@ const state: DemoState = {
 };
 
 appRoot.innerHTML = renderShell();
+const meterUi = createMeterUi(appRoot);
 
-const elements: Elements = {
+const elements = {
   blockMs: must("#blockMs", HTMLInputElement),
   blockMsNumber: must("#blockMsNumber", HTMLInputElement),
   canvas: must("#waveform", HTMLCanvasElement),
@@ -121,6 +103,8 @@ const elements: Elements = {
   loadedSource: must("#loadedSource", HTMLElement),
   overlap: must("#overlap", HTMLInputElement),
   overlapNumber: must("#overlapNumber", HTMLInputElement),
+  outputGain: must("#outputGain", HTMLInputElement),
+  outputGainValue: must("#outputGainValue", HTMLElement),
   pauseButton: must("#pauseButton", HTMLButtonElement),
   pitch: must("#pitch", HTMLInputElement),
   pitchValue: must("#pitchValue", HTMLElement),
@@ -143,10 +127,17 @@ const elements: Elements = {
 bindUi();
 syncControlsToDom(state.controls);
 render();
+startMeterUiLoop();
 void loadDefaultSource();
 
 window.addEventListener("beforeunload", () => {
-  disposeStretchControlSession(state.session);
+  disposeStretchMeterSession(state.session);
+  if (state.meterUiFrame !== null) {
+    cancelAnimationFrame(state.meterUiFrame);
+  }
+  if (state.meterNode) {
+    disposeSeqlokMeterNode(state.meterNode);
+  }
   state.node?.disconnect();
   void state.audioContext?.close();
 });
@@ -155,18 +146,13 @@ function renderShell(): string {
   return `
     <div class="app-shell">
       <header class="app-header">
-        <div>
-          <p class="eyebrow">Seqlok demo</p>
-          <h1>Signalsmith Stretch</h1>
-          <p class="header-copy">Direct upstream Web Audio wrapper, one bundled loop, one Seqlok control contract.</p>
-        </div>
+        <h1>Signalsmith Stretch</h1>
         <div id="runtimeFact" class="mode-badge">initializing</div>
       </header>
 
       <main class="demo-layout">
-        <section class="source-panel" aria-labelledby="sourceTitle">
+        <section class="source-panel" aria-label="Source">
           <div>
-            <p class="section-label" id="sourceTitle">Source</p>
             <strong id="fileName">Loading bundled loop</strong>
             <p id="loadedSource">Official Signalsmith demo loop.</p>
           </div>
@@ -176,12 +162,9 @@ function renderShell(): string {
           </label>
         </section>
 
-        <section class="waveform-panel" aria-labelledby="waveformTitle">
+        <section class="waveform-panel" aria-label="Playback">
           <div class="section-heading">
-            <div>
-              <p class="section-label" id="waveformTitle">Playback</p>
-              <h2>Loop overview</h2>
-            </div>
+            <h2>Playback</h2>
             <output id="playheadFact" class="readout">0:00.0</output>
           </div>
           <canvas id="waveform" class="waveform" width="1200" height="260"></canvas>
@@ -202,7 +185,7 @@ function renderShell(): string {
 
         <section class="control-grid" aria-label="Stretch controls">
           <div class="control-panel">
-            <p class="section-label">Time and pitch</p>
+            <h2>Time and pitch</h2>
             <label>
               <span>Rate</span>
               <input id="rate" type="range" min="0.25" max="4" step="0.001" value="1" />
@@ -216,7 +199,7 @@ function renderShell(): string {
           </div>
 
           <div class="control-panel">
-            <p class="section-label">Tone</p>
+            <h2>Tone</h2>
             <label class="toggle-row">
               <input id="tonalityEnabled" type="checkbox" checked />
               <span>Tonality enabled</span>
@@ -247,7 +230,7 @@ function renderShell(): string {
           </div>
 
           <div class="control-panel">
-            <p class="section-label">Wrapper config</p>
+            <h2>Engine config</h2>
             <label>
               <span>Block (ms)</span>
               <div class="dual-input">
@@ -262,8 +245,15 @@ function renderShell(): string {
                 <input id="overlapNumber" type="number" min="2" max="8" step="0.1" value="4" />
               </div>
             </label>
+            <label>
+              <span>Output gain</span>
+              <input id="outputGain" type="range" min="0" max="2" step="0.001" value="1" />
+              <output id="outputGainValue">1.000x</output>
+            </label>
           </div>
         </section>
+
+        ${renderMeterPanel()}
 
         <section class="facts-panel" aria-label="Demo facts">
           <dl class="fact-list">
@@ -290,15 +280,6 @@ function bindUi(): void {
     });
   }
 
-  elements.formantBaseAuto.addEventListener("change", () => {
-    handleControlInput();
-  });
-  elements.formantCompensation.addEventListener("change", () => {
-    handleControlInput();
-  });
-  elements.tonalityEnabled.addEventListener("change", () => {
-    handleControlInput();
-  });
   elements.chooseFile.addEventListener("change", () => {
     const file = elements.chooseFile.files?.item(0);
     if (file) {
@@ -335,11 +316,15 @@ function controlInputs(): readonly HTMLInputElement[] {
     elements.blockMs,
     elements.blockMsNumber,
     elements.formantBase,
+    elements.formantBaseAuto,
+    elements.formantCompensation,
     elements.formantShift,
     elements.overlap,
     elements.overlapNumber,
+    elements.outputGain,
     elements.pitch,
     elements.rate,
+    elements.tonalityEnabled,
     elements.tonalityHz,
   ];
 }
@@ -422,8 +407,12 @@ async function loadSource(
 }
 
 async function ensureRuntime(): Promise<Runtime> {
-  if (state.audioContext && state.node) {
-    return { audioContext: state.audioContext, node: state.node };
+  if (state.audioContext && state.node && state.meterNode) {
+    return {
+      audioContext: state.audioContext,
+      meterNode: state.meterNode,
+      node: state.node,
+    };
   }
 
   const audioContext = new AudioContext();
@@ -432,17 +421,20 @@ async function ensureRuntime(): Promise<Runtime> {
     numberOfOutputs: 1,
     outputChannelCount: [2],
   });
+  const meterNode = await createSeqlokMeterNode(audioContext, state.session.handoff);
 
-  node.connect(audioContext.destination);
+  node.connect(meterNode);
+  meterNode.connect(audioContext.destination);
   await node.setUpdateInterval(0.05, (inputSeconds) => {
     state.playheadSeconds = normalizePlayhead(inputSeconds);
     renderPlayhead();
   });
 
   state.audioContext = audioContext;
+  state.meterNode = meterNode;
   state.node = node;
 
-  return { audioContext, node };
+  return { audioContext, meterNode, node };
 }
 
 async function play(): Promise<void> {
@@ -531,10 +523,9 @@ async function scheduleNode(options: {
   readonly inputSeconds?: number;
   readonly reason: string;
 }): Promise<void> {
-  const runtime = await currentRuntime();
   const duration = sourceDuration();
 
-  if (!runtime || duration <= 0) {
+  if (!state.audioContext || !state.node || duration <= 0) {
     return;
   }
 
@@ -546,7 +537,7 @@ async function scheduleNode(options: {
     formantSemitones: controls.formantSemitones,
     loopEnd: duration,
     loopStart: 0,
-    outputTime: runtime.audioContext.currentTime + 0.02,
+    outputTime: state.audioContext.currentTime + 0.02,
     rate: controls.rate,
     semitones: controls.pitchSemitones,
     tonalityHz: controls.tonalityEnabled ? controls.tonalityHz : 0,
@@ -556,16 +547,8 @@ async function scheduleNode(options: {
     schedule.input = normalizePlayhead(options.inputSeconds);
   }
 
-  await runtime.node.schedule(schedule, options.adjustPrevious ?? false);
+  await state.node.schedule(schedule, options.adjustPrevious ?? false);
   setStatus(options.reason);
-}
-
-async function currentRuntime(): Promise<Runtime | null> {
-  if (!state.audioContext || !state.node) {
-    return null;
-  }
-
-  return { audioContext: state.audioContext, node: state.node };
 }
 
 function createDecodedPcmSource(buffer: AudioBuffer): DecodedPcmSource {
@@ -606,6 +589,7 @@ function readControlsFromDom(): StretchControls {
     formantCompensation: elements.formantCompensation.checked,
     formantSemitones: clampNumber(Number(elements.formantShift.value), -12, 12),
     intervalMs: blockMs / overlap,
+    outputGain: clampNumber(Number(elements.outputGain.value), 0, 2),
     pitchSemitones: clampNumber(Number(elements.pitch.value), -12, 12),
     rate: clampNumber(Number(elements.rate.value), 0.25, 4),
     tonalityEnabled: elements.tonalityEnabled.checked,
@@ -629,10 +613,12 @@ function syncControlsToDom(controls: StretchControls): void {
   elements.blockMsNumber.value = controls.blockMs.toString();
   elements.overlap.value = overlap.toFixed(1);
   elements.overlapNumber.value = overlap.toFixed(1);
+  elements.outputGain.value = controls.outputGain.toString();
   elements.rateValue.textContent = `${controls.rate.toFixed(3)}x`;
   elements.pitchValue.textContent = `${controls.pitchSemitones.toFixed(1)} st`;
   elements.tonalityHzValue.textContent = `${Math.round(controls.tonalityHz).toString()} Hz`;
   elements.formantShiftValue.textContent = `${controls.formantSemitones.toFixed(1)} st`;
+  elements.outputGainValue.textContent = `${controls.outputGain.toFixed(3)}x`;
   elements.formantBaseValue.textContent =
     controls.formantBaseHz === 0
       ? "Auto"
@@ -642,7 +628,7 @@ function syncControlsToDom(controls: StretchControls): void {
 function render(): void {
   const loaded = state.loadedSource;
   const hasSource = Boolean(loaded);
-  const plan = summarizeStretchControlPlan(state.session);
+  const plan = summarizeStretchMeterPlan(state.session);
 
   elements.playButton.disabled = !hasSource;
   elements.pauseButton.disabled = !hasSource;
@@ -666,6 +652,7 @@ function render(): void {
   elements.durationFact.textContent = formatSeconds(loaded.decoded.duration);
   elements.sampleFact.textContent = `${loaded.decoded.numberOfChannels.toString()} ch, ${loaded.decoded.sampleRate.toString()} Hz, browser decoded`;
   renderPlayhead();
+  renderMeters();
 }
 
 function renderPlayhead(): void {
@@ -680,6 +667,18 @@ function renderPlayhead(): void {
   if (duration > 0 && document.activeElement !== elements.seek) {
     elements.seek.value = playhead.toFixed(2);
   }
+}
+
+function startMeterUiLoop(): void {
+  const tick = () => {
+    renderMeters();
+    state.meterUiFrame = requestAnimationFrame(tick);
+  };
+  state.meterUiFrame = requestAnimationFrame(tick);
+}
+
+function renderMeters(): void {
+  renderMeterUi(meterUi, readPublishedMeters(state.session));
 }
 
 function drawWaveform(source: DecodedPcmSource): void {
