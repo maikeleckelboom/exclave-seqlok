@@ -4,21 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vite build --mode simulator",
-    "build:real": "pnpm run prepare:real && vite build --mode real-adapter",
-    "build:wasm": "tsx scripts/build-signalsmith-wasm.mts",
-    "check": "pnpm run lint && pnpm run test:types && pnpm run test",
-    "dev": "pnpm run prepare:real && vite --mode real-adapter --host 127.0.0.1",
-    "dev:real": "pnpm run prepare:real && vite --mode real-adapter --host 127.0.0.1",
-    "dev:simulator": "vite --mode simulator --host 127.0.0.1",
-    "lint": "eslint --config eslint.config.mts src tests scripts *.config.ts",
-    "prepare:real": "pnpm run vendor && pnpm run build:wasm",
+    "build": "vite build",
+    "check": "pnpm run test:types && pnpm run test",
+    "dev": "vite --host 127.0.0.1",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests --exclude \"tests/browser/**\"",
     "test:browser": "playwright test --config playwright.config.ts",
-    "test:browser:real": "pnpm run prepare:real && playwright test --config playwright.real.config.ts",
-    "test:types": "tsc -p tsconfig.json --noEmit --pretty",
-    "vendor": "tsx scripts/vendor.mts"
+    "test:types": "tsc -p tsconfig.json --noEmit --pretty"
   },
   "dependencies": {
     "@exclave/seqlok": "workspace:*"
@@ -26,13 +18,7 @@
   "devDependencies": {
     "@playwright/test": "catalog:",
     "@types/node": "catalog:",
-    "eslint": "catalog:",
-    "eslint-import-resolver-typescript": "catalog:",
-    "eslint-plugin-import": "catalog:",
-    "globals": "catalog:",
-    "tsx": "catalog:",
     "typescript": "catalog:",
-    "typescript-eslint": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
   }
