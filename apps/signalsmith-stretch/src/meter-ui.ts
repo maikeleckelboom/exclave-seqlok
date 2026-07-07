@@ -1,118 +1,261 @@
 import type { PublishedMeters } from "./seqlok-spec";
 
+interface MeterChannelUi {
+  readonly holdMarker: HTMLElement;
+  readonly holdValue: HTMLElement;
+  readonly peakFill: HTMLElement;
+  readonly peakMarker: HTMLElement;
+  readonly peakValue: HTMLElement;
+  readonly readout: HTMLElement;
+  readonly rmsBar: HTMLElement;
+  readonly rmsValue: HTMLElement;
+  readonly track: HTMLElement;
+}
+
 interface MeterUi {
+  channelReadoutDueAt: number;
   readonly clipL: HTMLElement;
   readonly clipR: HTMLElement;
-  readonly holdL: HTMLElement;
-  readonly holdR: HTMLElement;
-  readonly peakL: HTMLElement;
-  readonly peakR: HTMLElement;
+  readonly left: MeterChannelUi;
   readonly publishFact: HTMLElement;
-  readonly readoutL: HTMLElement;
-  readonly readoutR: HTMLElement;
-  readonly rmsL: HTMLElement;
-  readonly rmsR: HTMLElement;
+  readonly right: MeterChannelUi;
+  runtimeReadoutDueAt: number;
 }
+
+const MIN_METER_DB = -60;
+const MAX_METER_DB = 6;
+const CHANNEL_READOUT_INTERVAL_MS = 120;
+const RUNTIME_READOUT_INTERVAL_MS = 250;
+const METER_SCALE_TICKS = [-60, -48, -36, -24, -12, -6, 0, 6] as const;
 
 export function renderMeterPanel(): string {
   return `
-    <section class="meter-panel" aria-label="Seqlok level meters">
-      <div class="section-heading">
-        <h2>Seqlok level meters</h2>
-        <output id="publishFact" class="readout">0 publishes; 0 dropped; 0 frames</output>
+    <section class="meter-panel" aria-label="Seqlok RMS level meters">
+      <div class="meter-panel-heading">
+        <div>
+          <h2>Seqlok RMS meters</h2>
+          <p>Post-stretch output</p>
+        </div>
+        <output id="publishFact" class="meter-runtime readout">0 publishes; 0 dropped; 0 frames</output>
       </div>
       <div class="meter-stack">
-        <div class="meter-row">
-          <div class="meter-label">
-            <strong>Left</strong>
-            <output id="meterReadoutL">RMS -inf dB | sample peak -inf dB | peak hold -inf dB</output>
-          </div>
-          <div class="meter-track">
-            <div id="rmsL" class="meter-rms"></div>
-            <span id="peakL" class="meter-peak"></span>
-            <span id="holdL" class="meter-hold"></span>
-          </div>
-          <output id="clipL" class="clip-badge">clear</output>
-        </div>
-        <div class="meter-row">
-          <div class="meter-label">
-            <strong>Right</strong>
-            <output id="meterReadoutR">RMS -inf dB | sample peak -inf dB | peak hold -inf dB</output>
-          </div>
-          <div class="meter-track">
-            <div id="rmsR" class="meter-rms"></div>
-            <span id="peakR" class="meter-peak"></span>
-            <span id="holdR" class="meter-hold"></span>
-          </div>
-          <output id="clipR" class="clip-badge">clear</output>
-        </div>
+        ${renderMeterScale()}
+        ${renderChannelRow("L", "Left")}
+        ${renderChannelReadout("L")}
+        ${renderChannelRow("R", "Right")}
+        ${renderChannelReadout("R")}
       </div>
     </section>
   `;
 }
 
+function renderMeterScale(): string {
+  return `
+    <div class="meter-scale" aria-hidden="true">
+      <span class="meter-scale-spacer"></span>
+      <div class="meter-scale-track">
+        ${METER_SCALE_TICKS.map((tick) => {
+          const label = tick > 0 ? `+${tick.toString()}` : tick.toString();
+          return `<span class="meter-scale-tick" style="--meter-tick: ${dbToPercent(tick).toFixed(3)}%">${label}</span>`;
+        }).join("")}
+      </div>
+      <span class="meter-scale-clip">dB</span>
+    </div>
+  `;
+}
+
+function renderChannelRow(channel: "L" | "R", label: string): string {
+  return `
+    <div class="meter-row">
+      <div class="meter-channel-label">
+        <strong>${channel}</strong>
+        <span>${label}</span>
+      </div>
+      <div id="meterTrack${channel}" class="meter-track" aria-hidden="true">
+        <div id="peakFill${channel}" class="meter-peak-fill"></div>
+        <div id="rms${channel}" class="meter-rms"></div>
+        <span id="peak${channel}" class="meter-peak"></span>
+        <span id="hold${channel}" class="meter-hold"></span>
+      </div>
+      <output id="clip${channel}" class="clip-badge" aria-live="off">CLIP</output>
+    </div>
+  `;
+}
+
+function renderChannelReadout(channel: "L" | "R"): string {
+  return `
+    <output id="meterReadout${channel}" class="meter-readout" aria-live="off">${[
+      `<span class="meter-readout-spacer"></span>`,
+      `<span class="meter-readout-values">`,
+      renderReading("RMS", `meterRmsValue${channel}`),
+      renderReading("Peak", `meterPeakValue${channel}`),
+      renderReading("Hold", `meterHoldValue${channel}`),
+      `</span>`,
+      `<span class="meter-readout-clip-spacer"></span>`,
+    ].join("")}</output>
+  `;
+}
+
+function renderReading(label: string, valueId: string): string {
+  return `<span class="meter-reading"><span class="meter-reading-label">${label}</span> <span id="${valueId}" class="meter-reading-value">-inf dB</span></span>`;
+}
+
 export function createMeterUi(root: ParentNode): MeterUi {
   return {
+    channelReadoutDueAt: Number.NEGATIVE_INFINITY,
     clipL: must(root, "#clipL", HTMLElement),
     clipR: must(root, "#clipR", HTMLElement),
-    holdL: must(root, "#holdL", HTMLElement),
-    holdR: must(root, "#holdR", HTMLElement),
-    peakL: must(root, "#peakL", HTMLElement),
-    peakR: must(root, "#peakR", HTMLElement),
+    left: createMeterChannelUi(root, "L"),
     publishFact: must(root, "#publishFact", HTMLElement),
-    readoutL: must(root, "#meterReadoutL", HTMLElement),
-    readoutR: must(root, "#meterReadoutR", HTMLElement),
-    rmsL: must(root, "#rmsL", HTMLElement),
-    rmsR: must(root, "#rmsR", HTMLElement),
+    right: createMeterChannelUi(root, "R"),
+    runtimeReadoutDueAt: Number.NEGATIVE_INFINITY,
+  };
+}
+
+function createMeterChannelUi(
+  root: ParentNode,
+  channel: "L" | "R",
+): MeterChannelUi {
+  return {
+    holdMarker: must(root, `#hold${channel}`, HTMLElement),
+    holdValue: must(root, `#meterHoldValue${channel}`, HTMLElement),
+    peakFill: must(root, `#peakFill${channel}`, HTMLElement),
+    peakMarker: must(root, `#peak${channel}`, HTMLElement),
+    peakValue: must(root, `#meterPeakValue${channel}`, HTMLElement),
+    readout: must(root, `#meterReadout${channel}`, HTMLElement),
+    rmsBar: must(root, `#rms${channel}`, HTMLElement),
+    rmsValue: must(root, `#meterRmsValue${channel}`, HTMLElement),
+    track: must(root, `#meterTrack${channel}`, HTMLElement),
   };
 }
 
 export function renderMeterUi(ui: MeterUi, meters: PublishedMeters): void {
-  renderChannel(ui.rmsL, ui.peakL, ui.holdL, ui.readoutL, {
-    hold: meters.holdL,
-    peak: meters.peakL,
-    rms: meters.rmsL,
-  });
-  renderChannel(ui.rmsR, ui.peakR, ui.holdR, ui.readoutR, {
-    hold: meters.holdR,
-    peak: meters.peakR,
-    rms: meters.rmsR,
-  });
+  const now = performance.now();
+  const shouldUpdateChannelText = now >= ui.channelReadoutDueAt;
+  const shouldUpdateRuntimeText = now >= ui.runtimeReadoutDueAt;
+
+  renderChannel(
+    ui.left,
+    {
+      hold: meters.holdL,
+      peak: meters.peakL,
+      rms: meters.rmsL,
+    },
+    shouldUpdateChannelText,
+  );
+  renderChannel(
+    ui.right,
+    {
+      hold: meters.holdR,
+      peak: meters.peakR,
+      rms: meters.rmsR,
+    },
+    shouldUpdateChannelText,
+  );
   setClip(ui.clipL, meters.clippedL);
   setClip(ui.clipR, meters.clippedR);
-  ui.publishFact.textContent =
-    `${meters.publishCount.toString()} publishes; ` +
-    `${meters.droppedPublishCount.toString()} dropped; ` +
-    `${meters.frame.toString()} frames`;
+
+  if (shouldUpdateChannelText) {
+    ui.channelReadoutDueAt = now + CHANNEL_READOUT_INTERVAL_MS;
+  }
+
+  if (shouldUpdateRuntimeText) {
+    ui.publishFact.textContent =
+      `${meters.publishCount.toString()} publishes; ` +
+      `${meters.droppedPublishCount.toString()} dropped; ` +
+      `${meters.frame.toString()} frames`;
+    ui.runtimeReadoutDueAt = now + RUNTIME_READOUT_INTERVAL_MS;
+  }
 }
 
 function renderChannel(
-  rmsBar: HTMLElement,
-  peakMarker: HTMLElement,
-  holdMarker: HTMLElement,
-  readout: HTMLElement,
-  values: { readonly hold: number; readonly peak: number; readonly rms: number },
+  ui: MeterChannelUi,
+  values: {
+    readonly hold: number;
+    readonly peak: number;
+    readonly rms: number;
+  },
+  updateText: boolean,
 ): void {
-  rmsBar.style.transform = `scaleX(${clamp01(values.rms).toFixed(4)})`;
-  peakMarker.style.left = `${(clamp01(values.peak) * 100).toFixed(2)}%`;
-  holdMarker.style.left = `${(clamp01(values.hold) * 100).toFixed(2)}%`;
-  readout.textContent =
-    `RMS ${formatDb(values.rms)} | ` +
-    `sample peak ${formatDb(values.peak)} | ` +
-    `peak hold ${formatDb(values.hold)}`;
+  const rmsPercent = amplitudeToMeterPercent(values.rms);
+  const peakPercent = amplitudeToMeterPercent(values.peak);
+  const holdPercent = amplitudeToMeterPercent(values.hold);
+  const hasPeak = hasSignal(values.peak);
+  const hasHold = hasSignal(values.hold);
+
+  ui.rmsBar.style.setProperty("--meter-fill", `${rmsPercent.toFixed(2)}%`);
+  ui.peakFill.style.left = `${peakPercent.toFixed(2)}%`;
+  ui.peakFill.classList.toggle(
+    "is-ahead",
+    hasPeak && peakPercent > rmsPercent + 1,
+  );
+  ui.peakMarker.style.left = `${peakPercent.toFixed(2)}%`;
+  ui.peakMarker.classList.toggle("is-visible", hasPeak);
+  ui.holdMarker.style.left = `${holdPercent.toFixed(2)}%`;
+  ui.holdMarker.classList.toggle("is-visible", hasHold);
+  ui.track.classList.toggle("is-warning", amplitudeToDb(values.peak) >= -6);
+  ui.track.classList.toggle("is-hot", amplitudeToDb(values.peak) >= -1);
+
+  if (!updateText) {
+    return;
+  }
+
+  ui.rmsValue.textContent = formatDb(values.rms);
+  ui.peakValue.textContent = formatDb(values.peak);
+  ui.holdValue.textContent = formatDb(values.hold);
+  ui.readout.setAttribute(
+    "aria-label",
+    `RMS ${formatDb(values.rms)}, peak ${formatDb(values.peak)}, peak hold ${formatDb(values.hold)}`,
+  );
 }
 
 function setClip(element: HTMLElement, clipped: boolean): void {
-  element.textContent = clipped ? "clip" : "clear";
+  const state = clipped ? "clip" : "ok";
+
+  if (element.dataset.state === state) {
+    return;
+  }
+
+  element.dataset.state = state;
+  element.textContent = clipped ? "CLIP" : "OK";
   element.classList.toggle("is-clipped", clipped);
+  element.setAttribute("aria-label", clipped ? "Clip active" : "No clip");
 }
 
 function formatDb(value: number): string {
-  if (value <= 0 || !Number.isFinite(value)) {
+  const db = amplitudeToDb(value);
+
+  if (!Number.isFinite(db)) {
     return "-inf dB";
   }
 
-  return `${(20 * Math.log10(value)).toFixed(1)} dB`;
+  return `${db >= 0 ? "+" : ""}${db.toFixed(1)} dB`;
+}
+
+function amplitudeToMeterPercent(value: number): number {
+  const db = amplitudeToDb(value);
+
+  if (!Number.isFinite(db)) {
+    return 0;
+  }
+
+  return dbToPercent(db);
+}
+
+function amplitudeToDb(value: number): number {
+  if (value <= 0 || !Number.isFinite(value)) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  return 20 * Math.log10(value);
+}
+
+function hasSignal(value: number): boolean {
+  return value > 0 && Number.isFinite(value);
+}
+
+function dbToPercent(db: number): number {
+  return clamp01((db - MIN_METER_DB) / (MAX_METER_DB - MIN_METER_DB)) * 100;
 }
 
 function clamp01(value: number): number {
