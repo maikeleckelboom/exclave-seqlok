@@ -8,6 +8,7 @@ import {
   type ControllerBinding,
   type Handoff,
   type ObserverBinding,
+  type SpecAstInput,
 } from "@exclave/seqlok";
 
 export interface StretchControls {
@@ -39,44 +40,46 @@ export interface PublishedMeters {
   readonly rmsR: number;
 }
 
-export const stretchMeterSpec = defineSpec(({ meter, param }) => ({
-  id: "signalsmith-stretch/meter-boundary" as const,
+export const signalsmithStretchSpecAst = {
+  id: "signalsmith-stretch/meter-boundary",
   params: {
     config: {
-      blockMs: param.f32({ min: 50, max: 240 }),
-      intervalMs: param.f32({ min: 6.25, max: 120 }),
+      blockMs: { kind: "f32", min: 50, max: 240 },
+      intervalMs: { kind: "f32", min: 6.25, max: 120 },
     },
     control: {
-      active: param.bool(),
-      desiredSequence: param.u32(),
-      formantBaseHz: param.f32({ min: 0, max: 500 }),
-      formantCompensation: param.bool(),
-      formantSemitones: param.f32({ min: -12, max: 12 }),
-      outputGain: param.f32({ min: 0, max: 2 }),
-      pitchSemitones: param.f32({ min: -12, max: 12 }),
-      rate: param.f32({ min: 0.25, max: 4 }),
-      tonalityEnabled: param.bool(),
-      tonalityHz: param.f32({ min: 2_000, max: 20_000 }),
+      active: { kind: "bool" },
+      desiredSequence: { kind: "u32" },
+      formantBaseHz: { kind: "f32", min: 0, max: 500 },
+      formantCompensation: { kind: "bool" },
+      formantSemitones: { kind: "f32", min: -12, max: 12 },
+      outputGain: { kind: "f32", min: 0, max: 2 },
+      pitchSemitones: { kind: "f32", min: -12, max: 12 },
+      rate: { kind: "f32", min: 0.25, max: 4 },
+      tonalityEnabled: { kind: "bool" },
+      tonalityHz: { kind: "f32", min: 2_000, max: 20_000 },
     },
   },
   meters: {
     levels: {
-      clippedL: meter.bool(),
-      clippedR: meter.bool(),
-      holdL: meter.f32(),
-      holdR: meter.f32(),
-      peakL: meter.f32(),
-      peakR: meter.f32(),
-      rmsL: meter.f32(),
-      rmsR: meter.f32(),
+      clippedL: { kind: "bool" },
+      clippedR: { kind: "bool" },
+      holdL: { kind: "f32" },
+      holdR: { kind: "f32" },
+      peakL: { kind: "f32" },
+      peakR: { kind: "f32" },
+      rmsL: { kind: "f32" },
+      rmsR: { kind: "f32" },
     },
     runtime: {
-      droppedPublishCount: meter.u32(),
-      frame: meter.u32(),
-      publishCount: meter.u32(),
+      droppedPublishCount: { kind: "u32" },
+      frame: { kind: "u32" },
+      publishCount: { kind: "u32" },
     },
   },
-}));
+} as const satisfies SpecAstInput;
+
+export const stretchMeterSpec = defineSpec(signalsmithStretchSpecAst);
 
 export type StretchMeterSpec = typeof stretchMeterSpec;
 export type StretchMeterHandoff = Handoff<StretchMeterSpec>;

@@ -396,7 +396,9 @@ async function loadSource(
     state.loadedSource = { decoded, fileName, label };
     state.playheadSeconds = 0;
     state.playing = false;
-    await configureNode(runtime.node, state.controls);
+    state.controls = { ...readStretchControls(state.session), active: false };
+    writeStretchControls(state.session, state.controls);
+    await configureNode(runtime.node);
     await scheduleNode({ active: false, inputSeconds: 0, reason: "Source ready." });
     drawWaveform(decoded);
     render();
@@ -446,10 +448,10 @@ async function play(): Promise<void> {
 
   await runtime.audioContext.resume();
   state.playing = true;
-  state.controls = { ...state.controls, active: true };
+  state.controls = { ...readStretchControls(state.session), active: true };
   writeStretchControls(state.session, state.controls);
-  await scheduleNode({
-    active: true,
+  await configureNode(runtime.node);
+  await startNode({
     inputSeconds: normalizePlayhead(state.playheadSeconds),
     reason: "Playing.",
   });
@@ -462,7 +464,7 @@ async function pause(): Promise<void> {
   }
 
   state.playing = false;
-  state.controls = { ...state.controls, active: false };
+  state.controls = { ...readStretchControls(state.session), active: false };
   writeStretchControls(state.session, state.controls);
   state.playheadSeconds = normalizePlayhead(state.node.inputTime);
   await state.node.stop();
@@ -477,7 +479,7 @@ async function stop(): Promise<void> {
 
   state.playing = false;
   state.playheadSeconds = 0;
-  state.controls = { ...state.controls, active: false };
+  state.controls = { ...readStretchControls(state.session), active: false };
   writeStretchControls(state.session, state.controls);
   await state.node.stop();
   await scheduleNode({ active: false, inputSeconds: 0, reason: "Stopped." });
@@ -490,15 +492,13 @@ async function configureAndSchedule(reason: string): Promise<void> {
     return;
   }
 
-  await configureNode(state.node, state.controls);
+  await configureNode(state.node);
   await scheduleNode({ adjustPrevious: true, reason });
   render();
 }
 
-async function configureNode(
-  node: SignalsmithStretchNode,
-  controls: StretchControls,
-): Promise<void> {
+async function configureNode(node: SignalsmithStretchNode): Promise<void> {
+  const controls = readStretchControls(state.session);
   const configKey = [
     controls.blockMs.toFixed(1),
     controls.intervalMs.toFixed(1),
@@ -517,21 +517,60 @@ async function configureNode(
   state.configuredKey = configKey;
 }
 
+async function startNode(options: {
+  readonly inputSeconds: number;
+  readonly reason: string;
+}): Promise<void> {
+  if (!state.node) {
+    return;
+  }
+
+  const schedule = createSignalsmithSchedule({
+    active: true,
+    inputSeconds: options.inputSeconds,
+  });
+
+  if (!schedule) {
+    return;
+  }
+
+  await state.node.start(schedule);
+  setStatus(options.reason);
+}
+
 async function scheduleNode(options: {
   readonly active?: boolean;
   readonly adjustPrevious?: boolean;
   readonly inputSeconds?: number;
   readonly reason: string;
 }): Promise<void> {
+  if (!state.node) {
+    return;
+  }
+
+  const schedule = createSignalsmithSchedule(options);
+
+  if (!schedule) {
+    return;
+  }
+
+  await state.node.schedule(schedule, options.adjustPrevious ?? false);
+  setStatus(options.reason);
+}
+
+function createSignalsmithSchedule(options: {
+  readonly active?: boolean;
+  readonly inputSeconds?: number;
+}): SignalsmithSchedule | null {
   const duration = sourceDuration();
 
-  if (!state.audioContext || !state.node || duration <= 0) {
-    return;
+  if (!state.audioContext || duration <= 0) {
+    return null;
   }
 
   const controls = readStretchControls(state.session);
   const schedule: SignalsmithSchedule = {
-    active: options.active ?? state.playing,
+    active: options.active ?? controls.active,
     formantBaseHz: controls.formantBaseHz,
     formantCompensation: controls.formantCompensation,
     formantSemitones: controls.formantSemitones,
@@ -547,8 +586,7 @@ async function scheduleNode(options: {
     schedule.input = normalizePlayhead(options.inputSeconds);
   }
 
-  await state.node.schedule(schedule, options.adjustPrevious ?? false);
-  setStatus(options.reason);
+  return schedule;
 }
 
 function createDecodedPcmSource(buffer: AudioBuffer): DecodedPcmSource {

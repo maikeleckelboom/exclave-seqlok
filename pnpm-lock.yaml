@@ -133,9 +133,6 @@ importers:
       vite:
         specifier: "catalog:"
         version: 7.2.4(@types/node@24.10.1)(jiti@2.6.1)(tsx@4.20.6)
-      vitest:
-        specifier: "catalog:"
-        version: 4.0.13(@types/debug@4.1.12)(@types/node@24.10.1)(jiti@2.6.1)(tsx@4.20.6)
 
   apps/docs:
     devDependencies:

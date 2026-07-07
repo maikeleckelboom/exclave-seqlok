@@ -50,6 +50,9 @@ test("loads the Signalsmith Stretch meter demo", async ({ page }) => {
   await expect
     .poll(() => meterReadout(page, "#meterReadoutL"), { timeout: 10_000 })
     .toContain("RMS -inf");
+  await expect
+    .poll(() => outputPeak(page), { timeout: 10_000 })
+    .toBeLessThan(0.001);
 
   await page.locator("#pauseButton").click();
   await expect(page.locator("#runtimeFact")).toHaveText("ready");
@@ -75,8 +78,15 @@ async function installAudioProbe(page: Page): Promise<void> {
     ): AudioNode | void {
       const result = connect.call(this, destination, output, input);
       const probe = window.__signalsmithAudioProbe;
+      const connectsToDestination =
+        destination instanceof AudioDestinationNode;
 
-      if (this instanceof AudioWorkletNode && probe && !probe.attached) {
+      if (
+        connectsToDestination &&
+        this instanceof AudioWorkletNode &&
+        probe &&
+        !probe.attached
+      ) {
         const analyser = this.context.createAnalyser();
         analyser.fftSize = 2048;
         connect.call(this, analyser);
