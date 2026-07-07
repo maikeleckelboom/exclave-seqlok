@@ -414,7 +414,7 @@ output {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 4;
   background-image:
     linear-gradient(90deg, rgb(255 255 255 / 16%) 0 1px, transparent 1px),
     linear-gradient(
@@ -435,7 +435,7 @@ output {
   top: 0;
   bottom: 0;
   left: 90.9%;
-  z-index: 4;
+  z-index: 6;
   width: 1px;
   background: #ff6b50;
   box-shadow: 0 0 10px rgb(255 107 80 / 70%);
@@ -450,6 +450,7 @@ output {
   border-color: #a84539;
 }
 
+.meter-peak-fill,
 .meter-rms {
   position: absolute;
   top: 3px;
@@ -472,34 +473,18 @@ output {
 }
 
 .meter-peak-fill {
-  position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 0;
-  z-index: 3;
-  width: 16px;
-  border-radius: 2px;
+  z-index: 1;
   opacity: 0;
-  transform: translateX(-100%);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgb(245 242 233 / 32%),
-    rgb(255 178 56 / 74%)
-  );
-  box-shadow: 0 0 10px rgb(255 178 56 / 32%);
-  pointer-events: none;
-  transition:
-    left 70ms linear,
-    opacity 90ms linear;
+  filter: saturate(0.92);
+  transition: opacity 90ms linear;
 }
 
-.meter-peak-fill.is-ahead {
-  opacity: 0.72;
+.meter-peak-fill.is-visible {
+  opacity: 0.38;
 }
 
 .meter-rms {
-  z-index: 1;
+  z-index: 2;
   border-radius: 2px;
   box-shadow: 0 0 18px rgb(33 208 130 / 25%);
 }
@@ -510,7 +495,7 @@ output {
   top: 2px;
   bottom: 2px;
   left: 0;
-  z-index: 5;
+  z-index: 7;
   width: 2px;
   border-radius: 999px;
   opacity: 0;

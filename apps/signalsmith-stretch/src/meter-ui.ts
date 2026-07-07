@@ -1,8 +1,10 @@
 import type { PublishedMeters } from "./seqlok-spec";
 
 interface MeterChannelUi {
+  displayPeakPercent: number;
   readonly holdMarker: HTMLElement;
   readonly holdValue: HTMLElement;
+  lastFrameAt: number;
   readonly peakFill: HTMLElement;
   readonly peakMarker: HTMLElement;
   readonly peakValue: HTMLElement;
@@ -25,6 +27,7 @@ interface MeterUi {
 const MIN_METER_DB = -60;
 const MAX_METER_DB = 6;
 const CHANNEL_READOUT_INTERVAL_MS = 120;
+const PEAK_RELEASE_DB_PER_SECOND = 18;
 const RUNTIME_READOUT_INTERVAL_MS = 250;
 const METER_SCALE_TICKS = [-60, -48, -36, -24, -12, -6, 0, 6] as const;
 
@@ -117,8 +120,10 @@ function createMeterChannelUi(
   channel: "L" | "R",
 ): MeterChannelUi {
   return {
+    displayPeakPercent: 0,
     holdMarker: must(root, `#hold${channel}`, HTMLElement),
     holdValue: must(root, `#meterHoldValue${channel}`, HTMLElement),
+    lastFrameAt: Number.NEGATIVE_INFINITY,
     peakFill: must(root, `#peakFill${channel}`, HTMLElement),
     peakMarker: must(root, `#peak${channel}`, HTMLElement),
     peakValue: must(root, `#meterPeakValue${channel}`, HTMLElement),
@@ -141,6 +146,7 @@ export function renderMeterUi(ui: MeterUi, meters: PublishedMeters): void {
       peak: meters.peakL,
       rms: meters.rmsL,
     },
+    now,
     shouldUpdateChannelText,
   );
   renderChannel(
@@ -150,6 +156,7 @@ export function renderMeterUi(ui: MeterUi, meters: PublishedMeters): void {
       peak: meters.peakR,
       rms: meters.rmsR,
     },
+    now,
     shouldUpdateChannelText,
   );
   setClip(ui.clipL, meters.clippedL);
@@ -175,21 +182,23 @@ function renderChannel(
     readonly peak: number;
     readonly rms: number;
   },
+  now: number,
   updateText: boolean,
 ): void {
   const rmsPercent = amplitudeToMeterPercent(values.rms);
   const peakPercent = amplitudeToMeterPercent(values.peak);
   const holdPercent = amplitudeToMeterPercent(values.hold);
-  const hasPeak = hasSignal(values.peak);
+  const displayPeakPercent = nextDisplayPeakPercent(ui, peakPercent, now);
+  const hasPeak = displayPeakPercent > 0 || hasSignal(values.peak);
   const hasHold = hasSignal(values.hold);
 
   ui.rmsBar.style.setProperty("--meter-fill", `${rmsPercent.toFixed(2)}%`);
-  ui.peakFill.style.left = `${peakPercent.toFixed(2)}%`;
-  ui.peakFill.classList.toggle(
-    "is-ahead",
-    hasPeak && peakPercent > rmsPercent + 1,
+  ui.peakFill.style.setProperty(
+    "--meter-fill",
+    `${displayPeakPercent.toFixed(2)}%`,
   );
-  ui.peakMarker.style.left = `${peakPercent.toFixed(2)}%`;
+  ui.peakFill.classList.toggle("is-visible", hasPeak);
+  ui.peakMarker.style.left = `${displayPeakPercent.toFixed(2)}%`;
   ui.peakMarker.classList.toggle("is-visible", hasPeak);
   ui.holdMarker.style.left = `${holdPercent.toFixed(2)}%`;
   ui.holdMarker.classList.toggle("is-visible", hasHold);
@@ -252,6 +261,33 @@ function amplitudeToDb(value: number): number {
 
 function hasSignal(value: number): boolean {
   return value > 0 && Number.isFinite(value);
+}
+
+function nextDisplayPeakPercent(
+  ui: MeterChannelUi,
+  targetPercent: number,
+  now: number,
+): number {
+  const elapsedSeconds =
+    Number.isFinite(ui.lastFrameAt) && now >= ui.lastFrameAt
+      ? (now - ui.lastFrameAt) / 1_000
+      : 0;
+  const releasePercent =
+    (PEAK_RELEASE_DB_PER_SECOND / (MAX_METER_DB - MIN_METER_DB)) *
+    100 *
+    elapsedSeconds;
+
+  ui.lastFrameAt = now;
+  ui.displayPeakPercent =
+    targetPercent >= ui.displayPeakPercent
+      ? targetPercent
+      : Math.max(targetPercent, ui.displayPeakPercent - releasePercent);
+
+  if (targetPercent === 0 && ui.displayPeakPercent < 0.1) {
+    ui.displayPeakPercent = 0;
+  }
+
+  return ui.displayPeakPercent;
 }
 
 function dbToPercent(db: number): number {
