@@ -45,6 +45,20 @@ export const stretchControlSpec = defineSpec(({ param }) => ({
 
 type StretchControlSpec = typeof stretchControlSpec;
 
+const STRETCH_CONTROL_PARAM_KEYS = [
+  "config.blockMs",
+  "config.intervalMs",
+  "control.active",
+  "control.desiredSequence",
+  "control.formantBaseHz",
+  "control.formantCompensation",
+  "control.formantSemitones",
+  "control.pitchSemitones",
+  "control.rate",
+  "control.tonalityEnabled",
+  "control.tonalityHz",
+] as const;
+
 export interface StretchControlSession {
   readonly controller: ControllerBinding<StretchControlSpec>;
   readonly observer: ObserverBinding<StretchControlSpec>;
@@ -116,20 +130,32 @@ export function writeStretchControls(
 export function readStretchControls(
   session: StretchControlSession,
 ): StretchControls {
-  const snapshot = session.observer.params.snapshot();
+  const {
+    "config.blockMs": blockMs,
+    "config.intervalMs": intervalMs,
+    "control.active": active,
+    "control.desiredSequence": desiredSequence,
+    "control.formantBaseHz": formantBaseHz,
+    "control.formantCompensation": formantCompensation,
+    "control.formantSemitones": formantSemitones,
+    "control.pitchSemitones": pitchSemitones,
+    "control.rate": rate,
+    "control.tonalityEnabled": tonalityEnabled,
+    "control.tonalityHz": tonalityHz,
+  } = session.observer.params.snapshot({ keys: STRETCH_CONTROL_PARAM_KEYS });
 
   return {
-    active: snapshot["control.active"],
-    blockMs: snapshot["config.blockMs"],
-    desiredSequence: snapshot["control.desiredSequence"],
-    formantBaseHz: snapshot["control.formantBaseHz"],
-    formantCompensation: snapshot["control.formantCompensation"],
-    formantSemitones: snapshot["control.formantSemitones"],
-    intervalMs: snapshot["config.intervalMs"],
-    pitchSemitones: snapshot["control.pitchSemitones"],
-    rate: snapshot["control.rate"],
-    tonalityEnabled: snapshot["control.tonalityEnabled"],
-    tonalityHz: snapshot["control.tonalityHz"],
+    active,
+    blockMs,
+    desiredSequence,
+    formantBaseHz,
+    formantCompensation,
+    formantSemitones,
+    intervalMs,
+    pitchSemitones,
+    rate,
+    tonalityEnabled,
+    tonalityHz,
   };
 }
 
