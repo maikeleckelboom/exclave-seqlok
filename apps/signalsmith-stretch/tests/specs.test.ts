@@ -133,7 +133,7 @@ const LEVEL_METER_KEYS = [
 
 describe("Signalsmith Stretch boundary spec", () => {
   it("defines one exact app-private spec id", () => {
-    expect(signalsmithStretchSpec.id).toBe("signalsmith-stretch/runtime");
+    expect(signalsmithStretchSpec.id).toBe("signalsmith-stretch/dsp-engine");
   });
 
   it("defines the required canonical dot keys", () => {
@@ -212,9 +212,12 @@ describe("Signalsmith Stretch boundary spec", () => {
 
   it("uses music-safe desired control defaults", () => {
     expect(defaultDesiredControls()).toMatchObject({
+      blockMs: 80,
       formantBaseHz: FORMANT_BASE_AUTO_HZ,
       formantCompensation: false,
       formantSemitones: 0,
+      intervalMs: 80 / 3,
+      splitComputation: false,
       tonalityHz: TONALITY_LIMIT_DEFAULT_HZ,
     });
   });

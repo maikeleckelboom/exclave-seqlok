@@ -188,6 +188,10 @@ function drawLoop(
     return;
   }
 
+  if (loop.startFrame <= 0 && loop.endFrame >= frames) {
+    return;
+  }
+
   const start = frameToX(loop.startFrame, frames, width);
   const end = frameToX(loop.endFrame, frames, width);
   context.fillStyle = options.fill;

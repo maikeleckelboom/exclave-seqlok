@@ -280,8 +280,8 @@ function startSignalsmithStretch(appRoot: HTMLElement): void {
     let transportRefillInFlight = false;
     let transportBufferExpectation = emptyTransportBufferExpectation();
     const transportDiagnostics = createAudioTransportDiagnostics();
-    let qualityPreset: QualityPreset = "balanced";
-    let rangeMode: RangeMode = "musical";
+    let qualityPreset: QualityPreset = "responsive";
+    let rangeMode: RangeMode = "extended";
     let source = defaultSimulatedSource();
     let sourceFacts: PcmSourceFacts | null = null;
     let sourceRevision = 1;
@@ -345,8 +345,8 @@ function startSignalsmithStretch(appRoot: HTMLElement): void {
       enqueueCommand("resetFault");
     });
     elements.resetControlsButton.addEventListener("click", () => {
-      qualityPreset = "balanced";
-      rangeMode = "musical";
+      qualityPreset = "responsive";
+      rangeMode = "extended";
       desired = {
         ...defaultDesiredControls(),
         configSequence: nextSequence(desired.configSequence),
@@ -1374,7 +1374,7 @@ function startSignalsmithStretch(appRoot: HTMLElement): void {
       elements.overlap.value = overlapFromConfig(desired).toFixed(1);
       elements.overlapNumber.value = overlapFromConfig(desired).toFixed(1);
       elements.splitComputation.checked = desired.splitComputation;
-      elements.engineConfigFields.hidden = qualityPreset !== "custom";
+      elements.engineConfigFields.hidden = false;
       elements.rangeMode.value = rangeMode;
       elements.rangeModeWarning.hidden = rangeMode !== "extreme";
     }
@@ -1732,14 +1732,11 @@ function startSignalsmithStretch(appRoot: HTMLElement): void {
           ? runtimeStatusLabel(options.runtimeSelection.mode)
           : `Recoverable runtime fault ${options.runtime.lastErrorCode.toString()}.`,
         sourceStatusText,
-        `Waveform ${waveformModeLabel(waveformMode)}.`,
         options.realStatusError
           ? `Worklet error ${options.realStatusError}.`
           : "",
-        options.pending
-          ? "Desired controls are pending runtime acknowledgement."
-          : "Desired controls match applied acknowledgement.",
-        `Monitor ${options.monitor}.`,
+        options.pending ? "Applying controls." : "",
+        options.monitor !== "Processed" ? `Monitor ${options.monitor}.` : "",
       ]
         .filter(Boolean)
         .join(" ");
@@ -1799,8 +1796,8 @@ function startSignalsmithStretch(appRoot: HTMLElement): void {
         ],
         ["WAV mode", wavMode],
         ["Waveform mode", waveformModeLabel(waveformMode)],
-        ["Exclave spec hash", plans.stretch.hash],
-        ["Nested spec plan", planFact(plans.stretch)],
+        ["Seqlok spec hash", plans.stretch.hash],
+        ["Single spec plan", planFact(plans.stretch)],
         ["Pitch shift", `${desiredSnapshot.pitchSemitones.toFixed(1)} st`],
         [
           "Tonality limit",
@@ -2368,7 +2365,7 @@ function coerceQualityPreset(value: string): QualityPreset {
     value === "low-cpu" ||
     value === "custom"
     ? value
-    : "balanced";
+    : "responsive";
 }
 
 function matchingQualityPreset(

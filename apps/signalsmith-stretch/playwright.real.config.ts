@@ -22,6 +22,8 @@ const requiredRealAdapterAssets = [
 const missingRealAdapterAssets = requiredRealAdapterAssets
   .filter(([, filePath]) => !existsSync(filePath))
   .map(([label]) => label);
+const port = Number(process.env.SIGNALSMITH_PLAYWRIGHT_REAL_PORT ?? 5176);
+const baseURL = `http://127.0.0.1:${port.toString()}`;
 
 if (missingRealAdapterAssets.length > 0) {
   throw new Error(
@@ -47,14 +49,13 @@ export default defineConfig({
   timeout: 45_000,
   use: {
     ...devices["Desktop Chrome"],
-    baseURL: "http://127.0.0.1:5176",
+    baseURL,
     trace: "retain-on-failure",
   },
   webServer: {
-    command:
-      "pnpm exec vite --mode real-adapter --host 127.0.0.1 --port 5176 --strictPort",
+    command: `pnpm exec vite --mode real-adapter --host 127.0.0.1 --port ${port.toString()} --strictPort`,
     reuseExistingServer: false,
     timeout: 30_000,
-    url: "http://127.0.0.1:5176",
+    url: baseURL,
   },
 });

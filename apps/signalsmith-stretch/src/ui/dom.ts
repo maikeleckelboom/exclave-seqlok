@@ -85,6 +85,7 @@ export function renderAppShell(root: HTMLElement): AppElements {
         <div>
           <p class="eyebrow">Seqlok</p>
           <h1>Signalsmith Stretch</h1>
+          <p class="header-copy">A focused time and pitch demo using one Seqlok SharedArrayBuffer spec for the Signalsmith engine.</p>
         </div>
         <div class="header-facts" aria-label="Runtime facts">
           <span id="runtimeModeBadge" class="mode-badge">Checking Worklet</span>
@@ -93,6 +94,7 @@ export function renderAppShell(root: HTMLElement): AppElements {
         </div>
       </header>
 
+      <main class="demo-layout">
       <section class="source-panel" aria-labelledby="source-title">
         <div
           id="sourceDrop"
@@ -105,7 +107,7 @@ export function renderAppShell(root: HTMLElement): AppElements {
             <strong id="sourcePrimary">Drop a WAV file to begin</strong>
             <p id="sourceSecondary">Chunked WAV playback, real-time pitch and time stretch.</p>
             <p id="sourceState" class="source-state">No source loaded</p>
-            <p id="source-truth">WAV recommended; PCM and float WAV files use the most direct path.</p>
+            <p id="source-truth">WAV is the fastest path; the bundled loop loads automatically.</p>
           </div>
           <label class="file-picker">
             <span>Choose file</span>
@@ -118,7 +120,7 @@ export function renderAppShell(root: HTMLElement): AppElements {
       <section id="waveformPanel" class="waveform-panel" aria-labelledby="waveform-title" hidden>
         <div class="section-heading">
           <div>
-            <p class="section-label" id="waveform-title">Waveform overview</p>
+            <p class="section-label" id="waveform-title">Playback</p>
             <h2>Waveform</h2>
           </div>
           <div id="playhead" class="readout"></div>
@@ -129,42 +131,6 @@ export function renderAppShell(root: HTMLElement): AppElements {
             <span>Seek</span>
             <input id="seekRange" type="range" min="0" max="1" step="1" value="0" />
           </label>
-          <label>
-            <span>Frame</span>
-            <input id="seekFrame" type="number" min="0" step="1" value="0" />
-          </label>
-          <label>
-            <span>Loop start</span>
-            <input id="loopStart" type="range" min="0" max="1" step="1" value="0" />
-            <output id="loopStartValue">0</output>
-          </label>
-          <label>
-            <span>Loop end</span>
-            <input id="loopEnd" type="range" min="0" max="1" step="1" value="1" />
-            <output id="loopEndValue">1</output>
-          </label>
-        </div>
-        <div class="loop-status-grid" aria-live="polite">
-          <div>
-            <span>Draft loop</span>
-            <strong id="loopDraft">none</strong>
-          </div>
-          <div>
-            <span>Applied loop</span>
-            <strong id="loopAppliedSummary">inactive</strong>
-          </div>
-          <div>
-            <span>Source frame</span>
-            <strong id="loopSourceFrame">inactive</strong>
-          </div>
-          <div>
-            <span>Cache coverage</span>
-            <strong id="loopCacheCoverage">inactive</strong>
-          </div>
-          <div>
-            <span>Status</span>
-            <strong id="loopValidation">Mark start and end</strong>
-          </div>
         </div>
       </section>
 
@@ -173,42 +139,13 @@ export function renderAppShell(root: HTMLElement): AppElements {
           <button id="playButton" type="button">Play</button>
           <button id="pauseButton" type="button">Pause</button>
           <button id="stopButton" type="button">Stop</button>
-          <button id="markLoopStartButton" type="button">Mark start</button>
-          <button id="markLoopEndButton" type="button">Mark end</button>
-          <button id="setLoopButton" type="button">Apply loop</button>
-          <button id="playLoopButton" type="button">Play loop</button>
-          <button id="clearLoopButton" type="button">Clear loop</button>
         </div>
         <p id="controlsHint" class="control-hint">Load a source to enable processing</p>
-        <fieldset class="source-mode">
-          <legend>Monitor</legend>
-          <label>
-            <input id="processedMode" type="radio" name="sourceMode" value="processed" checked />
-            <span>Processed</span>
-          </label>
-          <label>
-            <input id="alignedSourceMode" type="radio" name="sourceMode" value="aligned" />
-            <span>Original preview</span>
-          </label>
-          <label>
-            <input id="splitCompareMode" type="radio" name="sourceMode" value="split" />
-            <span>Compare</span>
-          </label>
-        </fieldset>
       </section>
 
       <section id="controlGrid" class="control-grid" aria-label="Stretch controls">
         <div class="control-panel">
-          <p class="section-label">Timing and pitch</p>
-          <label>
-            <span>Range mode</span>
-            <select id="rangeMode">
-              <option value="musical">Musical</option>
-              <option value="extended">Extended</option>
-              <option value="extreme">Extreme</option>
-            </select>
-          </label>
-          <p id="rangeModeWarning" class="range-warning" hidden>Extreme settings are for stress testing and are not expected to sound musical.</p>
+          <p class="section-label">Time and pitch</p>
           <label>
             <span>Rate</span>
             <input id="rate" type="range" min="0.5" max="2" step="0.001" value="1" />
@@ -222,16 +159,7 @@ export function renderAppShell(root: HTMLElement): AppElements {
         </div>
 
         <div class="control-panel">
-          <p class="section-label">Voice/formant controls</p>
-          <label>
-            <span>Listening preset</span>
-            <select id="listeningPreset">
-              <option value="music-default">Music default</option>
-              <option value="voice-formant-experiment">Voice/formant experiment</option>
-              <option value="custom">Custom</option>
-            </select>
-          </label>
-          <p class="control-note">Music default keeps formant changes off and leaves formant base on Auto.</p>
+          <p class="section-label">Tone</p>
           <label class="toggle-row">
             <input id="tonalityEnabled" type="checkbox" checked />
             <span>Tonality enabled</span>
@@ -248,99 +176,112 @@ export function renderAppShell(root: HTMLElement): AppElements {
           </label>
           <label class="toggle-row">
             <input id="formantCompensation" type="checkbox" />
-            <span>Voice compensation</span>
+            <span>Formant compensation</span>
           </label>
           <label class="toggle-row">
             <input id="formantBaseAuto" type="checkbox" checked />
             <span>Auto formant base</span>
           </label>
           <label>
-            <span>Manual voice base (advanced)</span>
+            <span>Manual base</span>
             <input id="formantBase" type="range" min="50" max="500" step="1" value="120" disabled />
             <output id="formantBaseValue">Auto (0)</output>
           </label>
-          <p class="control-note">Manual base is for voice/formant experiments; Auto writes 0 for Signalsmith detection.</p>
         </div>
 
         <div class="control-panel config-panel">
-          <p class="section-label">Quality</p>
-          <label>
-            <span>Quality</span>
-            <select id="configPreset">
-              <option value="responsive">Responsive</option>
-              <option value="balanced" selected>Balanced</option>
-              <option value="smooth">Smooth</option>
-              <option value="low-cpu">Low CPU</option>
-              <option value="custom">Custom</option>
-            </select>
-          </label>
-          <div id="engineConfigFields" class="engine-config-fields" hidden>
+          <p class="section-label">Engine</p>
+          <div id="engineConfigFields" class="engine-config-fields">
             <label>
               <span>Block (ms)</span>
               <div class="dual-input">
-                <input id="blockMs" type="range" min="50" max="240" step="1" value="120" />
-                <input id="blockMsNumber" type="number" min="50" max="240" step="1" value="120" />
+                <input id="blockMs" type="range" min="50" max="180" step="1" value="80" />
+                <input id="blockMsNumber" type="number" min="50" max="180" step="1" value="80" />
               </div>
             </label>
             <label>
               <span>Overlap</span>
               <div class="dual-input">
-                <input id="overlap" type="range" min="2" max="8" step="0.1" value="4" />
-                <input id="overlapNumber" type="number" min="2" max="8" step="0.1" value="4" />
+                <input id="overlap" type="range" min="2" max="8" step="0.1" value="3" />
+                <input id="overlapNumber" type="number" min="2" max="8" step="0.1" value="3" />
               </div>
-            </label>
-            <label>
-              <span>Interval (ms)</span>
-              <input id="intervalMs" type="number" min="6.25" max="120" step="0.1" value="30" />
-            </label>
-            <label class="toggle-row">
-              <input id="splitComputation" type="checkbox" checked />
-              <span>Split computation</span>
             </label>
           </div>
         </div>
+      </section>
+      </main>
 
-        <div id="levelsPanel" class="control-panel levels-panel" hidden>
+      <section id="status" class="status-area" role="status" aria-live="polite"></section>
+
+      <section id="advancedInspector" class="diagnostic-surface" hidden>
+        <select id="rangeMode">
+          <option value="musical">Musical</option>
+          <option value="extended">Extended</option>
+          <option value="extreme">Extreme</option>
+        </select>
+        <p id="rangeModeWarning" class="range-warning" hidden>Extreme settings are for stress testing and are not expected to sound musical.</p>
+        <select id="listeningPreset">
+          <option value="music-default">Music default</option>
+          <option value="voice-formant-experiment">Voice/formant experiment</option>
+          <option value="custom">Custom</option>
+        </select>
+        <select id="configPreset">
+          <option value="responsive" selected>Responsive</option>
+          <option value="balanced">Balanced</option>
+          <option value="smooth">Smooth</option>
+          <option value="low-cpu">Low CPU</option>
+          <option value="custom">Custom</option>
+        </select>
+        <input id="intervalMs" type="number" min="6.25" max="120" step="0.1" value="26.7" />
+        <input id="splitComputation" type="checkbox" />
+        <input id="seekFrame" type="number" min="0" step="1" value="0" />
+        <input id="loopStart" type="range" min="0" max="1" step="1" value="0" />
+        <output id="loopStartValue">0</output>
+        <input id="loopEnd" type="range" min="0" max="1" step="1" value="1" />
+        <output id="loopEndValue">1</output>
+        <strong id="loopDraft">none</strong>
+        <strong id="loopAppliedSummary">inactive</strong>
+        <strong id="loopSourceFrame">inactive</strong>
+        <strong id="loopCacheCoverage">inactive</strong>
+        <strong id="loopValidation">Mark start and end</strong>
+        <button id="markLoopStartButton" type="button">Mark start</button>
+        <button id="markLoopEndButton" type="button">Mark end</button>
+        <button id="setLoopButton" type="button">Apply loop</button>
+        <button id="playLoopButton" type="button">Play loop</button>
+        <button id="clearLoopButton" type="button">Clear loop</button>
+        <fieldset class="source-mode">
+          <legend>Monitor</legend>
+          <label>
+            <input id="processedMode" type="radio" name="sourceMode" value="processed" checked />
+            <span>Processed</span>
+          </label>
+          <label>
+            <input id="alignedSourceMode" type="radio" name="sourceMode" value="aligned" />
+            <span>Original preview</span>
+          </label>
+          <label>
+            <input id="splitCompareMode" type="radio" name="sourceMode" value="split" />
+            <span>Compare</span>
+          </label>
+        </fieldset>
+        <div id="levelsPanel" hidden>
           <p class="section-label">Processed output</p>
           <div id="levelsSummary" class="levels-summary"></div>
           <button id="clearClipButton" type="button">Clear clip latch</button>
         </div>
+        <dl class="runtime-facts">
+          <div><dt>State</dt><dd id="transportState">idle</dd></div>
+          <div><dt>Desired</dt><dd id="appliedSequence">0</dd></div>
+          <div><dt>Pending</dt><dd id="pendingState">none</dd></div>
+          <div><dt>Command drops</dt><dd id="commandDrops">0</dd></div>
+          <div><dt>Loop</dt><dd id="loopApplied">inactive</dd></div>
+        </dl>
+        <button id="staleButton" type="button">Stale read</button>
+        <button id="faultButton" type="button">Fault</button>
+        <button id="resetFaultButton" type="button">Reset fault</button>
+        <button id="resetControlsButton" type="button">Reset controls</button>
+        <div id="inspector" class="inspector"></div>
       </section>
-
-      <details id="advancedInspector" class="advanced-inspector">
-        <summary>
-          <span>
-            <span class="section-label">Advanced proof inspector</span>
-            <strong>Seqlok runtime proof</strong>
-          </span>
-          <span class="details-hint" aria-hidden="true"></span>
-        </summary>
-        <section class="inspector-grid" aria-label="Seqlok inspector">
-          <div class="inspector-panel">
-            <p class="section-label">Runtime</p>
-            <dl class="runtime-facts">
-              <div><dt>State</dt><dd id="transportState">idle</dd></div>
-              <div><dt>Desired</dt><dd id="appliedSequence">0</dd></div>
-              <div><dt>Pending</dt><dd id="pendingState">none</dd></div>
-              <div><dt>Command drops</dt><dd id="commandDrops">0</dd></div>
-              <div><dt>Loop</dt><dd id="loopApplied">inactive</dd></div>
-            </dl>
-            <div class="button-row">
-              <button id="staleButton" type="button">Stale read</button>
-              <button id="faultButton" type="button">Fault</button>
-              <button id="resetFaultButton" type="button">Reset fault</button>
-              <button id="resetControlsButton" type="button">Reset controls</button>
-            </div>
-          </div>
-
-          <div class="inspector-panel">
-            <p class="section-label">Seqlok inspector</p>
-            <div id="inspector" class="inspector"></div>
-          </div>
-        </section>
-      </details>
-
-      <section id="status" class="status-area" role="status" aria-live="polite"></section>
     </div>
   `;
 

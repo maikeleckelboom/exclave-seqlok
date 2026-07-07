@@ -14,7 +14,7 @@ import {
 } from "../types";
 
 export const signalsmithStretchSpec = defineSpec(({ param, meter }) => ({
-  id: "signalsmith-stretch/runtime" as const,
+  id: "signalsmith-stretch/dsp-engine" as const,
   params: {
     control: {
       desiredSequence: param.u32(),

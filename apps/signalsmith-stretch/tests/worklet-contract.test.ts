@@ -84,7 +84,7 @@ describe("Signalsmith real Worklet contract", () => {
     expect(moduleLoader).toContain("__SIGNALSMITH_STRETCH_MODULE_FACTORY__");
   });
 
-  it("binds one accepted Seqlok handoff for the proof runtime", () => {
+  it("binds one accepted Seqlok handoff for the DSP engine", () => {
     const source = readFileSync(SEQLOK_BINDINGS, "utf8");
 
     expect(source).toContain("acceptHandoff(handoff)");

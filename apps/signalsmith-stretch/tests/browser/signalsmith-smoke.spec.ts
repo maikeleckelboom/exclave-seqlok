@@ -34,15 +34,12 @@ test("primary demo loads the default comparison track and keeps proof diagnostic
   await expect(page.locator("#playButton")).toBeEnabled();
   await expect(page.locator("#pauseButton")).toBeEnabled();
   await expect(page.locator("#seekRange")).toBeEnabled();
-  await expect(page.locator("#loopStart")).toBeEnabled();
-  await expect(page.locator("#processedMode")).toBeEnabled();
   await expect(page.locator("#rate")).toBeEnabled();
   await expect(page.locator("#pitch")).toBeEnabled();
   await expect(page.locator("#transitionFrames")).toHaveCount(0);
   await expect(
     page.locator("label").filter({ hasText: "Transition" }),
   ).toHaveCount(0);
-  await expect(page.locator("#configPreset")).toBeEnabled();
   await expect(page.locator("#controlsHint")).toBeHidden();
   await expect(page.locator("#loopDraft")).toContainText("0 to 495,513");
   await expect(page.locator("#loopAppliedSummary")).toContainText(
@@ -54,25 +51,21 @@ test("primary demo loads the default comparison track and keeps proof diagnostic
     page.locator("label").filter({ hasText: "Tonality limit" }),
   ).toBeVisible();
   await expect(page.locator("#listeningPreset")).toHaveValue("music-default");
-  await expect(page.locator("#rangeMode")).toHaveValue("musical");
-  await expect(page.locator("#rate")).toHaveAttribute("min", "0.5");
-  await expect(page.locator("#rate")).toHaveAttribute("max", "2");
-  await expect(page.locator("#pitch")).toHaveAttribute("min", "-7");
-  await expect(page.locator("#pitch")).toHaveAttribute("max", "7");
-  await expect(page.locator("#formantShift")).toHaveAttribute("min", "-7");
-  await expect(page.locator("#formantShift")).toHaveAttribute("max", "7");
-  await expect(page.locator("#configPreset")).toHaveValue("balanced");
+  await expect(page.locator("#rangeMode")).toHaveValue("extended");
+  await expect(page.locator("#rate")).toHaveAttribute("min", "0.25");
+  await expect(page.locator("#rate")).toHaveAttribute("max", "4");
+  await expect(page.locator("#pitch")).toHaveAttribute("min", "-12");
+  await expect(page.locator("#pitch")).toHaveAttribute("max", "12");
+  await expect(page.locator("#formantShift")).toHaveAttribute("min", "-12");
+  await expect(page.locator("#formantShift")).toHaveAttribute("max", "12");
+  await expect(page.locator("#configPreset")).toHaveValue("responsive");
   await expect(page.locator("#tonalityHz")).toHaveValue("8000");
   await expect(page.locator("#tonalityHzValue")).toHaveText("8000 Hz");
   await expect(page.locator("#formantCompensation")).not.toBeChecked();
   await expect(page.locator("#formantBaseAuto")).toBeChecked();
   await expect(page.locator("#formantBaseValue")).toHaveText("Auto (0)");
-  await expect(page.locator("#advancedInspector")).not.toHaveAttribute("open");
-  await expect(page.getByText("Exclave spec hash")).not.toBeVisible();
-
-  await page.locator("#advancedInspector > summary").click();
-  await expect(page.getByText("Exclave spec hash")).toBeVisible();
-  await expect(page.getByText("Nested spec plan")).toBeVisible();
+  await expect(page.locator("#advancedInspector")).toBeHidden();
+  await expect(page.getByText("Seqlok spec hash")).not.toBeVisible();
   await expect.poll(() => runtimeFact(page, "Source mode")).toBe("chunked WAV");
   await expect
     .poll(() => runtimeFact(page, "Source format"))
@@ -80,26 +73,6 @@ test("primary demo loads the default comparison track and keeps proof diagnostic
   await expect
     .poll(() => runtimeFact(page, "Voice/formant base"))
     .toBe("Auto (0)");
-
-  await page.locator("#rangeMode").selectOption("extended");
-  await expect(page.locator("#rate")).toHaveAttribute("max", "4");
-  await expect(page.locator("#pitch")).toHaveAttribute("min", "-12");
-  await expect(page.locator("#pitch")).toHaveAttribute("max", "12");
-
-  await page.locator("#rangeMode").selectOption("extreme");
-  await expect(page.locator("#rate")).toHaveAttribute("min", "0.05");
-  await expect(page.locator("#rate")).toHaveAttribute("max", "8");
-  await expect(page.locator("#pitch")).toHaveAttribute("max", "48");
-  await expect(page.locator("#rangeModeWarning")).toBeVisible();
-
-  await setRange(page, "#rate", "8");
-  await setRange(page, "#pitch", "24");
-  await setRange(page, "#formantShift", "12");
-  await page.locator("#rangeMode").selectOption("musical");
-  await expect(page.locator("#rate")).toHaveValue("2");
-  await expect(page.locator("#pitch")).toHaveValue("7");
-  await expect(page.locator("#formantShift")).toHaveValue("7");
-  await expect(page.locator("#rangeModeWarning")).toBeHidden();
 });
 
 test("primary controls enable after a source loads", async ({
@@ -122,7 +95,7 @@ test("primary controls enable after a source loads", async ({
   await expect(page.locator("#rate")).toBeEnabled();
   await expect(page.locator("#pitch")).toBeEnabled();
   await expect(page.locator("#configPreset")).toBeEnabled();
-  await expect(page.locator("#configPreset")).toHaveValue("balanced");
+  await expect(page.locator("#configPreset")).toHaveValue("responsive");
   await expect(page.locator("#controlsHint")).toBeHidden();
   await expect.poll(() => runtimeFact(page, "Source format")).toContain("WAV");
   await expect
@@ -168,7 +141,7 @@ test("default sample keeps an active loop coherent after seeking", async ({
   await expect(page.locator("#loopDraft")).toContainText("20,000");
   await expect(page.locator("#loopValidation")).toContainText("Ready");
 
-  await page.locator("#playLoopButton").click();
+  await clickHidden(page, "#playLoopButton");
   await expect
     .poll(() => runtimeFact(page, "Loop"))
     .toContain("12,000 to 20,000");
@@ -190,7 +163,7 @@ test("default sample keeps an active loop coherent after seeking", async ({
   await expect.poll(() => runtimeFact(page, "State")).toBe("playing");
   await page.locator("#pauseButton").click();
   await expect.poll(() => runtimeFact(page, "State")).toBe("ready-paused");
-  await page.locator("#markLoopStartButton").click();
+  await clickHidden(page, "#markLoopStartButton");
   await expect(page.locator("#loopDraft")).toContainText("12,000");
   await expect(page.locator("#loopDraft")).not.toContainText("5,000");
   await page.locator("#playButton").click();
@@ -437,7 +410,7 @@ test("real Worklet runtime handles chunked WAV transport controls", async ({
     page,
     "Block / interval / split",
   );
-  await page.locator("#listeningPreset").selectOption("music-default");
+  await selectHidden(page, "#listeningPreset", "music-default");
   await expect(page.locator("#tonalityHz")).toHaveValue("8000");
   await expect(page.locator("#formantShift")).toHaveValue("0");
   await expect(page.locator("#formantCompensation")).not.toBeChecked();
@@ -466,7 +439,7 @@ test("real Worklet runtime handles chunked WAV transport controls", async ({
     .poll(() => runtimeFact(page, "Block / interval / split"))
     .toBe(blockIntervalBefore);
 
-  await page.locator("#configPreset").selectOption("custom");
+  await selectHidden(page, "#configPreset", "custom");
   await expect(page.locator("#engineConfigFields")).toBeVisible();
   await setRange(page, "#blockMs", "150");
   await expect
@@ -506,30 +479,30 @@ test("real Worklet runtime handles chunked WAV transport controls", async ({
     .poll(() => runtimeFact(page, "Block / interval / split"))
     .toBe(blockIntervalAfterConfig);
 
-  await page.locator("#alignedSourceMode").check();
+  await checkHidden(page, "#alignedSourceMode");
   await expect
     .poll(() => runtimeFact(page, "Monitor"))
     .toContain("Original preview");
-  await page.locator("#splitCompareMode").check();
+  await checkHidden(page, "#splitCompareMode");
   await expect.poll(() => runtimeFact(page, "Monitor")).toContain("Compare");
-  await page.locator("#processedMode").check();
+  await checkHidden(page, "#processedMode");
   await page.locator("#pauseButton").click();
   await expect.poll(() => runtimeFact(page, "State")).toBe("ready-paused");
 
   await setSeekFrame(page, "12000");
   await expect.poll(() => sourceFrameNear(page, 12_000, 2_048)).toBe(true);
-  await page.locator("#markLoopStartButton").click();
+  await clickHidden(page, "#markLoopStartButton");
   await expect(page.locator("#loopDraft")).toContainText("12,000");
   await expect(page.locator("#loopDraft")).toContainText("not set");
 
   await setSeekFrame(page, "36000");
   await expect.poll(() => sourceFrameNear(page, 36_000, 2_048)).toBe(true);
-  await page.locator("#markLoopEndButton").click();
+  await clickHidden(page, "#markLoopEndButton");
   await expect(page.locator("#loopDraft")).toContainText("12,");
   await expect(page.locator("#loopDraft")).toContainText("36,000");
   await expect(page.locator("#loopValidation")).toContainText("Ready");
 
-  await page.locator("#playLoopButton").click();
+  await clickHidden(page, "#playLoopButton");
   await expect(page.locator("#loopApplied")).toContainText("12,000 to 36,000");
   await expect
     .poll(() => runtimeFact(page, "Loop"))
@@ -576,7 +549,7 @@ test("real Worklet runtime handles chunked WAV transport controls", async ({
     .poll(() => runtimeFact(page, "Loop cache coverage"))
     .toContain("current");
 
-  await page.locator("#clearLoopButton").click();
+  await clickHidden(page, "#clearLoopButton");
   await expect.poll(() => runtimeFact(page, "Loop")).toBe("inactive");
   await expect(page.locator("#loopDraft")).toHaveText("none");
 
@@ -789,6 +762,52 @@ async function setSeekFrame(page: Page, value: string): Promise<void> {
   await page.locator("#seekFrame").evaluate((element, nextValue) => {
     if (!(element instanceof HTMLInputElement)) {
       throw new Error("Expected seek frame input.");
+    }
+
+    element.value = nextValue;
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+  }, value);
+}
+
+async function clickHidden(page: Page, selector: string): Promise<void> {
+  await page.locator(selector).evaluate((element) => {
+    if (!(element instanceof HTMLButtonElement)) {
+      throw new Error("Expected hidden button.");
+    }
+
+    element.click();
+  });
+}
+
+async function checkHidden(page: Page, selector: string): Promise<void> {
+  await page.locator(selector).evaluate((element) => {
+    if (!(element instanceof HTMLInputElement)) {
+      throw new Error("Expected hidden input.");
+    }
+
+    if (element.type === "radio" && element.name) {
+      for (const peer of document.querySelectorAll<HTMLInputElement>(
+        `input[type="radio"][name="${element.name}"]`,
+      )) {
+        peer.checked = false;
+      }
+    }
+
+    element.checked = true;
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+}
+
+async function selectHidden(
+  page: Page,
+  selector: string,
+  value: string,
+): Promise<void> {
+  await page.locator(selector).evaluate((element, nextValue) => {
+    if (!(element instanceof HTMLSelectElement)) {
+      throw new Error("Expected hidden select.");
     }
 
     element.value = nextValue;

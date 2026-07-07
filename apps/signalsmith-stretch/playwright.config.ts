@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const port = Number(process.env.SIGNALSMITH_PLAYWRIGHT_PORT ?? 5175);
+const baseURL = `http://127.0.0.1:${port.toString()}`;
+
 export default defineConfig({
   expect: {
     timeout: 10_000,
@@ -14,14 +17,13 @@ export default defineConfig({
   timeout: 45_000,
   use: {
     ...devices["Desktop Chrome"],
-    baseURL: "http://127.0.0.1:5175",
+    baseURL,
     trace: "retain-on-failure",
   },
   webServer: {
-    command:
-      "pnpm exec vite --mode simulator --host 127.0.0.1 --port 5175 --strictPort",
+    command: `pnpm exec vite --mode simulator --host 127.0.0.1 --port ${port.toString()} --strictPort`,
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
-    url: "http://127.0.0.1:5175",
+    url: baseURL,
   },
 });
