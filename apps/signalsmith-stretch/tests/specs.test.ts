@@ -16,6 +16,7 @@ import {
 import { signalsmithStretchSpec } from "../src/boundary/specs";
 import {
   FORMANT_BASE_AUTO_HZ,
+  FORMANT_BASE_MANUAL_DEFAULT_HZ,
   FORMANT_BASE_MAX_HZ,
   FORMANT_BASE_MIN_HZ,
   FORMANT_SHIFT_MAX_SEMITONES,
@@ -210,14 +211,19 @@ describe("Signalsmith Stretch boundary spec", () => {
     }
   });
 
-  it("uses music-safe desired control defaults", () => {
+  it("uses official Signalsmith demo desired control defaults", () => {
     expect(defaultDesiredControls()).toMatchObject({
-      blockMs: 80,
-      formantBaseHz: FORMANT_BASE_AUTO_HZ,
+      active: false,
+      blockMs: 120,
+      formantBaseHz: FORMANT_BASE_MANUAL_DEFAULT_HZ,
       formantCompensation: false,
       formantSemitones: 0,
-      intervalMs: 80 / 3,
-      splitComputation: false,
+      intervalMs: 30,
+      pitchSemitones: 0,
+      preset: "custom",
+      rate: 1,
+      splitComputation: true,
+      tonalityEnabled: true,
       tonalityHz: TONALITY_LIMIT_DEFAULT_HZ,
     });
   });

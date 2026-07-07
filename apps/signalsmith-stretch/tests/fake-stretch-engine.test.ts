@@ -35,11 +35,11 @@ describe("FakeStretchEngine", () => {
 
       expect(runtime.adapterMode).toBe("simulator");
       expect(runtime.effectiveRate).toBeCloseTo(1);
-      expect(runtime.blockSamples).toBe(3_840);
-      expect(runtime.intervalSamples).toBe(1_280);
-      expect(runtime.inputLatencyFrames).toBe(3_840);
-      expect(runtime.outputLatencyFrames).toBe(1_280);
-      expect(runtime.bufferLengthFrames).toBe(5_120);
+      expect(runtime.blockSamples).toBe(5_760);
+      expect(runtime.intervalSamples).toBe(1_440);
+      expect(runtime.inputLatencyFrames).toBe(5_760);
+      expect(runtime.outputLatencyFrames).toBe(1_440);
+      expect(runtime.bufferLengthFrames).toBe(7_200);
       expect(runtime.durationFrames).toBe(engine.currentSource.frames);
       expect(runtime.durationSeconds).toBe(
         engine.currentSource.durationSeconds,

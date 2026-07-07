@@ -179,13 +179,13 @@ export function renderAppShell(root: HTMLElement): AppElements {
             <span>Formant compensation</span>
           </label>
           <label class="toggle-row">
-            <input id="formantBaseAuto" type="checkbox" checked />
+            <input id="formantBaseAuto" type="checkbox" />
             <span>Auto formant base</span>
           </label>
           <label>
             <span>Manual base</span>
-            <input id="formantBase" type="range" min="50" max="500" step="1" value="120" disabled />
-            <output id="formantBaseValue">Auto (0)</output>
+            <input id="formantBase" type="range" min="50" max="500" step="1" value="200" />
+            <output id="formantBaseValue">200 Hz</output>
           </label>
         </div>
 
@@ -195,15 +195,15 @@ export function renderAppShell(root: HTMLElement): AppElements {
             <label>
               <span>Block (ms)</span>
               <div class="dual-input">
-                <input id="blockMs" type="range" min="50" max="180" step="1" value="80" />
-                <input id="blockMsNumber" type="number" min="50" max="180" step="1" value="80" />
+                <input id="blockMs" type="range" min="50" max="180" step="1" value="120" />
+                <input id="blockMsNumber" type="number" min="50" max="180" step="1" value="120" />
               </div>
             </label>
             <label>
               <span>Overlap</span>
               <div class="dual-input">
-                <input id="overlap" type="range" min="2" max="8" step="0.1" value="3" />
-                <input id="overlapNumber" type="number" min="2" max="8" step="0.1" value="3" />
+                <input id="overlap" type="range" min="2" max="8" step="0.1" value="4" />
+                <input id="overlapNumber" type="number" min="2" max="8" step="0.1" value="4" />
               </div>
             </label>
           </div>
@@ -221,19 +221,20 @@ export function renderAppShell(root: HTMLElement): AppElements {
         </select>
         <p id="rangeModeWarning" class="range-warning" hidden>Extreme settings are for stress testing and are not expected to sound musical.</p>
         <select id="listeningPreset">
+          <option value="signalsmith-demo">Signalsmith demo</option>
           <option value="music-default">Music default</option>
           <option value="voice-formant-experiment">Voice/formant experiment</option>
           <option value="custom">Custom</option>
         </select>
         <select id="configPreset">
-          <option value="responsive" selected>Responsive</option>
-          <option value="balanced">Balanced</option>
+          <option value="signalsmith-demo" selected>Signalsmith demo</option>
+          <option value="responsive">Responsive</option>
           <option value="smooth">Smooth</option>
           <option value="low-cpu">Low CPU</option>
           <option value="custom">Custom</option>
         </select>
-        <input id="intervalMs" type="number" min="6.25" max="120" step="0.1" value="26.7" />
-        <input id="splitComputation" type="checkbox" />
+        <input id="intervalMs" type="number" min="15" max="60" step="0.1" value="30" />
+        <input id="splitComputation" type="checkbox" checked />
         <input id="seekFrame" type="number" min="0" step="1" value="0" />
         <input id="loopStart" type="range" min="0" max="1" step="1" value="0" />
         <output id="loopStartValue">0</output>

@@ -55,7 +55,9 @@ test("primary demo loads the default comparison track and keeps proof diagnostic
   await expect(
     page.locator("label").filter({ hasText: "Tonality limit" }),
   ).toBeVisible();
-  await expect(page.locator("#listeningPreset")).toHaveValue("music-default");
+  await expect(page.locator("#listeningPreset")).toHaveValue(
+    "signalsmith-demo",
+  );
   await expect(page.locator("#rangeMode")).toHaveValue("extended");
   await expect(page.locator("#rate")).toHaveAttribute("min", "0.25");
   await expect(page.locator("#rate")).toHaveAttribute("max", "4");
@@ -63,12 +65,24 @@ test("primary demo loads the default comparison track and keeps proof diagnostic
   await expect(page.locator("#pitch")).toHaveAttribute("max", "12");
   await expect(page.locator("#formantShift")).toHaveAttribute("min", "-12");
   await expect(page.locator("#formantShift")).toHaveAttribute("max", "12");
-  await expect(page.locator("#configPreset")).toHaveValue("responsive");
+  await expect(page.locator("#configPreset")).toHaveValue("signalsmith-demo");
+  await expect(page.locator("#rate")).toHaveValue("1");
+  await expect(page.locator("#rateValue")).toHaveText("1.000x");
+  await expect(page.locator("#pitch")).toHaveValue("0");
+  await expect(page.locator("#pitchValue")).toHaveText("0.0 st");
   await expect(page.locator("#tonalityHz")).toHaveValue("8000");
   await expect(page.locator("#tonalityHzValue")).toHaveText("8000 Hz");
   await expect(page.locator("#formantCompensation")).not.toBeChecked();
-  await expect(page.locator("#formantBaseAuto")).toBeChecked();
-  await expect(page.locator("#formantBaseValue")).toHaveText("Auto (0)");
+  await expect(page.locator("#formantBaseAuto")).not.toBeChecked();
+  await expect(page.locator("#formantBase")).toBeEnabled();
+  await expect(page.locator("#formantBase")).toHaveValue("200");
+  await expect(page.locator("#formantBaseValue")).toHaveText("200 Hz");
+  await expect(page.locator("#blockMs")).toHaveValue("120");
+  await expect(page.locator("#blockMsNumber")).toHaveValue("120");
+  await expect(page.locator("#overlap")).toHaveValue("4");
+  await expect(page.locator("#overlapNumber")).toHaveValue("4.0");
+  await expect(page.locator("#intervalMs")).toHaveValue("30.0");
+  await expect(page.locator("#splitComputation")).toBeChecked();
   await expect(page.locator("#advancedInspector")).toBeHidden();
   await expect(page.getByText("Seqlok spec hash")).not.toBeVisible();
   await expect.poll(() => runtimeFact(page, "Source mode")).toBe("chunked WAV");
@@ -77,7 +91,10 @@ test("primary demo loads the default comparison track and keeps proof diagnostic
     .toBe("WAV chunked PCM 16-bit 48000 Hz stereo");
   await expect
     .poll(() => runtimeFact(page, "Voice/formant base"))
-    .toBe("Auto (0)");
+    .toBe("200 Hz");
+  await expect
+    .poll(() => runtimeFact(page, "Block / interval / split"))
+    .toContain("120 ms / 30.0 ms / split");
 });
 
 test("primary controls enable after a source loads", async ({
@@ -100,7 +117,7 @@ test("primary controls enable after a source loads", async ({
   await expect(page.locator("#rate")).toBeEnabled();
   await expect(page.locator("#pitch")).toBeEnabled();
   await expect(page.locator("#configPreset")).toBeEnabled();
-  await expect(page.locator("#configPreset")).toHaveValue("responsive");
+  await expect(page.locator("#configPreset")).toHaveValue("signalsmith-demo");
   await expect(page.locator("#controlsHint")).toBeHidden();
   await expect.poll(() => runtimeFact(page, "Source format")).toContain("WAV");
   await expect

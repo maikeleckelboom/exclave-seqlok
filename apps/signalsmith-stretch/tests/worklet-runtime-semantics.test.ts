@@ -98,7 +98,10 @@ describe("Signalsmith Worklet runtime semantics", () => {
 
     expect(source).toContain("private tonalityHz = TONALITY_LIMIT_DEFAULT_HZ");
     expect(source).toContain("private formantCompensation = false");
-    expect(source).toContain("private formantBaseHz = FORMANT_BASE_AUTO_HZ");
+    expect(source).toContain(
+      "private formantBaseHz = FORMANT_BASE_MANUAL_DEFAULT_HZ",
+    );
+    expect(source).toContain("private splitComputation = true");
     expect(source).not.toContain("private tonalityHz = 440");
     expect(source).not.toContain("private formantCompensation = true");
   });

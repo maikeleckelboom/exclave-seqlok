@@ -8,7 +8,7 @@ import { validateLoopRange } from "../loop/loop-validation";
 import {
   enumIndex,
   enumLabel,
-  FORMANT_BASE_AUTO_HZ,
+  FORMANT_BASE_MANUAL_DEFAULT_HZ,
   FORMANT_SHIFT_DEFAULT_SEMITONES,
   SOURCE_STATES,
   STRETCH_PRESETS,
@@ -101,7 +101,7 @@ class SignalsmithStretchProcessor extends AudioWorkletProcessor {
   private destroyed = false;
   private effectiveRate = 1;
   private failed = false;
-  private formantBaseHz = FORMANT_BASE_AUTO_HZ;
+  private formantBaseHz = FORMANT_BASE_MANUAL_DEFAULT_HZ;
   private formantCompensation = false;
   private formantSemitones = FORMANT_SHIFT_DEFAULT_SEMITONES;
   private heapGeneration = 0;
@@ -136,7 +136,7 @@ class SignalsmithStretchProcessor extends AudioWorkletProcessor {
   private sessionId = 1;
   private sourceFrame = 0;
   private sourceRevision = 0;
-  private splitComputation = false;
+  private splitComputation = true;
   private staleReadTotal = 0;
   private tonalityEnabled = true;
   private tonalityHz = TONALITY_LIMIT_DEFAULT_HZ;

@@ -118,8 +118,8 @@ type TransportPumpReason =
   | "startup"
   | "visibilitychange";
 type QualityPreset =
+  | "signalsmith-demo"
   | "responsive"
-  | "balanced"
   | "smooth"
   | "low-cpu"
   | "custom";
@@ -209,7 +209,7 @@ const QUALITY_CONFIGS: Record<
   Exclude<QualityPreset, "custom">,
   QualityConfig
 > = {
-  balanced: {
+  "signalsmith-demo": {
     blockMs: 120,
     intervalMs: 30,
     preset: "custom",
@@ -280,7 +280,7 @@ function startSignalsmithStretch(appRoot: HTMLElement): void {
     let transportRefillInFlight = false;
     let transportBufferExpectation = emptyTransportBufferExpectation();
     const transportDiagnostics = createAudioTransportDiagnostics();
-    let qualityPreset: QualityPreset = "responsive";
+    let qualityPreset: QualityPreset = matchingQualityPreset(desired);
     let rangeMode: RangeMode = "extended";
     let source = defaultSimulatedSource();
     let sourceFacts: PcmSourceFacts | null = null;
@@ -345,13 +345,13 @@ function startSignalsmithStretch(appRoot: HTMLElement): void {
       enqueueCommand("resetFault");
     });
     elements.resetControlsButton.addEventListener("click", () => {
-      qualityPreset = "responsive";
       rangeMode = "extended";
       desired = {
         ...defaultDesiredControls(),
         configSequence: nextSequence(desired.configSequence),
         desiredSequence: nextSequence(desired.desiredSequence),
       };
+      qualityPreset = matchingQualityPreset(desired);
       applyRangeModeToInputs(rangeMode, elements);
       applyControlsToInputs(desired, elements, rangeMode);
       writeDesiredControls(session, desired);
@@ -2360,12 +2360,13 @@ function clampDesiredControlsToRangeMode(
 }
 
 function coerceQualityPreset(value: string): QualityPreset {
-  return value === "responsive" ||
+  return value === "signalsmith-demo" ||
+    value === "responsive" ||
     value === "smooth" ||
     value === "low-cpu" ||
     value === "custom"
     ? value
-    : "responsive";
+    : "signalsmith-demo";
 }
 
 function matchingQualityPreset(

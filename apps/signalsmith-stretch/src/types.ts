@@ -33,6 +33,7 @@ export const SOURCE_STATES = [
 export const STRETCH_PRESETS = ["custom", "default", "cheaper"] as const;
 
 export const LISTENING_PRESETS = [
+  "signalsmith-demo",
   "music-default",
   "voice-formant-experiment",
 ] as const;
@@ -44,7 +45,7 @@ export const FORMANT_SHIFT_DEFAULT_SEMITONES = 0;
 export const FORMANT_SHIFT_MIN_SEMITONES = -12;
 export const FORMANT_SHIFT_MAX_SEMITONES = 12;
 export const FORMANT_BASE_AUTO_HZ = 0;
-export const FORMANT_BASE_MANUAL_DEFAULT_HZ = 120;
+export const FORMANT_BASE_MANUAL_DEFAULT_HZ = 200;
 export const FORMANT_BASE_MIN_HZ = 50;
 export const FORMANT_BASE_MAX_HZ = 500;
 
@@ -190,17 +191,17 @@ export interface LoopPreview {
 export function defaultDesiredControls(): DesiredStretchControls {
   return {
     active: false,
-    blockMs: 80,
+    blockMs: 120,
     configSequence: 1,
     desiredSequence: 1,
-    formantBaseHz: FORMANT_BASE_AUTO_HZ,
+    formantBaseHz: FORMANT_BASE_MANUAL_DEFAULT_HZ,
     formantCompensation: false,
     formantSemitones: FORMANT_SHIFT_DEFAULT_SEMITONES,
-    intervalMs: 80 / 3,
+    intervalMs: 30,
     pitchSemitones: 0,
     preset: "custom",
     rate: 1,
-    splitComputation: false,
+    splitComputation: true,
     tonalityEnabled: true,
     tonalityHz: TONALITY_LIMIT_DEFAULT_HZ,
     transitionFrames: 2_048,
@@ -211,6 +212,13 @@ export const LISTENING_PRESET_CONTROLS: Record<
   ListeningPreset,
   ListeningPresetControls
 > = {
+  "signalsmith-demo": {
+    formantBaseHz: FORMANT_BASE_MANUAL_DEFAULT_HZ,
+    formantCompensation: false,
+    formantSemitones: FORMANT_SHIFT_DEFAULT_SEMITONES,
+    tonalityEnabled: true,
+    tonalityHz: TONALITY_LIMIT_DEFAULT_HZ,
+  },
   "music-default": {
     formantBaseHz: FORMANT_BASE_AUTO_HZ,
     formantCompensation: false,
@@ -219,7 +227,7 @@ export const LISTENING_PRESET_CONTROLS: Record<
     tonalityHz: TONALITY_LIMIT_DEFAULT_HZ,
   },
   "voice-formant-experiment": {
-    formantBaseHz: FORMANT_BASE_MANUAL_DEFAULT_HZ,
+    formantBaseHz: 120,
     formantCompensation: false,
     formantSemitones: FORMANT_SHIFT_DEFAULT_SEMITONES,
     tonalityEnabled: true,
