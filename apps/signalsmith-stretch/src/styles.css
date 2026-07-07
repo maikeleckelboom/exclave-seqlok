@@ -167,7 +167,7 @@ select:disabled {
 
 .source-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.42fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
 }
 
@@ -185,13 +185,13 @@ select:disabled {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 150px;
+  min-height: 138px;
   padding: 18px;
   gap: 16px;
 }
 
 .app-shell.is-unloaded .drop-surface {
-  min-height: 220px;
+  min-height: 180px;
 }
 
 .drop-surface.is-dragging {

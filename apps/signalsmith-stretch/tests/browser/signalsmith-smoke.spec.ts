@@ -20,7 +20,12 @@ test("primary demo loads the default comparison track and keeps proof diagnostic
   await expect(page.locator("#sourceState")).toHaveText(
     "WAV chunked PCM 16-bit 48000 Hz stereo",
   );
+  await expect(page.locator("#sourceState")).toBeHidden();
   await expect(page.locator("#sourceStatusBadge")).toHaveText("Source loaded");
+  await expect(page.locator("#sourceStatusBadge")).toBeHidden();
+  await expect(page.locator("#runtimeModeBadge")).toBeHidden();
+  await expect(page.locator("#adapterAvailability")).toBeHidden();
+  await expect(page.locator("#metadata")).toBeHidden();
   await expect(page.locator("#waveformPanel")).toBeVisible();
   await expect(page.locator("#waveform")).toBeVisible();
   await expect(page.getByText("Deterministic simulator source")).toHaveCount(0);

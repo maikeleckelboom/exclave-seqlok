@@ -85,9 +85,9 @@ export function renderAppShell(root: HTMLElement): AppElements {
         <div>
           <p class="eyebrow">Seqlok</p>
           <h1>Signalsmith Stretch</h1>
-          <p class="header-copy">A focused time and pitch demo using one Seqlok SharedArrayBuffer spec for the Signalsmith engine.</p>
+          <p class="header-copy">A compact time and pitch demo powered by Signalsmith Stretch.</p>
         </div>
-        <div class="header-facts" aria-label="Runtime facts">
+        <div class="header-facts" aria-label="Runtime facts" hidden>
           <span id="runtimeModeBadge" class="mode-badge">Checking Worklet</span>
           <span id="adapterAvailability">Real adapter readiness unknown</span>
           <span id="sourceStatusBadge" class="source-status-badge">No source loaded</span>
@@ -106,7 +106,7 @@ export function renderAppShell(root: HTMLElement): AppElements {
             <p class="section-label" id="source-title">Local source</p>
             <strong id="sourcePrimary">Drop a WAV file to begin</strong>
             <p id="sourceSecondary">Chunked WAV playback, real-time pitch and time stretch.</p>
-            <p id="sourceState" class="source-state">No source loaded</p>
+            <p id="sourceState" class="source-state" hidden>No source loaded</p>
             <p id="source-truth">WAV is the fastest path; the bundled loop loads automatically.</p>
           </div>
           <label class="file-picker">
@@ -114,7 +114,7 @@ export function renderAppShell(root: HTMLElement): AppElements {
             <input id="fileInput" type="file" accept="audio/*" />
           </label>
         </div>
-        <div id="metadata" class="metadata-grid" aria-live="polite"></div>
+        <div id="metadata" class="metadata-grid" aria-live="polite" hidden></div>
       </section>
 
       <section id="waveformPanel" class="waveform-panel" aria-labelledby="waveform-title" hidden>
