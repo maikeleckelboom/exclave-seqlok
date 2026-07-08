@@ -64,6 +64,9 @@ interface DemoState {
   node: SignalsmithStretchNode | null;
   playheadSeconds: number;
   playing: boolean;
+  seekScrubActive: boolean;
+  seekScrubResumeOnRelease: boolean;
+  seekScrubStop: Promise<unknown> | null;
   session: SignalsmithStretchSession;
 }
 
@@ -81,6 +84,9 @@ const state: DemoState = {
   node: null,
   playheadSeconds: 0,
   playing: false,
+  seekScrubActive: false,
+  seekScrubResumeOnRelease: false,
+  seekScrubStop: null,
   session,
 };
 
@@ -272,10 +278,23 @@ function bindUi(): void {
     syncControlsToDom(readStretchControls(state.session));
     void configureAndSchedule("Controls reset.");
   });
+  elements.seek.addEventListener("pointerdown", (event) => {
+    void beginSeekScrub(event.pointerId);
+  });
+  elements.seek.addEventListener("pointerup", () => {
+    void finishSeekScrub();
+  });
+  elements.seek.addEventListener("pointercancel", () => {
+    void finishSeekScrub();
+  });
   elements.seek.addEventListener("input", () => {
     const next = clampNumber(Number(elements.seek.value), 0, sourceDuration());
     state.playheadSeconds = next;
     renderPlayhead();
+    if (state.seekScrubActive) {
+      setStatus("Seeking.");
+      return;
+    }
     if (state.playing) {
       void scheduleNode({ inputSeconds: next, reason: "Seek applied." });
     }
@@ -444,6 +463,78 @@ async function stop(): Promise<void> {
   await state.node.stop();
   await scheduleNode({ active: false, inputSeconds: 0, reason: "Stopped." });
   render();
+}
+
+async function beginSeekScrub(pointerId: number): Promise<void> {
+  if (elements.seek.disabled || state.seekScrubActive) {
+    return;
+  }
+
+  state.seekScrubActive = true;
+  state.seekScrubResumeOnRelease = state.playing;
+
+  try {
+    elements.seek.setPointerCapture(pointerId);
+  } catch {
+    // Synthetic pointer events in tests do not always create an active capture.
+  }
+
+  if (!state.node || !state.playing) {
+    render();
+    setStatus("Seeking.");
+    return;
+  }
+
+  state.playing = false;
+  state.controls = { ...readStretchControls(state.session), active: false };
+  writeStretchControls(state.session, state.controls);
+  state.playheadSeconds = normalizePlayhead(state.node.inputTime);
+  const stopPromise = state.node.stop();
+  state.seekScrubStop = stopPromise;
+
+  try {
+    await stopPromise;
+  } catch (error) {
+    setError(error);
+    return;
+  } finally {
+    if (state.seekScrubStop === stopPromise) {
+      state.seekScrubStop = null;
+    }
+  }
+
+  if (state.seekScrubActive) {
+    render();
+    setStatus("Seeking.");
+  }
+}
+
+async function finishSeekScrub(): Promise<void> {
+  if (!state.seekScrubActive) {
+    return;
+  }
+
+  const shouldResume = state.seekScrubResumeOnRelease;
+  const stopPromise = state.seekScrubStop;
+  state.seekScrubActive = false;
+  state.seekScrubResumeOnRelease = false;
+
+  if (stopPromise) {
+    try {
+      await stopPromise;
+    } catch (error) {
+      setError(error);
+      return;
+    }
+  }
+
+  if (shouldResume) {
+    await play();
+    return;
+  }
+
+  render();
+  setStatus("Seek applied.");
 }
 
 async function configureAndSchedule(reason: string): Promise<void> {

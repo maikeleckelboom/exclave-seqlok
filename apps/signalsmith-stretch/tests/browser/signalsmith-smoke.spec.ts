@@ -46,6 +46,33 @@ test("loads the Signalsmith Stretch meter demo", async ({ page }) => {
     .poll(() => meterReadout(page, "#meterReadoutL"), { timeout: 10_000 })
     .not.toContain("RMS -inf");
 
+  const scrubTarget = await seekMidpoint(page);
+  await page.locator("#seek").dispatchEvent("pointerdown", {
+    isPrimary: true,
+    pointerId: 1,
+    pointerType: "mouse",
+  });
+  await expect(page.locator("#runtimeFact")).toHaveText("ready");
+  await expect(page.locator("#status")).toContainText("Seeking");
+  await expect
+    .poll(() => outputPeak(page), { timeout: 10_000 })
+    .toBeLessThan(0.001);
+  await setRange(page, "#seek", scrubTarget);
+  await expect(page.locator("#seek")).toHaveValue(scrubTarget);
+  await expect(page.locator("#runtimeFact")).toHaveText("ready");
+  await expect
+    .poll(() => outputPeak(page), { timeout: 10_000 })
+    .toBeLessThan(0.001);
+  await page.locator("#seek").dispatchEvent("pointerup", {
+    isPrimary: true,
+    pointerId: 1,
+    pointerType: "mouse",
+  });
+  await expect(page.locator("#runtimeFact")).toHaveText("playing");
+  await expect
+    .poll(() => outputPeak(page), { timeout: 10_000 })
+    .toBeGreaterThan(0.01);
+
   await setRange(page, "#outputGain", "0");
   await expect(page.locator("#outputGainValue")).toHaveText("0.000x");
   await expect
@@ -132,6 +159,16 @@ async function setRange(
     element.value = nextValue;
     element.dispatchEvent(new Event("input", { bubbles: true }));
   }, value);
+}
+
+async function seekMidpoint(page: Page): Promise<string> {
+  return page.locator("#seek").evaluate((element) => {
+    if (!(element instanceof HTMLInputElement)) {
+      throw new Error("Expected seek input.");
+    }
+
+    return (Number(element.max) / 2).toFixed(2);
+  });
 }
 
 async function publishCount(page: Page): Promise<number> {
