@@ -15,6 +15,11 @@ canonical Seqlok snapshots to the upstream Signalsmith Web API, and the
 downstream meter Worklet proves realtime Seqlok reads and published telemetry
 across the audio boundary.
 
+The demo intentionally uses one bundled official Signalsmith demo loop. There
+is no file picker path and no waveform renderer. The UI surface is deliberately
+reduced to the full control surface, transport and seek controls, compact
+source/contract metadata, and the Seqlok meter readout.
+
 The full Signalsmith control surface is mapped into Seqlok rather than held as
 plain local state. The app writes the UI control state into Seqlok, reads back
 the canonical Seqlok control snapshot, and applies that snapshot to the upstream
@@ -47,7 +52,7 @@ The active path is:
 
 1. Create an `AudioContext`.
 2. Await `SignalsmithStretch(audioContext, channelOptions)`.
-3. Browser-decode the bundled loop or a user-selected file.
+3. Browser-decode the bundled official Signalsmith demo loop.
 4. Reset and load the upstream node with `dropBuffers()` and `addBuffers(...)`.
 5. Write the UI control state into Seqlok.
 6. Read the canonical Seqlok control snapshot.
@@ -56,6 +61,10 @@ The active path is:
 8. Read `control.outputGain` from Seqlok inside `SeqlokMeterWorkletNode`.
 9. Publish RMS, sample peak, peak hold, clip flags, frame count, publish count,
    and dropped publish count back through Seqlok.
+
+No alternate manual file path exists in this proof demo. The deterministic
+source is the bundled official Signalsmith demo loop, decoded by the browser and
+loaded into the upstream node with `dropBuffers()` followed by `addBuffers(...)`.
 
 ## Seqlok Boundary
 
@@ -112,3 +121,5 @@ WASM build step in this proof demo.
   work is explicitly re-scoped as an integration lab.
 - Keep the bundled source labeled as the official Signalsmith demo loop unless
   upstream publishes more specific metadata.
+- Keep the demo free of file-picker and waveform-renderer paths unless the proof
+  is explicitly re-scoped.

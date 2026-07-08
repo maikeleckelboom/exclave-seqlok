@@ -11,14 +11,15 @@ test("loads the Signalsmith Stretch meter demo", async ({ page }) => {
   await expect(page.locator("#loadedSource")).toHaveText(
     "official Signalsmith demo loop",
   );
-  await expect(page.locator("#durationFact")).not.toHaveText("none");
-  await expect(page.locator("#sampleFact")).toContainText("browser decoded");
-  await expect(page.locator("#planFact")).toContainText(
+  await expect(page.locator("#chooseFile")).toHaveCount(0);
+  await expect(page.locator("#waveform")).toHaveCount(0);
+  await expect(page.locator("#sourceMeta")).toContainText("browser decoded");
+  await expect(page.locator("#sourceMeta")).toContainText(/\d+ch\/\d+Hz/u);
+  await expect(page.locator("#sourceMeta")).toContainText(
     "signalsmith-stretch/control-meter-boundary",
   );
   await expect(page.locator("#playButton")).toBeEnabled();
   await expect(page.locator("#seek")).toBeEnabled();
-  await expect.poll(() => canvasHasPaint(page, "#waveform")).toBe(true);
 
   await setRange(page, "#rate", "1.25");
   await expect(page.locator("#rateValue")).toHaveText("1.250x");
@@ -131,32 +132,6 @@ async function setRange(
     element.value = nextValue;
     element.dispatchEvent(new Event("input", { bubbles: true }));
   }, value);
-}
-
-async function canvasHasPaint(
-  page: Page,
-  selector: string,
-): Promise<boolean> {
-  return page.locator(selector).evaluate((element) => {
-    if (!(element instanceof HTMLCanvasElement)) {
-      throw new Error("Expected canvas.");
-    }
-
-    const context = element.getContext("2d");
-    if (!context) {
-      return false;
-    }
-
-    const data = context.getImageData(0, 0, element.width, element.height).data;
-
-    for (let index = 3; index < data.length; index += 4) {
-      if ((data[index] ?? 0) !== 0) {
-        return true;
-      }
-    }
-
-    return false;
-  });
 }
 
 async function publishCount(page: Page): Promise<number> {

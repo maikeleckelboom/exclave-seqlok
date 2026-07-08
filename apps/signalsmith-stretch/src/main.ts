@@ -90,9 +90,6 @@ const meterUi = createMeterUi(appRoot);
 const elements = {
   blockMs: must("#blockMs", HTMLInputElement),
   blockMsNumber: must("#blockMsNumber", HTMLInputElement),
-  canvas: must("#waveform", HTMLCanvasElement),
-  chooseFile: must("#chooseFile", HTMLInputElement),
-  durationFact: must("#durationFact", HTMLElement),
   fileName: must("#fileName", HTMLElement),
   formantBase: must("#formantBase", HTMLInputElement),
   formantBaseAuto: must("#formantBaseAuto", HTMLInputElement),
@@ -108,15 +105,14 @@ const elements = {
   pauseButton: must("#pauseButton", HTMLButtonElement),
   pitch: must("#pitch", HTMLInputElement),
   pitchValue: must("#pitchValue", HTMLElement),
-  planFact: must("#planFact", HTMLElement),
   playButton: must("#playButton", HTMLButtonElement),
   playheadFact: must("#playheadFact", HTMLElement),
   rate: must("#rate", HTMLInputElement),
   rateValue: must("#rateValue", HTMLElement),
   resetButton: must("#resetButton", HTMLButtonElement),
   runtimeFact: must("#runtimeFact", HTMLElement),
-  sampleFact: must("#sampleFact", HTMLElement),
   seek: must("#seek", HTMLInputElement),
+  sourceMeta: must("#sourceMeta", HTMLElement),
   status: must("#status", HTMLElement),
   stopButton: must("#stopButton", HTMLButtonElement),
   tonalityEnabled: must("#tonalityEnabled", HTMLInputElement),
@@ -152,29 +148,19 @@ function renderShell(): string {
 
       <main class="demo-layout">
         <section class="source-panel" aria-label="Source">
-          <div>
+          <div class="source-copy">
             <strong id="fileName">Loading bundled loop</strong>
             <p id="loadedSource">Official Signalsmith demo loop.</p>
+            <p id="sourceMeta" class="compact-meta">loading bundled source</p>
           </div>
-          <label class="file-picker">
-            <span>Choose file</span>
-            <input id="chooseFile" type="file" accept="audio/*" />
-          </label>
         </section>
 
-        <section class="waveform-panel" aria-label="Playback">
-          <div class="section-heading">
-            <h2>Playback</h2>
-            <output id="playheadFact" class="readout">0:00.0</output>
-          </div>
-          <canvas id="waveform" class="waveform" width="1200" height="260"></canvas>
-          <label>
+        <section class="playback-row" aria-label="Playback">
+          <output id="playheadFact" class="readout">0:00.0</output>
+          <label class="seek-control">
             <span>Seek</span>
             <input id="seek" type="range" min="0" max="0" step="0.01" value="0" disabled />
           </label>
-        </section>
-
-        <section class="transport-panel" aria-label="Transport">
           <div class="button-row">
             <button id="playButton" type="button" disabled>Play</button>
             <button id="pauseButton" type="button" disabled>Pause</button>
@@ -254,15 +240,6 @@ function renderShell(): string {
         </section>
 
         ${renderMeterPanel()}
-
-        <section class="facts-panel" aria-label="Demo facts">
-          <dl class="fact-list">
-            <div><dt>Duration</dt><dd id="durationFact">none</dd></div>
-            <div><dt>Source format</dt><dd id="sampleFact">none</dd></div>
-            <div><dt>Signalsmith API</dt><dd>addBuffers + schedule + start/stop</dd></div>
-            <div><dt>Seqlok contract</dt><dd id="planFact">pending</dd></div>
-          </dl>
-        </section>
       </main>
 
       <p id="status" class="status-area" role="status" aria-live="polite">Loading.</p>
@@ -280,12 +257,6 @@ function bindUi(): void {
     });
   }
 
-  elements.chooseFile.addEventListener("change", () => {
-    const file = elements.chooseFile.files?.item(0);
-    if (file) {
-      void loadSourceFromFile(file);
-    }
-  });
   elements.playButton.addEventListener("click", () => {
     void play();
   });
@@ -363,16 +334,6 @@ async function loadDefaultSource(): Promise<void> {
   });
 }
 
-async function loadSourceFromFile(file: File): Promise<void> {
-  await loadSource(file.name, "local browser-decoded source", async (runtime) => {
-    const arrayBuffer = await file.arrayBuffer();
-    const audioBuffer = await runtime.audioContext.decodeAudioData(
-      arrayBuffer.slice(0),
-    );
-    return createDecodedPcmSource(audioBuffer);
-  });
-}
-
 async function loadSource(
   fileName: string,
   label: string,
@@ -400,7 +361,6 @@ async function loadSource(
     writeStretchControls(state.session, state.controls);
     await configureNode(runtime.node);
     await scheduleNode({ active: false, inputSeconds: 0, reason: "Source ready." });
-    drawWaveform(decoded);
     render();
   } catch (error) {
     setError(error);
@@ -673,13 +633,12 @@ function render(): void {
   elements.stopButton.disabled = !hasSource;
   elements.seek.disabled = !hasSource;
   elements.runtimeFact.textContent = state.playing ? "playing" : "ready";
-  elements.planFact.textContent = `${plan.id}; ${plan.bytesTotal.toString()} bytes; ${plan.hash.slice(0, 12)}`;
 
   if (!loaded) {
-    elements.fileName.textContent = "No source loaded";
-    elements.loadedSource.textContent = "Choose a file or wait for the bundled loop.";
-    elements.durationFact.textContent = "none";
-    elements.sampleFact.textContent = "none";
+    elements.fileName.textContent = "Loading bundled loop";
+    elements.loadedSource.textContent = "Official Signalsmith demo loop.";
+    elements.sourceMeta.textContent =
+      `loading | ${plan.id} | ${plan.bytesTotal.toString()} bytes`;
     renderPlayhead();
     return;
   }
@@ -687,8 +646,11 @@ function render(): void {
   elements.fileName.textContent = loaded.fileName;
   elements.loadedSource.textContent = loaded.label;
   elements.seek.max = loaded.decoded.duration.toFixed(2);
-  elements.durationFact.textContent = formatSeconds(loaded.decoded.duration);
-  elements.sampleFact.textContent = `${loaded.decoded.numberOfChannels.toString()} ch, ${loaded.decoded.sampleRate.toString()} Hz, browser decoded`;
+  elements.sourceMeta.textContent =
+    `${formatSeconds(loaded.decoded.duration)} | ` +
+    `${loaded.decoded.numberOfChannels.toString()}ch/` +
+    `${loaded.decoded.sampleRate.toString()}Hz | ` +
+    `${plan.id} | ${plan.bytesTotal.toString()} bytes | browser decoded`;
   renderPlayhead();
   renderMeters();
 }
@@ -717,39 +679,6 @@ function startMeterUiLoop(): void {
 
 function renderMeters(): void {
   renderMeterUi(meterUi, readPublishedMeters(state.session));
-}
-
-function drawWaveform(source: DecodedPcmSource): void {
-  const context = elements.canvas.getContext("2d");
-  if (!context) {
-    return;
-  }
-
-  const width = elements.canvas.width;
-  const height = elements.canvas.height;
-  const data = source.channelData[0] ?? new Float32Array(source.length);
-  const step = Math.max(1, Math.floor(data.length / width));
-  const center = height / 2;
-
-  context.clearRect(0, 0, width, height);
-  context.fillStyle = "#f8f7f4";
-  context.fillRect(0, 0, width, height);
-  context.strokeStyle = "#0f8c7c";
-  context.lineWidth = 2;
-  context.beginPath();
-
-  for (let x = 0; x < width; x += 1) {
-    const start = x * step;
-    let peak = 0;
-    for (let offset = 0; offset < step; offset += 1) {
-      peak = Math.max(peak, Math.abs(data[start + offset] ?? 0));
-    }
-    const y = peak * center * 0.9;
-    context.moveTo(x, center - y);
-    context.lineTo(x, center + y);
-  }
-
-  context.stroke();
 }
 
 function normalizePlayhead(value: number): number {
