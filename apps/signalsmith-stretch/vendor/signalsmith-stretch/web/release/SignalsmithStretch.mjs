@@ -2,7 +2,7 @@ let module = {}, exports = {};
 
 var SignalsmithStretch = (() => {
   var _scriptName = typeof document != 'undefined' ? document.currentScript?.src : undefined;
-  
+
   return (
 function(moduleArg = {}) {
   var moduleRtn;
@@ -27,14 +27,14 @@ function registerWorkletProcessor(Module, audioNodeKey) {
 			this.channels = 0;
 			this.buffersIn = [];
 			this.buffersOut = [];
-			
+
 			this.audioBuffers = []; // list of (multi-channel) audio buffers
 			this.audioBuffersStart = 0; // time-stamp for the first audio buffer
 			this.audioBuffersEnd = 0; // just to be helpful
-			
+
 			this.timeIntervalSamples = sampleRate*0.1;
 			this.timeIntervalCounter = 0;
-			
+
 			this.timeMap = [{
 				active: false,
 				input: 0,
@@ -48,7 +48,7 @@ function registerWorkletProcessor(Module, audioNodeKey) {
 				loopStart: 0,
 				loopEnd: 0
 			}];
-			
+
 			let remoteMethods = {
 				configure: config => {
 					Object.assign(this.config, config);
@@ -69,7 +69,7 @@ function registerWorkletProcessor(Module, audioNodeKey) {
 						if (!('active' in when)) when.active = true;
 						return remoteMethods.schedule(when);
 					}
-					
+
 					let obj = {active: true, input: 0, output: currentTime + this.outputLatencySeconds};
 					if (typeof when === 'number') obj.output = when;
 					if (typeof offset === 'number') obj.input = offset;
@@ -113,7 +113,7 @@ function registerWorkletProcessor(Module, audioNodeKey) {
 						}
 						previous.rate = (obj.input - previous.input)/(obj.output - previous.output);
 					}
-	
+
 					let currentMapSegment = this.timeMap[0];
 					while (this.timeMap.length > 1 && this.timeMap[1].output <= outputTime) {
 						this.timeMap.shift();
@@ -123,7 +123,7 @@ function registerWorkletProcessor(Module, audioNodeKey) {
 					let inputTime = currentMapSegment.input + (outputTime - currentMapSegment.output)*rate;
 					this.timeIntervalCounter = this.timeIntervalSamples;
 					this.port.postMessage(['time', inputTime]);
-					
+
 					return obj;
 				},
 				dropBuffers: toSeconds => {
@@ -196,7 +196,7 @@ function registerWorkletProcessor(Module, audioNodeKey) {
 				pendingMessages = null;
 			});
 		}
-		
+
 		config = {
 			preset: 'default'
 		};
@@ -216,12 +216,12 @@ function registerWorkletProcessor(Module, audioNodeKey) {
 			this.inputLatencySeconds = this.wasmModule._inputLatency()/sampleRate;
 			this.outputLatencySeconds = this.wasmModule._outputLatency()/sampleRate;
 		}
-		
+
 		updateBuffers() {
 			let wasmModule = this.wasmModule;
 			// longer than one STFT block, so we can seek smoothly
 			this.bufferLength = (wasmModule._inputLatency() + wasmModule._outputLatency());
-			
+
 			let lengthBytes = this.bufferLength*4;
 			let bufferPointer = wasmModule._setBuffers(this.channels, this.bufferLength);
 			this.buffersIn = [];
@@ -291,7 +291,7 @@ function registerWorkletProcessor(Module, audioNodeKey) {
 					currentMapSegment.input -= loopLength;
 					inputTime -= loopLength;
 				}
-				
+
 				inputTime += this.inputLatencySeconds;
 				let inputSamplesEnd = Math.round(inputTime*sampleRate);
 
@@ -340,14 +340,14 @@ function registerWorkletProcessor(Module, audioNodeKey) {
 					this.port.postMessage(['time', inputTime]);
 				}
 			}
-			
+
 			// Re-fetch in case the memory changed (even though there *shouldn't* be any allocations)
 			memory = wasmModule.exports ? wasmModule.exports.memory.buffer : wasmModule.HEAP8.buffer;
 			outputList[0].forEach((channelBuffer, c) => {
 				let buffer = new Float32Array(memory, this.buffersOut[c], outputBlockSize);
 				channelBuffer.set(buffer);
 			});
-			
+
 			return true;
 		}
 	}
@@ -422,7 +422,7 @@ SignalsmithStretch = ((Module, audioNodeKey) => {
 				delete requestMap[id];
 			}
 		};
-		
+
 		return new Promise(resolve => {
 			requestMap['ready'] = remoteMethodKeys => {
 				Object.keys(remoteMethodKeys).forEach(key => {

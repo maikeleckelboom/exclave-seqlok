@@ -65,7 +65,7 @@ You can set a "tonality limit", which uses a non-linear frequency map to preserv
 stretch.setTransposeSemitones(4, 8000/sampleRate);
 ```
 
-Alternatively, you can set a custom frequency map, mapping input frequencies to output frequencies (both normalised against the sample-rate): 
+Alternatively, you can set a custom frequency map, mapping input frequencies to output frequencies (both normalised against the sample-rate):
 
 ```cpp
 stretch.setFreqMap([](float inputFreq) {
@@ -94,7 +94,7 @@ You should be supplying input samples slightly ahead of the processing time (whi
 
 All of the `.preset???()` and `.configure()` methods have an optional `splitComputation` flag.  When enabled, this introduces one extra interval of output latency, and uses this to spread the computation out more evenly.
 
-Without this (as is common for spectral processing) the library will occasionally do a bunch of computation all at once, to compute the next spectral block of audio.  This is often fine, when audio's being processed across multiple threads with a decent amount of buffering (like mixing in a DAW), but if you're in a stricter situation then this flag might help. 
+Without this (as is common for spectral processing) the library will occasionally do a bunch of computation all at once, to compute the next spectral block of audio.  This is often fine, when audio's being processed across multiple threads with a decent amount of buffering (like mixing in a DAW), but if you're in a stricter situation then this flag might help.
 
 #### Automation
 
@@ -118,7 +118,7 @@ You can then read the final part of the output using `.flush()`.  It's recommend
 
 ```cpp
 stretch.flush(outputBuffers, outputSamples);
-``` 
+```
 
 Using `.seek()`/`.flush()` like this, you can perform an exact time-stretch on a fixed-length sound, and your result will have `.outputLatency()` of pre-roll.
 

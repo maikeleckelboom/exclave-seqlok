@@ -14,7 +14,7 @@ This provides real and complex FFTs.  They all have `.resize(size_t)`, and `.fft
 
 The `Pow2FFT<>` and `Pow2RealFFT<>` templates wrap around fast implementations where available.
 
-The main `FFT<>`, `RealFFT<>` and `ModifiedRealFFT<>` templates wrap around the `Pow2<>` implementations, to add support for multiples of 3 and 5.  They provide a static `.fastSizeAbove()` to find the next biggest size. 
+The main `FFT<>`, `RealFFT<>` and `ModifiedRealFFT<>` templates wrap around the `Pow2<>` implementations, to add support for multiples of 3 and 5.  They provide a static `.fastSizeAbove()` to find the next biggest size.
 
 ### Chunked computation
 
@@ -94,6 +94,6 @@ To use Accelerate on Mac, link the framework and define `SIGNALSMITH_USE_ACCELER
 g++ -framework Accelerate -DSIGNALSMITH_USE_ACCELERATE
 ```
 
-Similarly, define `SIGNALSMITH_USE_IPP` (and link to `IPP::ippcore` and `IPP::ipps`) for IPP. 
+Similarly, define `SIGNALSMITH_USE_IPP` (and link to `IPP::ippcore` and `IPP::ipps`) for IPP.
 
 Not all PFFFT versions support double-precision, so there are separate `SIGNALSMITH_USE_PFFFT`/`SIGNALSMITH_USE_PFFFT_DOUBLE` flags.
