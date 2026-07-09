@@ -9,7 +9,7 @@ export interface LibraryConfigOptions {
 export function createLibraryConfig(options: LibraryConfigOptions): UserConfig {
   return defineConfig(({ mode }) => ({
     define: {
-      __EXCLAVE_BOUNDARY_DEV_ASSERTS__:
+      __EXCLAVE_SEQWIRE_DEV_ASSERTS__:
         mode === "development" ? "true" : "false",
     },
     build: {

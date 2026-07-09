@@ -233,7 +233,7 @@ function backingKindDetail(value: unknown): string {
  *
  * @typeParam S - Spec type inferred from `plan`.
  *
- * @throws {@link import('../errors').SeqlokError}
+ * @throws {@link import('../errors').SeqWireError}
  * - `handoff.invalidArtifact` if the backing is incompatible with the plan,
  *   or an unsupported backing kind is provided.
  *
@@ -520,7 +520,7 @@ export function acceptHandoff<S extends SpecInput>(
 /**
  * Compare two plans for compatibility.
  *
- * @throws {@link import('../errors').SeqlokError}
+ * @throws {@link import('../errors').SeqWireError}
  * - `handoff.specHashMismatch` if `hash` values differ.
  * - `handoff.backingMismatch` if `bytesTotal` differ.
  */

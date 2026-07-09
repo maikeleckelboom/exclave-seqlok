@@ -3,7 +3,7 @@
 **Audience:** future maintainers, contributors, and “why is it called that?” readers.
 **Status:** design rationale, not user-facing API docs.
 
-This file explains _why_ the core Seqlok API is shaped and named the way it is, which alternatives we tried, and which
+This file explains _why_ the core SeqWire API is shaped and named the way it is, which alternatives we tried, and which
 parts of the surface are considered "frozen" for v1.
 
 For how the pieces fit together at a systems level, see:
@@ -20,7 +20,7 @@ This doc is the naming + semantics layer on top of that.
 
 ## 1. Top-level mental model
 
-Seqlok is a **typed shared-memory wire** between:
+SeqWire is a **typed shared-memory wire** between:
 
 - a **controller side** (main/UI/host/orchestrator),
 - a **processor side** (worker / AudioWorklet / DSP loop), and
@@ -64,14 +64,14 @@ the handoff:
 
 ```ts
 // worker / AudioWorklet
-import { acceptHandoff, bindProcessor, bindObserver } from "@exclave/seqlok";
+import { acceptHandoff, bindProcessor, bindObserver } from "@exclave/seqwire";
 import type { MySpec } from "./spec";
-import type { Handoff } from "@exclave/seqlok";
+import type { Handoff } from "@exclave/seqwire";
 
 type InitMessage = { type: "INIT"; handoff: Handoff<MySpec> };
 
-let proc: import("@exclave/seqlok").ProcessorBinding<MySpec> | undefined;
-let hud: import("@exclave/seqlok").ObserverBinding<MySpec> | undefined;
+let proc: import("@exclave/seqwire").ProcessorBinding<MySpec> | undefined;
+let hud: import("@exclave/seqwire").ObserverBinding<MySpec> | undefined;
 
 self.onmessage = (ev: MessageEvent<InitMessage>) => {
   if (ev.data.type !== "INIT") return;
@@ -245,7 +245,7 @@ On the processor side, v2 removes the requirement to pass `spec` at runtime:
 
 That aligns with the threat model (cooperative bundle, not hostile actors) and keeps processor code slim.
 
-For observers, v0.2.0 surfaces the previously "conceptual" role as a real binding:
+For observers, v0.2.0 surfaces the conceptual role as a real binding:
 
 ```ts
 const observer = bindObserver(accepted);
@@ -666,7 +666,7 @@ We explicitly _do not_ require re-planning on the processor side in v2; `bindPro
 
 ## 6. Error model: why a structured error type
 
-We use a dedicated `SeqlokError` with:
+We use a dedicated `SeqWireError` with:
 
 - `code` – machine-readable identifier (e.g. `spec.invalid`, `plan.overflowRisk`, `binding.doubleBind`),
 - `details` – structured per-throw payload (where, key, expected, accepted, etc.),
@@ -724,11 +724,11 @@ subscriptions.
 
 This was fun but wrong-layered:
 
-- It turned Seqlok into a **state management library** instead of a **wire**.
+- It turned SeqWire into a **state management library** instead of a **wire**.
 - It entangled **reactivity semantics** (subscribe/batching) with the ABI.
 - It bloated the surface area with things apps/frameworks already do well.
 
-Modern Seqlok keeps:
+Modern SeqWire keeps:
 
 - the seqlock-backed memory model,
 - the spec → plan → backing → handoff pipeline,
@@ -800,7 +800,7 @@ because:
 - backpressure,
 - error handling.
 
-Forcing one inside Seqlok would either be too opinionated or too weak.
+Forcing one inside SeqWire would either be too opinionated or too weak.
 
 2. **It complicates the mental model.**
 
@@ -809,7 +809,7 @@ Forcing one inside Seqlok would either be too opinionated or too weak.
 - write params,
 - occasionally read meters.
 
-`subscribe` encourages people to treat Seqlok as a mini store, which drags in questions like:
+`subscribe` encourages people to treat SeqWire as a mini store, which drags in questions like:
 
 - Are callbacks sync or batched?
 - What's the ordering across keys?
@@ -838,12 +838,12 @@ If you want reactivity:
 
 Big shift:
 
-> **Old Seqlok:** “small reactive store + memory wire.”
-> **Current Seqlok:** “boring predictable wire” you _plug into_ your store / engine.
+> **Old SeqWire:** “small reactive store + memory wire.”
+> **Current SeqWire:** “boring predictable wire” you _plug into_ your store / engine.
 
 ### 7.5 Why there is no `controller.params.volume.set(…)` or `.get()`
 
-Seqlok bindings are a **typed shared-memory wire**, not a reactive store with per-field objects.
+SeqWire bindings are a **typed shared-memory wire**, not a reactive store with per-field objects.
 
 On the controller side:
 
@@ -860,7 +860,7 @@ A property-style API like `controller.params.volume.set(0.8)`:
 
 If you prefer "handles" like `volume.set(value)` and `volume.get()`, build them in your own control layer on top of the
 controller binding (for example, small helpers that delegate to `params.set` / `params.snapshot`).
-`@exclave/seqlok` stays the boring, explicit wire.
+`@exclave/seqwire` stays the boring, explicit wire.
 
 ---
 
@@ -907,7 +907,7 @@ That's how we keep the API intentional instead of "whatever sounded nice that we
 
 ## 9. Diagnostics domain (`diagnostics.*`)
 
-Diagnostics in Seqlok is **introspection-only**. It lives entirely off the hot path and is not required for normal use.
+Diagnostics in SeqWire is **introspection-only**. It lives entirely off the hot path and is not required for normal use.
 
 There are three layers involved:
 

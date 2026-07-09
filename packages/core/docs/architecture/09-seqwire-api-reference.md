@@ -1,11 +1,11 @@
 # API Reference
 
-Complete API documentation for `@exclave/seqlok`.
+Complete API documentation for `@exclave/seqwire`.
 
 This file is about **shape and signatures**. For rationale and design notes, see:
 
-- `07-seqlok-api-shape-rationale.md`
-- `08-seqlok-api-and-naming-rationale.md`
+- `07-seqwire-api-shape-rationale.md`
+- `08-seqwire-api-and-naming-rationale.md`
 
 ---
 
@@ -191,7 +191,7 @@ declare function allocateWasm<S extends SpecInput>(
   - plane offsets/lengths are derived from `Plan<S>`,
   - typed views are created as `new <TypedArray>(memory.buffer, offset, length)`.
 
-- Intended for WASM-heavy engines that want "DSP state + Seqlok planes" in the same linear memory.
+- Intended for WASM-heavy engines that want "DSP state + SeqWire planes" in the same linear memory.
 
 - **Current limitation (v0.2.0)**:
 
@@ -308,7 +308,7 @@ verifyHandoff(plan, accepted.plan); // throws on mismatch
   - per-plane byte lengths,
   - plan `version`.
 
-- Throws `SeqlokError` on mismatch:
+- Throws `SeqWireError` on mismatch:
 
   - `handoff.specHashMismatch`
   - `handoff.versionMismatch`
@@ -356,7 +356,7 @@ import {
   buildHandoff,
   bindController,
   type Handoff,
-} from "@exclave/seqlok";
+} from "@exclave/seqwire";
 
 export const spec = defineSpec(/* ... */);
 const plan = planLayout(spec);
@@ -397,8 +397,8 @@ declare function bindProcessor<S extends SpecInput>(
 Typical usage (worker / AudioWorklet):
 
 ```ts
-import { acceptHandoff, bindProcessor } from "@exclave/seqlok";
-import type { Handoff } from "@exclave/seqlok";
+import { acceptHandoff, bindProcessor } from "@exclave/seqwire";
+import type { Handoff } from "@exclave/seqwire";
 import type { Spec } from "./spec";
 
 self.onmessage = (
@@ -1019,6 +1019,6 @@ Selected examples (non-exhaustive):
 
 - `internal.assertionFailed`, `internal.unreachable`, `internal.exhaustiveness`
 
-  - Internal invariants violated; these indicate bugs in Seqlok itself.
+  - Internal invariants violated; these indicate bugs in SeqWire itself.
 
 All error codes are centralized in the error registry and covered by tests to prevent accidental renames or silent semantic changes.

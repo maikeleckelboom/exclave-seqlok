@@ -1,24 +1,24 @@
-# Seqlok: Error System & Fail-Fast Philosophy
+# SeqWire: Error System & Fail-Fast Philosophy
 
-> _When things are wrong, Seqlok tells you loudly and immediately._
+> _When things are wrong, SeqWire tells you loudly and immediately._
 
 This document explains:
 
-- Where Seqlok can fail
+- Where SeqWire can fail
 - How errors are structured and surfaced
 - Why the library **refuses** to silently recover from certain problems
-- How to work with `SeqlokError` as a user or contributor
+- How to work with `SeqWireError` as a user or contributor
 
 The short version:
 
-> Seqlok is a **low-level concurrency + memory primitive**.
+> SeqWire is a **low-level concurrency + memory primitive**.
 > When invariants are broken, it prefers a clean crash over quiet corruption.
 
 ---
 
 ## 1. Why Fail-Fast?
 
-Seqlok sits at the bottom of a stack:
+SeqWire sits at the bottom of a stack:
 
 - It defines the **memory plan** for shared buffers.
 - It controls **concurrency semantics** over that memory.
@@ -38,16 +38,16 @@ That is worse than:
 
 So the philosophy is:
 
-> If Seqlok detects a violation of its invariants, it throws a structured `SeqlokError`.
+> If SeqWire detects a violation of its invariants, it throws a structured `SeqWireError`.
 > It does **not** attempt best-effort recovery or automatic fallback.
 
-Higher-level code is free to catch those and decide what to do (show a dialog, disable a device, rebuild a graph), but **Seqlok itself** doesn't try to patch over broken fundamentals.
+Higher-level code is free to catch those and decide what to do (show a dialog, disable a device, rebuild a graph), but **SeqWire itself** doesn't try to patch over broken fundamentals.
 
 ---
 
 ## 2. Error Architecture at a Glance
 
-Seqlok's error system has three pillars:
+SeqWire's error system has three pillars:
 
 1. **Single error class** for all kernel-originated failures.
 2. **Central registry of codes → payload types → metadata.**
@@ -62,19 +62,19 @@ import {
   type ErrorCode,
   type ErrorPayload,
   type ErrorMeta,
-  SeqlokError,
-  isSeqlokError,
+  SeqWireError,
+  isSeqWireError,
   getErrorMeta,
   interpretHealth,
-} from "@exclave/seqlok";
+} from "@exclave/seqwire";
 ```
 
 - `ErrorCode` – finite union of string codes (`'env.unsupported'`, `'backing.allocUndersized'`, …).
 - `ErrorPayload<C>` – details payload type for code `C`.
 - `ErrorMeta` – static metadata per code (severity, recoverable, docs section, etc.).
-- `SeqlokError<C extends ErrorCode>` – the concrete error class Seqlok throws.
+- `SeqWireError<C extends ErrorCode>` – the concrete error class SeqWire throws.
 
-`SeqlokError` carries:
+`SeqWireError` carries:
 
 - `code: C`
 - `message: string`
@@ -111,19 +111,19 @@ Design constraints:
 
 - **No `any` in payloads.** Every code has a dedicated payload type.
 - **No ad-hoc strings.** All codes live in domain-specific registries.
-- The only class thrown by the kernel is `SeqlokError`.
+- The only class thrown by the kernel is `SeqWireError`.
 
 ### 2.3 Health interpretation (consumer-side)
 
 Consumers never need to parse error messages. Instead, they use:
 
 ```ts
-import { isSeqlokError, getErrorMeta, interpretHealth } from "@exclave/seqlok";
+import { isSeqWireError, getErrorMeta, interpretHealth } from "@exclave/seqwire";
 
 try {
-  // … Seqlok operations …
+  // … SeqWire operations …
 } catch (err) {
-  if (isSeqlokError(err)) {
+  if (isSeqWireError(err)) {
     const meta = getErrorMeta(err.code);
     const health = interpretHealth(meta);
 
@@ -157,11 +157,11 @@ That's the canonical way to decide how hard you should crash, and what to tell t
 
 ## 3. Where Errors Come From (Phases)
 
-Errors can originate in several phases of Seqlok's lifecycle.
+Errors can originate in several phases of SeqWire's lifecycle.
 
 ### 3.1 Environment / prerequisites (`env.*`)
 
-Before you even plan or allocate, the environment must support Seqlok's core assumptions:
+Before you even plan or allocate, the environment must support SeqWire's core assumptions:
 
 - Shared memory (`SharedArrayBuffer` / shared `WebAssembly.Memory`)
 - Atomics on typed arrays
@@ -214,7 +214,7 @@ Handoffs are structured envelopes used to ship plan+backing across agents.
 Typical errors:
 
 - `handoff.invalidArtifact` – structurally malformed; missing required fields or incompatible schema.
-- `handoff.versionMismatch` – handoff produced by a different Seqlok version or incompatible schema version.
+- `handoff.versionMismatch` – handoff produced by a different SeqWire version or incompatible schema version.
 - `handoff.specHashMismatch` – spec driving this process doesn’t match the one that produced the handoff.
 - `handoff.backingMismatch` – handoff doesn’t describe the provided backing accurately.
 
@@ -227,7 +227,7 @@ At:
 - `bindController(spec, plan, backing)`
 - `bindProcessor(accepted)`
 
-Seqlok checks spec, plan, backing, and handoff against each other.
+SeqWire checks spec, plan, backing, and handoff against each other.
 
 Examples:
 
@@ -258,11 +258,11 @@ Auxiliary domains:
 - `diagnostics.*` – counters/metrics that should “never happen” (NaN, Infinity, negative counts, etc.).
 - `internal.assertionFailed`, `internal.unreachable`, `internal.exhaustiveness` – hard kernel bugs / missing `switch` branches.
 
-These are treated as **fatal** and point at problems in Seqlok itself, not user code.
+These are treated as **fatal** and point at problems in SeqWire itself, not user code.
 
 ---
 
-## 4. `SeqlokError` Shape & Usage
+## 4. `SeqWireError` Shape & Usage
 
 ### 4.1 What you get at call sites
 
@@ -275,8 +275,8 @@ try {
   const backing = allocatePacked(plan);
   const controller = bindController(spec, plan, backing);
 } catch (err) {
-  if (isSeqlokError(err)) {
-    console.error("Seqlok failed:", err.code, err.message, err.details);
+  if (isSeqWireError(err)) {
+    console.error("SeqWire failed:", err.code, err.message, err.details);
   } else {
     throw err;
   }
@@ -289,7 +289,7 @@ Key points:
 - `err.details` is a typed object; the shape depends on `err.code`.
 - `err.message` is for humans, not for branching logic.
 
-You never need to construct `SeqlokError` manually from application code; that's a kernel concern.
+You never need to construct `SeqWireError` manually from application code; that's a kernel concern.
 
 ### 4.2 Anatomy of a payload
 
@@ -339,7 +339,7 @@ APIs:
 - Broken handoffs
 - Unsupported environments
 
-This is where Seqlok is intentionally strict: if something is wrong, you get a `SeqlokError` and initialization fails.
+This is where SeqWire is intentionally strict: if something is wrong, you get a `SeqWireError` and initialization fails.
 
 Guideline:
 
@@ -368,11 +368,11 @@ The design intent:
 
 ---
 
-## 6. What Seqlok Does _Not_ Do
+## 6. What SeqWire Does _Not_ Do
 
 ### 6.1 No silent fallbacks
 
-Seqlok does **not**:
+SeqWire does **not**:
 
 - Fall back from SAB to `postMessage` if SAB is unavailable.
 - “Emulate” Atomics with locks or message passing.
@@ -384,11 +384,11 @@ Reasoning:
 - They can break real-time guarantees (e.g. GC from copying).
 - They turn clear failures into subtle performance/behavior regressions.
 
-If the environment doesn't satisfy Seqlok's requirements, you get an `env.*` or `binding.*` error and **initialization fails**.
+If the environment doesn't satisfy SeqWire's requirements, you get an `env.*` or `binding.*` error and **initialization fails**.
 
 ### 6.2 No best-effort layout "fixes"
 
-If a backing buffer is too small or incorrectly aligned, Seqlok does **not**:
+If a backing buffer is too small or incorrectly aligned, SeqWire does **not**:
 
 - Truncate the plan
 - Shift offsets
@@ -402,7 +402,7 @@ Helpers that create backings for you (`allocatePacked`, `allocateWasm`) are desi
 
 If you change your spec:
 
-- Seqlok does **not** try to interpret old handoffs or backings as if they matched the new spec.
+- SeqWire does **not** try to interpret old handoffs or backings as if they matched the new spec.
 - There is no hidden migration layer inside the kernel.
 
 Your app is responsible for:
@@ -412,7 +412,7 @@ Your app is responsible for:
 - Rebuilding plans/backings
 - Rebinding controller & processor
 
-Seqlok simply enforces "spec and backing must match" and fails when they don't.
+SeqWire simply enforces "spec and backing must match" and fails when they don't.
 
 ---
 
@@ -428,12 +428,12 @@ import {
   planLayout,
   allocatePacked,
   bindController,
-  isSeqlokError,
+  isSeqWireError,
   interpretHealth,
   getErrorMeta,
-} from "@exclave/seqlok";
+} from "@exclave/seqwire";
 
-function createSeqlokDevice() {
+function createSeqWireDevice() {
   try {
     const spec = defineSpec(/* … */);
     const plan = planLayout(spec);
@@ -442,10 +442,10 @@ function createSeqlokDevice() {
 
     return { spec, plan, backing, controller };
   } catch (err) {
-    if (isSeqlokError(err)) {
+    if (isSeqWireError(err)) {
       const health = interpretHealth(getErrorMeta(err.code));
 
-      console.error(`[Seqlok] ${health.label}: ${err.message}`, err.details);
+      console.error(`[SeqWire] ${health.label}: ${err.message}`, err.details);
 
       if (!health.recoverable) {
         // Device cannot be used in this environment/config.
@@ -456,7 +456,7 @@ function createSeqlokDevice() {
       return null;
     }
 
-    throw err; // non-Seqlok error; let it propagate
+    throw err; // non-SeqWire error; let it propagate
   }
 }
 ```
@@ -464,7 +464,7 @@ function createSeqlokDevice() {
 Guidelines:
 
 - **Centralize** error handling around initialization and major topology changes.
-- Treat `SeqlokError` as "this device / environment / binding is misconfigured or unhealthy."
+- Treat `SeqWireError` as "this device / environment / binding is misconfigured or unhealthy."
 - Use `interpretHealth` to decide whether to retry, rebuild, or fail hard.
 
 ### 7.2 Runtime handling
@@ -479,7 +479,7 @@ For hot paths, only catch if you genuinely have a strategy:
 
 ## 8. Guidelines for Contributors
 
-If you're working on Seqlok internals (or on tightly coupled helpers), these rules apply.
+If you're working on SeqWire internals (or on tightly coupled helpers), these rules apply.
 
 ### 8.1 Never throw bare `Error`
 
@@ -509,7 +509,7 @@ invariant(
 );
 ```
 
-All kernel-originated failures that escape **must** be `SeqlokError`.
+All kernel-originated failures that escape **must** be `SeqWireError`.
 
 ### 8.2 Reuse existing codes where reasonable
 
@@ -572,11 +572,11 @@ it("throws backing.allocUndersized for too-small buffer", () => {
 
 ## 9. Summary
 
-- Seqlok is a **low-level shared-memory kernel**; silent failure is unacceptable.
-- All kernel-originated failures are surfaced as **`SeqlokError`** with a small, structured set of codes and typed payloads.
+- SeqWire is a **low-level shared-memory kernel**; silent failure is unacceptable.
+- All kernel-originated failures are surfaced as **`SeqWireError`** with a small, structured set of codes and typed payloads.
 - Error **domains** (`spec.*`, `plan.*`, `backing.*`, `handoff.*`, `binding.*`, `primitives.*`, `env.*`, `diagnostics.*`, `internal.*`) mirror the architectural layers.
 - The library chooses **fail-fast** over "best-effort recovery" when core invariants are violated.
-- Users should handle errors primarily at **initialization time**, using `isSeqlokError`, `getErrorMeta`, and `interpretHealth` to decide on recovery.
+- Users should handle errors primarily at **initialization time**, using `isSeqWireError`, `getErrorMeta`, and `interpretHealth` to decide on recovery.
 - Contributors must:
 
   - Avoid bare `Error`
@@ -584,4 +584,4 @@ it("throws backing.allocUndersized for too-small buffer", () => {
   - Keep domains clean
   - Test every new error path
 
-If you treat Seqlok as a **sharp but honest tool**—one that refuses to lie about the state of shared memory—its error system becomes a safety harness instead of a nuisance.
+If you treat SeqWire as a **sharp but honest tool**—one that refuses to lie about the state of shared memory—its error system becomes a safety harness instead of a nuisance.

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { allocatePartitioned } from "../../src/backing/allocate-partitioned";
 import { getBackingBuffer } from "../../src/backing/buffers";
-import { SeqlokError } from "../../src/errors/error";
+import { SeqWireError } from "../../src/errors/error";
 import { planLayout } from "../../src/plan/layout";
 import { defineSpec } from "../../src/spec/define";
 
@@ -21,13 +21,13 @@ describe("getBackingBuffer: Partitioned Backing Restrictions", () => {
     const backing = allocatePartitioned(plan);
 
     // Assert that the generic error type is correct
-    expect(() => getBackingBuffer(backing)).toThrow(SeqlokError);
+    expect(() => getBackingBuffer(backing)).toThrow(SeqWireError);
 
     // Inspect specific error codes and details
     try {
       getBackingBuffer(backing);
     } catch (error) {
-      const err = error as SeqlokError;
+      const err = error as SeqWireError;
 
       // Partitioned backings split memory across multiple independent buffers (planes).
       // Therefore, requesting a single global SharedArrayBuffer is a logic error.

@@ -1,34 +1,34 @@
-# Seqlok Signalsmith Stretch Demo
+# SeqWire Signalsmith Stretch Demo
 
 - **Status:** proof demo authority; not package API authority
 - **Date:** 2026-07-08
 - **Product:** Signalsmith Stretch
-- **Seqlok package:** `@exclave/seqlok`
+- **SeqWire package:** `@exclave/seqwire`
 - **Contract id:** `signalsmith-stretch/control-meter-boundary`
 
 ## Current Scope
 
-`apps/signalsmith-stretch` proves that Seqlok can model the full typed control
+`apps/signalsmith-stretch` proves that SeqWire can model the full typed control
 and telemetry contract around a real DSP engine. Signalsmith remains the DSP
-engine. Seqlok owns the control and meter contract. The adapter applies
-canonical Seqlok snapshots to the upstream Signalsmith Web API, and the
-downstream meter Worklet proves realtime Seqlok reads and published telemetry
+engine. SeqWire owns the control and meter contract. The adapter applies
+canonical SeqWire snapshots to the upstream Signalsmith Web API, and the
+downstream meter Worklet proves realtime SeqWire reads and published telemetry
 across the audio boundary.
 
 The demo intentionally uses one bundled official Signalsmith demo loop. There
 is no file picker path and no waveform renderer. The UI surface is deliberately
 reduced to the full control surface, transport and seek controls, compact
-source/contract metadata, and the Seqlok meter readout.
+source/contract metadata, and the SeqWire meter readout.
 
-The full Signalsmith control surface is mapped into Seqlok rather than held as
-plain local state. The app writes the UI control state into Seqlok, reads back
-the canonical Seqlok control snapshot, and applies that snapshot to the upstream
+The full Signalsmith control surface is mapped into SeqWire rather than held as
+plain local state. The app writes the UI control state into SeqWire, reads back
+the canonical SeqWire control snapshot, and applies that snapshot to the upstream
 Signalsmith API from the main thread. The custom AudioWorklet is a downstream
-realtime Seqlok audio-boundary proof node that reads `control.outputGain` and
-publishes live meters back through Seqlok.
+realtime SeqWire audio-boundary proof node that reads `control.outputGain` and
+publishes live meters back through SeqWire.
 
 This is not a fake DSP demo, not a custom Signalsmith fork, and not a claim that
-the internal upstream Signalsmith DSP Worklet reads Seqlok memory directly. The
+the internal upstream Signalsmith DSP Worklet reads SeqWire memory directly. The
 demo intentionally does not contain a custom Signalsmith DSP Worklet, custom
 Signalsmith transport, command ring, streaming source state, custom WAV parser,
 source prefetcher, fake engine, private C++ build, generated WASM module, or
@@ -45,7 +45,7 @@ import SignalsmithStretch from "../vendor/signalsmith-stretch/web/release/Signal
 The audio graph is:
 
 ```text
-SignalsmithStretchNode -> SeqlokMeterWorkletNode -> audioContext.destination
+SignalsmithStretchNode -> SeqWireMeterWorkletNode -> audioContext.destination
 ```
 
 The active path is:
@@ -54,21 +54,21 @@ The active path is:
 2. Await `SignalsmithStretch(audioContext, channelOptions)`.
 3. Browser-decode the bundled official Signalsmith demo loop.
 4. Reset and load the upstream node with `dropBuffers()` and `addBuffers(...)`.
-5. Write the UI control state into Seqlok.
-6. Read the canonical Seqlok control snapshot.
-7. Apply that canonical Seqlok snapshot to the upstream node with
+5. Write the UI control state into SeqWire.
+6. Read the canonical SeqWire control snapshot.
+7. Apply that canonical SeqWire snapshot to the upstream node with
    `configure(...)`, `schedule(...)`, `start(...)`, and `stop(...)`.
-8. Read `control.outputGain` from Seqlok inside `SeqlokMeterWorkletNode`.
+8. Read `control.outputGain` from SeqWire inside `SeqWireMeterWorkletNode`.
 9. Publish RMS, sample peak, peak hold, clip flags, frame count, publish count,
-   and dropped publish count back through Seqlok.
+   and dropped publish count back through SeqWire.
 
 No alternate manual file path exists in this proof demo. The deterministic
 source is the bundled official Signalsmith demo loop, decoded by the browser and
 loaded into the upstream node with `dropBuffers()` followed by `addBuffers(...)`.
 
-## Seqlok Boundary
+## SeqWire Boundary
 
-The full Signalsmith control surface remains modeled in Seqlok:
+The full Signalsmith control surface remains modeled in SeqWire:
 
 - `config.blockMs`
 - `config.intervalMs`
@@ -83,7 +83,7 @@ The full Signalsmith control surface remains modeled in Seqlok:
 - `control.formantBaseHz`
 - `control.outputGain`
 
-The downstream Worklet publishes this meter surface back through Seqlok:
+The downstream Worklet publishes this meter surface back through SeqWire:
 
 - `levels.rmsL`
 - `levels.rmsR`
@@ -111,11 +111,11 @@ WASM build step in this proof demo.
 
 ## Guardrails
 
-- Keep `@exclave/seqlok` public API untouched.
+- Keep `@exclave/seqwire` public API untouched.
 - Keep Signalsmith-specific code private to the demo app.
 - Do not claim custom Signalsmith DSP, custom Signalsmith transport, or
   zero-copy audio behavior.
-- Do not claim the internal upstream Signalsmith DSP Worklet reads Seqlok memory
+- Do not claim the internal upstream Signalsmith DSP Worklet reads SeqWire memory
   directly.
 - Do not reintroduce a fake engine or streaming source architecture unless the
   work is explicitly re-scoped as an integration lab.

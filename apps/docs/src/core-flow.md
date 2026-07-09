@@ -1,6 +1,6 @@
-# Seqlok Flow
+# SeqWire Flow
 
-Seqlok has one explicit flow. The steps are intentionally separate so layout ownership, backing allocation, and runtime capability transfer remain visible.
+SeqWire has one explicit flow. The steps are intentionally separate so layout ownership, backing allocation, and runtime capability transfer remain visible.
 
 ## Shared Backing Model
 

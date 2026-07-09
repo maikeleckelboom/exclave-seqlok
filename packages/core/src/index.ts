@@ -1,9 +1,9 @@
 /**
  * @fileoverview
- * Core module for Seqlok.
+ * Core module for SeqWire.
  *
  * @remarks
- * - Re-exports all public APIs for the @exclave/seqlok package.
+ * - Re-exports all public APIs for the @exclave/seqwire package.
  * - Organized into logical sections: SPEC, PLAN, BACKING, BINDING, HANDOFF, and ERRORS.
  * - This is the main entry point for consumers of the library.
  */
@@ -76,7 +76,7 @@ export { buildHandoff, acceptHandoff, verifyHandoff } from "./handoff/handoff";
 export type { Handoff, HandoffPacking, AcceptedHandoff } from "./handoff/types";
 
 // ERRORS
-export { SeqlokError, isSeqlokError } from "./errors/error";
+export { SeqWireError, isSeqWireError } from "./errors/error";
 export { getErrorMeta, getErrorMessage, isErrorCode } from "./errors/registry";
 export { interpretHealth } from "./errors/health";
 

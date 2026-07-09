@@ -1,6 +1,6 @@
 # SWSR Command Ring
 
-**Status:** Draft – targeted for `@exclave/seqlok` v0.3.0
+**Status:** Draft – targeted for `@exclave/seqwire` v0.3.0
 **Audience:** Engine orchestration, Dekzer driver, infra
 
 This document specifies a **Single-Writer Single-Reader (SWSR) command ring** used to
@@ -15,7 +15,7 @@ It is deliberately narrow:
 - No implicit command dropping.
 
 This ring is for **discrete events** (commands), not continuous parameters. For
-continuous parameters, Seqlok params/meters remain the primary mechanism.
+continuous parameters, SeqWire params/meters remain the primary mechanism.
 
 ---
 
@@ -47,7 +47,7 @@ Responsibilities:
 - Poll/dequeue commands in FIFO order.
 - Apply commands atomically and deterministically to local state.
 - Bound worst-case work per audio block (e.g. max commands per block).
-- Expose any relevant state to Seqlok meters/params.
+- Expose any relevant state to SeqWire meters/params.
 
 ---
 
@@ -173,7 +173,7 @@ Error surfaces:
   at construction time, not at runtime.
 - **Operational pressure** is surfaced via `push` returning `false`.
 
-Instrumentation is handled externally via Seqlok meters, e.g.:
+Instrumentation is handled externally via SeqWire meters, e.g.:
 
 - `commandQueue.size` – current queue depth.
 - `commandQueue.droppedWrites` – cumulative count of failed `push` attempts.
@@ -183,11 +183,11 @@ These meters give you dashboard visibility without baking policy into the ring.
 
 ---
 
-## 6. Integration with Seqlok
+## 6. Integration with SeqWire
 
 ### 6.1 Relationship to params/meters
 
-The command ring carries **discrete events**. Seqlok params/meters carry **state**.
+The command ring carries **discrete events**. SeqWire params/meters carry **state**.
 
 Recommended split:
 
@@ -199,10 +199,10 @@ Recommended split:
 Pattern:
 
 - Writer:
-  - Uses Seqlok **controller** to update current param values.
+  - Uses SeqWire **controller** to update current param values.
   - Uses **command ring** to request structural/state transitions.
 - Reader:
-  - Uses Seqlok **processor** to read params within an audio block (`within`).
+  - Uses SeqWire **processor** to read params within an audio block (`within`).
   - Uses **command ring** to process queued events before/after sample loops.
 
 This keeps the ring lean and avoids asking it to be a param transport.
@@ -211,14 +211,14 @@ This keeps the ring lean and avoids asking it to be a param transport.
 
 The SWSR ring is expected to be backed by:
 
-- A dedicated **SharedArrayBuffer** or a **plane** within a larger Seqlok backing.
+- A dedicated **SharedArrayBuffer** or a **plane** within a larger SeqWire backing.
 
 But it is **not** part of the canonical spec → plan → backing → handoff DSL.
 
 Instead:
 
-- The ring is a "sidecar" protocol layered beside Seqlok:
-  - It may use Seqlok allocation helpers or companion types.
+- The ring is a "sidecar" protocol layered beside SeqWire:
+  - It may use SeqWire allocation helpers or companion types.
   - It does not affect the params/meters layout or hashes.
   - It is versioned and documented as a separate protocol.
 
@@ -254,7 +254,7 @@ These scenarios will be reflected in both tests and higher-level docs.
   - `trackLoaded` (boolean or enum).
   - `decoderWarmth` or other telemetry.
 
-The ring delivers the **event**, Seqlok meters corroborate the **state**.
+The ring delivers the **event**, SeqWire meters corroborate the **state**.
 
 ### 7.2 Golden Flow 2 – Engine Swap via SwapTicket
 
@@ -341,7 +341,7 @@ The ring thus carries **coalesced state transitions**, not every intermediate tw
 - **No implicit dropping**: all drops are explicit and visible via return values
   and/or meters.
 - **No RPC semantics**: no built-in replies or acknowledgements; responses are
-  modelled via Seqlok meters or separate mechanisms.
+  modelled via SeqWire meters or separate mechanisms.
 
 ---
 

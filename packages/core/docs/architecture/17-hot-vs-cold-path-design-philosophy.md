@@ -6,15 +6,15 @@
 
 - ADR-00C — Meter Writes & Snapshot `into` (Controller side)
 - ADR-00F — ControllerParams.hydrate() for Cold-Path Bulk Updates
-- ADR-00Z — Observer Binding Role in `@exclave/seqlok`
-- 07 — Seqlok API Shape Rationale
-- 09 — Seqlok API Reference
+- ADR-00Z — Observer Binding Role in `@exclave/seqwire`
+- 07 — SeqWire API Shape Rationale
+- 09 — SeqWire API Reference
 
 ---
 
 ## Overview
 
-Seqlok's API surface is shaped by an implicit **temperature-based design philosophy**: operations are designed for either **hot paths** (real-time, performance-critical) or **cold paths** (human-time, ergonomics-centric), never both.
+SeqWire's API surface is shaped by an implicit **temperature-based design philosophy**: operations are designed for either **hot paths** (real-time, performance-critical) or **cold paths** (human-time, ergonomics-centric), never both.
 
 This document formalizes that philosophy and provides guidance for evaluating existing APIs and designing new features.
 
@@ -42,7 +42,7 @@ This document formalizes that philosophy and provides guidance for evaluating ex
 - Inline-friendly (small, predictable code paths)
 - Cache-conscious (minimize SAB thrashing)
 
-**Examples in Seqlok:**
+**Examples in SeqWire:**
 
 ```ts
 // Hot: Audio quantum processing
@@ -93,7 +93,7 @@ controller.params.stage("eqBands", (dst) => {
 - Type conversions, validation, and defensive checks
 - Can touch multiple planes or domains in one call
 
-**Examples in Seqlok:**
+**Examples in SeqWire:**
 
 ```ts
 // Cold: Preset loading (scalars + arrays in one call)
@@ -312,7 +312,7 @@ When designing a new operation, follow this process:
 
 ---
 
-## Examples Throughout Seqlok
+## Examples Throughout SeqWire
 
 ### Controller Binding
 
@@ -431,18 +431,18 @@ async function loadPreset(name: string) {
 
 ## Summary
 
-Temperature-based design is a **first-class principle** in Seqlok:
+Temperature-based design is a **first-class principle** in SeqWire:
 
 - **Hot path**: Real-time frequencies, allocation-free, bounded latency, specialized verbs
 - **Cold path**: Human-time frequencies, ergonomic, flexible types, bulk operations
 
-Every Seqlok operation has a temperature. Every new API must declare its temperature and honor the corresponding performance contracts.
+Every SeqWire operation has a temperature. Every new API must declare its temperature and honor the corresponding performance contracts.
 
 This philosophy is reflected in:
 
 - ADR-00F's decision to separate `update` (hot) and `hydrate` (cold)
 - ADR-00Z's distinction between controller (cold) and observer (hot) snapshots
 - ADR-00C's `into` optimization for hot polling loops
-- The entire binding API surface (see 09-seqlok-api-reference.md)
+- The entire binding API surface (see 09-seqwire-api-reference.md)
 
 When in doubt, ask: **"Is this hot or cold?"** The answer determines everything else.

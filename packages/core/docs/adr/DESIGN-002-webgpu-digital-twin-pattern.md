@@ -2,13 +2,13 @@
 
 **Context**: High-performance visualization
 **Target**: 10k+ entities, waveforms, analyzers
-**Tech**: `@exclave/seqlok`, WebGPU, WGSL
+**Tech**: `@exclave/seqwire`, WebGPU, WGSL
 
 ---
 
 ## 1. Idea
 
-A Seqlok domain exposes its **meters** as plain typed views on top of a `SharedArrayBuffer`. WebGPU consumes typed views as `GPUBuffer` data.
+A SeqWire domain exposes its **meters** as plain typed views on top of a `SharedArrayBuffer`. WebGPU consumes typed views as `GPUBuffer` data.
 
 The "digital twin" pattern is:
 
@@ -22,7 +22,7 @@ Data path:
 Processor (bindProcessor)
     └─ meters.publish(...)
          ↓
-SharedArrayBuffer (Seqlok backing)
+SharedArrayBuffer (SeqWire backing)
          ↓
 Observer (bindObserver).meters.snapshot(...)
          ↓
@@ -37,7 +37,7 @@ WGSL shader
 
 WGSL has strict alignment rules (notably `vec3` padded to 16 bytes). To keep copies trivial:
 
-- Use **SoA** (structure-of-arrays) in Seqlok as the default.
+- Use **SoA** (structure-of-arrays) in SeqWire as the default.
 - Let WGSL bind one storage buffer per component, or pack into `vec4` on the GPU side.
 
 Example: swarm / particle positions and energy.
@@ -121,7 +121,7 @@ Everything else (physics, shading, blending, trails, etc.) lives off-thread or o
 
 ## 4. WGSL bindings
 
-WGSL maps directly to the Seqlok meter arrays.
+WGSL maps directly to the SeqWire meter arrays.
 
 SoA mapping:
 
@@ -180,13 +180,13 @@ Same pattern, different shape:
   - line strip / triangle strip for the waveform
   - bar/heatmap textures for spectrum
 
-Seqlok doesn't know or care whether the reader is a DOM 2D canvas or WebGPU; it just provides a coherent SAB-backed array.
+SeqWire doesn't know or care whether the reader is a DOM 2D canvas or WebGPU; it just provides a coherent SAB-backed array.
 
 ---
 
 ## 7. Invariants
 
-- Renderer never mutates Seqlok planes.
+- Renderer never mutates SeqWire planes.
 - No dynamic allocation in the rendering hot path.
 - Snapshot + `writeBuffer` are the only per-frame data movement.
-- All higher-level policies (zoom, camera, color schemes) live outside Seqlok; they operate on snapshot views and GPU pipelines.
+- All higher-level policies (zoom, camera, color schemes) live outside SeqWire; they operate on snapshot views and GPU pipelines.

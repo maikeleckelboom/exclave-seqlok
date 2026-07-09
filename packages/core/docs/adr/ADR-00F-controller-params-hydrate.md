@@ -7,9 +7,9 @@
 **Related**:
 
 - 03 – Concurrency Model & Roles (Controller vs Processor)
-- 07 – Seqlok API Shape Rationale
-- 08 – Seqlok API & Naming Rationale
-- 09 – Seqlok API Reference
+- 07 – SeqWire API Shape Rationale
+- 08 – SeqWire API & Naming Rationale
+- 09 – SeqWire API Reference
 
 ---
 
@@ -264,7 +264,7 @@ controller.params.hydrate(snap); // reconstitute into SAB-backed state
 - `hydrate` rehydrates those values + typed arrays into live shared memory.
 
 The terminology aligns with industry usage ("hydrate" in React/Redux/SSR) and
-maps well to the Seqlok model: dry data → hydrated in shared memory.
+maps well to the SeqWire model: dry data → hydrated in shared memory.
 
 ### 5.2 Temperature semantics (hot vs cold)
 

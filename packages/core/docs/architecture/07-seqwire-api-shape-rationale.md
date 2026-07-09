@@ -1,6 +1,6 @@
 # API Shape Rationale: `spec → plan → backing → handoff → binding`
 
-Why Seqlok takes `spec`, `plan`, and `backing` explicitly, and why that is intentional, not accidental boilerplate.
+Why SeqWire takes `spec`, `plan`, and `backing` explicitly, and why that is intentional, not accidental boilerplate.
 This chapter also links the naming to responsibilities and folds in lessons learned while building the Typebits plan
 library.
 
@@ -19,8 +19,8 @@ import {
   acceptHandoff,
   bindController,
   bindProcessor,
-} from "@exclave/seqlok";
-import type { Handoff } from "@exclave/seqlok";
+} from "@exclave/seqwire";
+import type { Handoff } from "@exclave/seqwire";
 
 // Owner / controller side
 const spec = defineSpec(/* ... */);
@@ -245,13 +245,13 @@ From a UX perspective, it's tempting to want:
 
 ```ts
 // Magical: give me everything in one call
-const { controller, processorHandles } = seqlokWire({
+const { controller, processorHandles } = seqwireWire({
   spec,
   ownerRole: "controller",
 });
 ```
 
-Seqlok deliberately resists this pattern in its **kernel** API.
+SeqWire deliberately resists this pattern in its **kernel** API.
 
 ### 3.1 Explicit domains → explicit invariants
 
@@ -287,7 +287,7 @@ Each domain has its own invariants and error codes:
   - seqlock handling,
   - convenience surface for users.
 
-By keeping calls explicit, Seqlok makes it clear:
+By keeping calls explicit, SeqWire makes it clear:
 
 - where each error can originate,
 - which module is responsible for which invariant,
@@ -338,7 +338,7 @@ Each domain can be improved or optimized in isolation, as long as its interface 
 
 ## 4. Lessons from Typebits and early iterations
 
-Seqlok's shape is heavily informed by prior work on the Typebits plan library and early iterations of Seqlok itself.
+SeqWire's shape is heavily informed by prior work on the Typebits plan library and early iterations of SeqWire itself.
 
 ### 4.1 Typebits: pure planning as a first-class citizen
 
@@ -353,14 +353,14 @@ Experience from Typebits reinforced:
 - Plans should be free of side-effects.
 - Planning is a separate concern from binding and from allocation.
 
-Seqlok adopts the same philosophy:
+SeqWire adopts the same philosophy:
 
 - `planLayout` can be used in test harnesses, design tools, or static analysis without any actual memory.
 - Plans can be cached, diffed, and versioned independently of runtime objects.
 
-### 4.2 Early Seqlok iterations: enriched backings and the "god object" problem
+### 4.2 Early SeqWire iterations: enriched backings and the "god object" problem
 
-Early versions of Seqlok experimented with "enriched backings":
+Early versions of SeqWire experimented with "enriched backings":
 
 ```ts
 interface EnrichedBacking<S> {
@@ -400,7 +400,7 @@ It might be tempting to treat `plan` as an internal detail of `allocatePacked`:
 
 ```ts
 // REJECTED: hides plan as an implementation detail
-const { backing, controller } = seqlokMakeAll(spec);
+const { backing, controller } = seqwireMakeAll(spec);
 ```
 
 This hides important details:
@@ -448,7 +448,7 @@ If a consumer needs the actual `spec`, it's expected to import it from its own b
 
 ### 4.5 Observer roles (v0.2.0+) and the N×B₂ use-case
 
-With v0.2.0, Seqlok surfaces a concrete `bindObserver` binding.
+With v0.2.0, SeqWire surfaces a concrete `bindObserver` binding.
 
 Key lessons folded into this:
 
@@ -571,13 +571,13 @@ import {
   planLayout,
   acceptHandoff,
   bindProcessor,
-} from "@exclave/seqlok";
+} from "@exclave/seqwire";
 import type {
   SpecInput,
   ControllerBinding,
   ProcessorBinding,
   Handoff,
-} from "@exclave/seqlok";
+} from "@exclave/seqwire";
 
 export interface SharedWire<S extends SpecInput> {
   spec: S;
@@ -644,7 +644,7 @@ Putting ergonomics into these core verbs would:
 By keeping the kernel API intentionally low-level and explicit:
 
 - Advanced users can build their own orchestration layers.
-- Frameworks can wrap Seqlok in whichever higher-level abstractions they prefer.
+- Frameworks can wrap SeqWire in whichever higher-level abstractions they prefer.
 - The core stays small and verifiable.
 
 ---
@@ -666,7 +666,7 @@ Why `allocatePacked`:
 Why not `defineLayout`:
 
 - that verb belongs to a _raw_ plan library,
-- Seqlok has a **semantic** DSL (`defineSpec`) followed by **byte planning** (`planLayout`); the layout is derived, we
+- SeqWire has a **semantic** DSL (`defineSpec`) followed by **byte planning** (`planLayout`); the layout is derived, we
   don't "define" it by hand.
 
 Why keep `buildHandoff` / `acceptHandoff` instead of something shorter like `encodeHandoff` / `decodeHandoff`:
@@ -738,7 +738,7 @@ Everything else (diagnostics, orchestration, registries, workers, engine kits) l
 
 ## 10. Reviewer checklist
 
-When reviewing changes to Seqlok's API shape, ask:
+When reviewing changes to SeqWire's API shape, ask:
 
 1. **Does this introduce a new object that crosses domains?**
 
@@ -749,7 +749,7 @@ When reviewing changes to Seqlok's API shape, ask:
 
 - Or does it try to "shortcut" by hiding these steps?
 
-3. **Does this change couple previously independent domains?**
+3. **Does this change couple independent domains?**
 
 - E.g. does backing suddenly need to know about spec?
 - Does planning suddenly depend on allocation?
@@ -765,5 +765,5 @@ When reviewing changes to Seqlok's API shape, ask:
 - Backing changes should be testable with synthetic plans.
 - Binding changes should be testable with fake specs/plans/backings.
 
-Changes that keep domains separate, preserve explicit verbs, and avoid enriched god-objects are aligned with Seqlok's
+Changes that keep domains separate, preserve explicit verbs, and avoid enriched god-objects are aligned with SeqWire's
 design philosophy.

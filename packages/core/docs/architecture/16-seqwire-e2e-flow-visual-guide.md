@@ -1,8 +1,8 @@
-# Seqlok E2E Flow – Visual Guide
+# SeqWire E2E Flow – Visual Guide
 
 > How `spec → plan → backing → handoff → bindings` fit together across UI and real-time threads.
 
-This document is the "single page mental model" for Seqlok's end-to-end flow:
+This document is the "single page mental model" for SeqWire's end-to-end flow:
 
 - Main thread (controller) defines the shared state and owns **params**.
 - Worker / AudioWorklet (processor) owns **meters** and the real-time loop.
@@ -10,10 +10,10 @@ This document is the "single page mental model" for Seqlok's end-to-end flow:
 
 For deeper dives, see:
 
-- `03-seqlok-concurrency-model-and-roles.md`
-- `07-seqlok-api-shape-rationale.md`
-- `10-seqlok-primitives-and-seqlock.md`
-- `11-seqlok-backing-and-plane-layout.md`
+- `03-seqwire-concurrency-model-and-roles.md`
+- `07-seqwire-api-shape-rationale.md`
+- `10-seqwire-primitives-and-seqlock.md`
+- `11-seqwire-backing-and-plane-layout.md`
 - `12-coherent-reads-and-planes.md`
 
 ---
@@ -251,7 +251,7 @@ This is illustrative, not a performance chart. Units are arbitrary.
 
 ```mermaid
 gantt
-  title Seqlok E2E Timeline (Conceptual)
+  title SeqWire E2E Timeline (Conceptual)
   dateFormat  X
   axisFormat  %s
 

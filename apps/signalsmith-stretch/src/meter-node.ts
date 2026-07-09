@@ -1,16 +1,16 @@
 import meterWorkletUrl from "./meter-worklet.ts?worker&url";
 
-import type { SignalsmithStretchHandoff } from "./seqlok-spec";
+import type { SignalsmithStretchHandoff } from "./seqwire-spec";
 
-const PROCESSOR_NAME = "seqlok-meter";
+const PROCESSOR_NAME = "seqwire-meter";
 const loadedWorklets = new WeakMap<BaseAudioContext, Promise<void>>();
 
-export type SeqlokMeterWorkletNode = AudioWorkletNode;
+export type SeqWireMeterWorkletNode = AudioWorkletNode;
 
-export async function createSeqlokMeterNode(
+export async function createSeqWireMeterNode(
   audioContext: AudioContext,
   handoff: SignalsmithStretchHandoff,
-): Promise<SeqlokMeterWorkletNode> {
+): Promise<SeqWireMeterWorkletNode> {
   await loadMeterWorklet(audioContext);
 
   const node = new AudioWorkletNode(audioContext, PROCESSOR_NAME, {
@@ -23,7 +23,7 @@ export async function createSeqlokMeterNode(
   return node;
 }
 
-export function disposeSeqlokMeterNode(node: SeqlokMeterWorkletNode): void {
+export function disposeSeqWireMeterNode(node: SeqWireMeterWorkletNode): void {
   node.port.postMessage({ type: "dispose" });
   node.disconnect();
 }

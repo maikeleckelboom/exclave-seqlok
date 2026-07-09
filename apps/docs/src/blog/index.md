@@ -4,5 +4,5 @@ Technical notes about the boundary contract, public package direction, and integ
 
 ## Posts
 
-- [Why Seqlok exists](/blog/why-seqlok-exists)
+- [Why SeqWire exists](/blog/why-seqwire-exists)
 - [Specs, layout, and handoff: the runtime contract](/blog/specs-layout-handoff-runtime-contract)

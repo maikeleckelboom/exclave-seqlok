@@ -1,12 +1,9 @@
-import {
-  bindProcessor,
-  type ProcessorBinding,
-} from "@exclave/seqlok";
+import { bindProcessor, type ProcessorBinding } from "@exclave/seqwire";
 
 import type {
   SignalsmithStretchHandoff,
   SignalsmithStretchSpec,
-} from "./seqlok-spec";
+} from "./seqwire-spec";
 
 interface AudioWorkletProcessor {
   readonly port: MessagePort;
@@ -31,13 +28,13 @@ type MeterMessage =
   | { readonly type: "dispose" }
   | { readonly handoff: SignalsmithStretchHandoff; readonly type: "init" };
 
-const PROCESSOR_NAME = "seqlok-meter";
+const PROCESSOR_NAME = "seqwire-meter";
 const TARGET_PUBLISH_HZ = 60;
 const HOLD_SECONDS = 0.9;
 const HOLD_DECAY_DB_PER_SECOND = 18;
 const CLIP_HOLD_SECONDS = 1;
 
-class SeqlokMeterProcessor extends AudioWorkletProcessor {
+class SeqWireMeterProcessor extends AudioWorkletProcessor {
   private accumulatedFrames = 0;
   private clippedFramesL = 0;
   private clippedFramesR = 0;
@@ -160,13 +157,21 @@ class SeqlokMeterProcessor extends AudioWorkletProcessor {
       frameCount,
     );
     this.holdFramesL =
-      peakL >= this.holdL ? this.holdFrames : Math.max(0, this.holdFramesL - frameCount);
+      peakL >= this.holdL
+        ? this.holdFrames
+        : Math.max(0, this.holdFramesL - frameCount);
     this.holdFramesR =
-      peakR >= this.holdR ? this.holdFrames : Math.max(0, this.holdFramesR - frameCount);
+      peakR >= this.holdR
+        ? this.holdFrames
+        : Math.max(0, this.holdFramesR - frameCount);
     this.clippedFramesL =
-      peakL >= 1 ? this.clipHoldFrames : Math.max(0, this.clippedFramesL - frameCount);
+      peakL >= 1
+        ? this.clipHoldFrames
+        : Math.max(0, this.clippedFramesL - frameCount);
     this.clippedFramesR =
-      peakR >= 1 ? this.clipHoldFrames : Math.max(0, this.clippedFramesR - frameCount);
+      peakR >= 1
+        ? this.clipHoldFrames
+        : Math.max(0, this.clippedFramesR - frameCount);
   }
 
   private publishMeters(): void {
@@ -220,4 +225,4 @@ function updatePeakHold(
   return Math.max(peak, hold * decay);
 }
 
-registerProcessor(PROCESSOR_NAME, SeqlokMeterProcessor);
+registerProcessor(PROCESSOR_NAME, SeqWireMeterProcessor);

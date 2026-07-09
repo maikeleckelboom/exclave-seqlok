@@ -6,16 +6,16 @@
 
 **Related**:
 
-- ADR-001 – Seqlok Core Golden Flow
+- ADR-001 – SeqWire Core Golden Flow
 - ADR-002 – Memory Growth & Swap via Handoff Sequences
 - ADR-00Y – MWMR System Architecture via Domains + Observers + Rings
-- ADR-00X - Historical System-Level Composition Proposal
+- ADR-00X - Superseded System-Level Composition Proposal
 
 ---
 
 ## 1. Context
 
-Seqlok is designed for **single-address-space** environments with:
+SeqWire is designed for **single-address-space** environments with:
 
 - `SharedArrayBuffer` + `Atomics`
 - concurrency via Web Workers / AudioWorklets / threads
@@ -34,11 +34,11 @@ Electron introduces a **multi-process** architecture:
 
 Recurring questions:
 
-> “Does Electron make Seqlok obsolete or redundant?”
+> “Does Electron make SeqWire obsolete or redundant?”
 >
-> “Should Seqlok become an Electron IPC abstraction?”
+> “Should SeqWire become an Electron IPC abstraction?”
 
-This ADR draws the line: **Seqlok remains an in-process shared-memory engine**, not an IPC framework.
+This ADR draws the line: **SeqWire remains an in-process shared-memory engine**, not an IPC framework.
 
 ---
 
@@ -46,32 +46,32 @@ This ADR draws the line: **Seqlok remains an in-process shared-memory engine**, 
 
 We need to clarify:
 
-1. **Where** Seqlok is meant to run in an Electron app:
+1. **Where** SeqWire is meant to run in an Electron app:
 
 - renderer vs main vs worker
 
-2. How Seqlok interacts with **multi-process IPC**:
+2. How SeqWire interacts with **multi-process IPC**:
 
 - renderer ↔ main
 
 3. Whether Electron-specific constraints should change:
 
-- Seqlok’s **core SWMR model**
+- SeqWire’s **core SWMR model**
 - the **MWMR system model** (ADR-00Y)
 - topology semantics (ADR-00X)
 
 We explicitly want to avoid:
 
-- over-extending Seqlok into "cross-process magic"
+- over-extending SeqWire into "cross-process magic"
 - coupling core APIs to Electron-specific concepts
 
 ---
 
 ## 3. Decision
 
-### 3.1 Seqlok remains **per-process**
+### 3.1 SeqWire remains **per-process**
 
-Seqlok's golden flow is per address space:
+SeqWire's golden flow is per address space:
 
 ```txt
 defineSpec
@@ -82,7 +82,7 @@ defineSpec
 → bind{Controller,Processor,Observer}
 ```
 
-A **Seqlok domain** assumes:
+A **SeqWire domain** assumes:
 
 - a backing (SAB or shared Wasm memory) that is **local to the process**
 - `Atomics` operating directly on that backing
@@ -92,7 +92,7 @@ In Electron:
 
 - **Renderer process**
 
-  Seqlok is used like in a normal browser:
+  SeqWire is used like in a normal browser:
 
   - main thread
   - Web Workers
@@ -100,20 +100,20 @@ In Electron:
 
 - **Main process** (Node)
 
-  Seqlok can also be used with `worker_threads`:
+  SeqWire can also be used with `worker_threads`:
 
   - main Node thread
   - worker threads
 
-Each process hosts **its own** Seqlok systems. There is no attempt to share Seqlok backings across the renderer/main
+Each process hosts **its own** SeqWire systems. There is no attempt to share SeqWire backings across the renderer/main
 boundary.
 
-> **Decision:** Seqlok **does not** grow cross-process primitives.
+> **Decision:** SeqWire **does not** grow cross-process primitives.
 > It stays **per-process SWMR/MWMR**.
 
 ---
 
-### 3.2 Cross-process boundaries use IPC, not Seqlok
+### 3.2 Cross-process boundaries use IPC, not SeqWire
 
 Communication between processes:
 
@@ -126,9 +126,9 @@ is done via:
 - Node IPC / sockets / pipes / OS-specific mechanisms
 - optional binary payloads, shared file handles, etc.
 
-but **not** via Seqlok-managed shared memory.
+but **not** via SeqWire-managed shared memory.
 
-Seqlok sees **one process at a time**. Anything cross-process is outside `@exclave/seqlok` and the historical typed shared-memory contract prototype.
+SeqWire sees **one process at a time**. Anything cross-process is outside `@exclave/seqwire` and the typed shared-memory contract package.
 
 ---
 
@@ -157,14 +157,14 @@ In Electron this is **scoped to one process**:
   - non-realtime analyzers
   - IPC bridges
 
-There can be multiple Seqlok **systems** (one per process), each with its own MWMR topology, but **no shared SAB/Wasm
+There can be multiple SeqWire **systems** (one per process), each with its own MWMR topology, but **no shared SAB/Wasm
 memory across processes**.
 
 ---
 
 ## 4. Recommended Topologies in Electron
 
-### 4.1 Realtime-first: Seqlok in renderer
+### 4.1 Realtime-first: SeqWire in renderer
 
 - Renderer:
 
@@ -189,19 +189,19 @@ Renderer ↔ main use IPC for:
 - “load track X” commands
 - telemetry / logging
 
-**Seqlok stays completely inside renderer.**
+**SeqWire stays completely inside renderer.**
 
 ---
 
-### 4.2 Split responsibilities: Seqlok in renderer and main
+### 4.2 Split responsibilities: SeqWire in renderer and main
 
 - Renderer:
 
-  - “hot path” Seqlok systems (deck, waveform, HUD)
+  - “hot path” SeqWire systems (deck, waveform, HUD)
 
 - Main:
 
-  - Seqlok systems for:
+  - SeqWire systems for:
 
     - batch analyzers
     - long-running indexing
@@ -210,7 +210,7 @@ Renderer ↔ main use IPC for:
 IPC is used to:
 
 - send high-level intents and results between systems
-- not to "project" one Seqlok domain into another process
+- not to "project" one SeqWire domain into another process
 
 Each process remains responsible for its own:
 
@@ -221,32 +221,32 @@ Each process remains responsible for its own:
 
 ## 5. Non-goals
 
-Seqlok does **not** attempt to:
+SeqWire does **not** attempt to:
 
 - implement a generic Electron IPC abstraction
 - share `SharedArrayBuffer` across renderer/main
 - manage OS-level process lifecycles
-- hide Electron's process model behind a Seqlok API
+- hide Electron's process model behind a SeqWire API
 
 Electron-specific features (e.g., window management, menus, OS integration) are handled at the app layer, not in
-`@exclave/seqlok`.
+`@exclave/seqwire`.
 
 ---
 
 ## 6. Consequences
 
-- `@exclave/seqlok` remains **platform-neutral**:
+- `@exclave/seqwire` remains **platform-neutral**:
 
   - no special Electron types or concepts
   - still usable in plain browser / Node / workers
 
 - The **MWMR story (ADR-00Y)** and **ring primitive (ADR-010)** apply per process, unchanged.
 
-- Electron apps that use Seqlok:
+- Electron apps that use SeqWire:
 
-  - treat each process as an independent "Seqlok island"
+  - treat each process as an independent "SeqWire island"
   - use IPC between islands
-  - can evolve their IPC protocols without touching Seqlok's core APIs
+  - can evolve their IPC protocols without touching SeqWire's core APIs
 
 ---
 
@@ -261,7 +261,7 @@ Electron-specific features (e.g., window management, menus, OS integration) are 
 
   - contrasting “all-in-renderer” vs “split” architectures.
 
-- Optional helper outside `@exclave/seqlok` to:
+- Optional helper outside `@exclave/seqwire` to:
 
   - serialize ring payloads / hydrate patches across IPC
   - document recommended message formats

@@ -1,6 +1,6 @@
-# From Pipe to Hub: Understanding Seqlok's Architecture
+# From Pipe to Hub: Understanding SeqWire's Architecture
 
-Welcome. You are looking at **Seqlok**, a high-performance library for sharing state between threads (like the Main Thread and a Physics Worker) without blocking the UI or creating garbage collection pauses.
+Welcome. You are looking at **SeqWire**, a high-performance library for sharing state between threads (like the Main Thread and a Physics Worker) without blocking the UI or creating garbage collection pauses.
 
 To understand where we are today (**MWMR**), we must first understand the evolution of the system.
 
@@ -39,7 +39,7 @@ flowchart LR
 
 **"One writer holds the pen. Everyone else waits."**
 
-At its core, Seqlok manages a block of **Shared Memory** (`SharedArrayBuffer`). Because two threads accessing the same memory at the same time causes chaos (race conditions), we established a strict **Single-Writer / Single-Reader (SWSR)** rule per domain.
+At its core, SeqWire manages a block of **Shared Memory** (`SharedArrayBuffer`). Because two threads accessing the same memory at the same time causes chaos (race conditions), we established a strict **Single-Writer / Single-Reader (SWSR)** rule per domain.
 
 ### The Two Domains
 
@@ -106,7 +106,7 @@ To handle multiple inputs (MIDI, UI, AI), we don't let them touch the shared mem
 - **The Ring Primitive:** A lock-free circular buffer. It acts like a mailbox.
 - **The Hub:** One specific thread (usually the Controller) acts as the "Hub." It opens the mailboxes, decides what to do, and is the **only one allowed to write** to the Params memory.
 
-In Seqlok, fan-in is built from **SWSR rings**: each ring is still single-writer / single-reader, but the system uses many rings (one per writer or per channel) feeding into a single hub. The hub pulls from those rings and remains the **only writer** to the shared Params domain, so the memory itself never leaves SWSR.
+In SeqWire, fan-in is built from **SWSR rings**: each ring is still single-writer / single-reader, but the system uses many rings (one per writer or per channel) feeding into a single hub. The hub pulls from those rings and remains the **only writer** to the shared Params domain, so the memory itself never leaves SWSR.
 
 **Result:** The memory still sees only one writer (The Hub), but the _system_ accepts inputs from everywhere.
 
@@ -175,7 +175,7 @@ xychart-beta
 
 ### The Complete Architecture
 
-When we combine Fan-In and Fan-Out, the full Seqlok architecture looks like this:
+When we combine Fan-In and Fan-Out, the full SeqWire architecture looks like this:
 
 ```mermaid
 flowchart TD
@@ -245,9 +245,9 @@ quadrantChart
     y-axis "Simple" --> "Complex"
     quadrant-1 "Complex System, Simple Memory"
     quadrant-2 "Simple Everywhere"
-    quadrant-3 "Legacy Approach"
+    quadrant-3 "Direct Shared State"
     quadrant-4 "Chaos (Avoid)"
-    "Seqlok MWMR": [0.8, 0.2]
+    "SeqWire MWMR": [0.8, 0.2]
     "Traditional SWSR": [0.2, 0.2]
     "Unprotected Access": [0.9, 0.9]
 ```
@@ -255,4 +255,4 @@ quadrantChart
 ### See Also
 
 - **ADR-00Y – MWMR Architecture** – the normative design for rings, hub, and observer roles.
-- **Onboarding: The Seqlok Mindset and Hot Path** – how the MWMR topology feels from a developer’s point of view.
+- **Onboarding: The SeqWire Mindset and Hot Path** – how the MWMR topology feels from a developer’s point of view.

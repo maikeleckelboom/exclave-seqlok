@@ -1,21 +1,21 @@
-# Seqlok: Concurrency Model & Roles
+# SeqWire: Concurrency Model & Roles
 
-> How Seqlok coordinates Controllers, Processors, and shared memory.
+> How SeqWire coordinates Controllers, Processors, and shared memory.
 
-This document describes **who is allowed to touch what**, **how Seqlok uses seqlocks**, and **what is actually
+This document describes **who is allowed to touch what**, **how SeqWire uses seqlocks**, and **what is actually
 guaranteed** when you call things like `within`, `publish`, and `snapshot`.
 
 It is the canonical reference for:
 
 - param vs meter ownership,
 - SWMR discipline per domain,
-- what "coherent snapshot" means in Seqlok.
+- what "coherent snapshot" means in SeqWire.
 
 ---
 
 ## High-Level Model
 
-Seqlok organizes shared state into two **domains**:
+SeqWire organizes shared state into two **domains**:
 
 - **Params** – control inputs flowing **from Controller → Processor**
 - **Meters** – telemetry outputs flowing **from Processor → Controller / observers**
@@ -26,7 +26,7 @@ Each domain is:
 - Guarded by its own **seqlock** (sequence lock)
 - Accessed under strict **SWMR** (Single-Writer / Multiple-Reader) rules
 
-On top of that, Seqlok defines three roles:
+On top of that, SeqWire defines three roles:
 
 ```text
 Controller:
@@ -66,7 +66,7 @@ import {
   planLayout,
   allocatePacked,
   bindController,
-} from "@exclave/seqlok";
+} from "@exclave/seqwire";
 
 const spec = defineSpec(/* ... */);
 const plan = planLayout(spec);
@@ -99,7 +99,7 @@ The **Processor** lives in a Worker, AudioWorklet, WASM-backed engine, or some o
 Example (engine-side binding already constructed via `acceptHandoff` → `bindProcessor`):
 
 ```ts
-import type { ProcessorBinding } from "@exclave/seqlok";
+import type { ProcessorBinding } from "@exclave/seqwire";
 import type { DemoSpec } from "./spec";
 
 class MyProcessor {
@@ -142,8 +142,8 @@ The Processor is **“the device brain”**: runs tight loops, does DSP / simula
 They should:
 
 - Use **controller-facing APIs** (`controller.meters.snapshot(...)`) or observer helpers
-- Never attempt to write into the Seqlok backing directly
-- Treat Seqlok as _source-of-truth telemetry_, not as mutable state
+- Never attempt to write into the SeqWire backing directly
+- Treat SeqWire as _source-of-truth telemetry_, not as mutable state
 
 Example (controller-side consumer):
 
@@ -158,7 +158,7 @@ drawMeterUI({ peak, rms });
 
 ## Domains and Planes
 
-Seqlok has two logical domains, each backed by several **planes** in a shared backing.
+SeqWire has two logical domains, each backed by several **planes** in a shared backing.
 
 ### Param Domain
 
@@ -188,7 +188,7 @@ Seqlok has two logical domains, each backed by several **planes** in a shared ba
 
 Each domain has:
 
-- One **writer** from Seqlok's perspective (Controller for params, Processor for meters)
+- One **writer** from SeqWire's perspective (Controller for params, Processor for meters)
 - Zero or more **readers**
 - Exactly one **seqlock pair** per backing
 
@@ -283,7 +283,7 @@ With correct usage:
 - No `within` callback sees a mix of two different param writes; at worst it spins and retries until one is stable or
   times out with a clear error.
 
-Seqlok does **not**:
+SeqWire does **not**:
 
 - Guarantee that every intermediate Controller update is visible to the Processor.
 - Guarantee a specific "age" for the snapshot, only that it is **coherent**.
@@ -461,7 +461,7 @@ This is the **“quantum scope”** mental model:
 > One `within` defines the param snapshot window. Any number of `publish` calls inside that `within` compute and commit
 > meters derived from that snapshot.
 
-Seqlok guarantees:
+SeqWire guarantees:
 
 - Param reads inside that `within` are coherent.
 - Each meter commit is coherent.
@@ -470,11 +470,11 @@ Seqlok guarantees:
 
 ---
 
-## What Seqlok Guarantees (and Does Not)
+## What SeqWire Guarantees (and Does Not)
 
 ### Guarantees
 
-Within the documented roles and APIs, Seqlok guarantees:
+Within the documented roles and APIs, SeqWire guarantees:
 
 1. **Per-domain coherence via seqlock**
 
@@ -483,7 +483,7 @@ Within the documented roles and APIs, Seqlok guarantees:
 
 2. **SWMR discipline per domain**
 
-- Exactly one writer for params, one writer for meters (from Seqlok's perspective).
+- Exactly one writer for params, one writer for meters (from SeqWire's perspective).
 
 3. **Monotonic versions**
 
@@ -502,7 +502,7 @@ Within the documented roles and APIs, Seqlok guarantees:
 
 ### Non-Guarantees
 
-Seqlok does **not** guarantee:
+SeqWire does **not** guarantee:
 
 1. **Fairness between readers and writers**
 
@@ -538,7 +538,7 @@ import {
   allocatePacked,
   buildHandoff,
   bindController,
-} from "@exclave/seqlok";
+} from "@exclave/seqwire";
 
 const spec = defineSpec(/* ... */);
 const plan = planLayout(spec);
@@ -552,7 +552,7 @@ const handoff = buildHandoff(plan, backing);
 
 audioContext.audioWorklet.addModule("processor.js").then(() => {
   const node = new AudioWorkletNode(audioContext, "my-processor", {
-    processorOptions: { seqlok: handoff },
+    processorOptions: { seqwire: handoff },
   });
 
   // UI → params
@@ -579,16 +579,16 @@ import {
   acceptHandoff,
   bindProcessor,
   type ProcessorBinding,
-} from "@exclave/seqlok";
+} from "@exclave/seqwire";
 import type { DemoSpec } from "./spec";
 
 class MyProcessor extends AudioWorkletProcessor {
   private readonly binding: ProcessorBinding<DemoSpec>;
 
-  constructor(opts: { processorOptions: { seqlok: unknown } }) {
+  constructor(opts: { processorOptions: { seqwire: unknown } }) {
     super();
 
-    const accepted = acceptHandoff<DemoSpec>(opts.processorOptions.seqlok);
+    const accepted = acceptHandoff<DemoSpec>(opts.processorOptions.seqwire);
     this.binding = bindProcessor(accepted);
   }
 
@@ -609,7 +609,7 @@ class MyProcessor extends AudioWorkletProcessor {
 registerProcessor("my-processor", MyProcessor);
 ```
 
-This is the canonical **Controller ↔ Processor** Seqlok pipeline:
+This is the canonical **Controller ↔ Processor** SeqWire pipeline:
 
 - Main side: `defineSpec → planLayout → allocatePacked → buildHandoff → bindController`
 - Worklet side: `acceptHandoff → bindProcessor`
@@ -647,14 +647,14 @@ Internally, the concurrency model relies on several invariants that **must not b
 - No field-level concurrency flags or ad-hoc semantics.
 - Concurrency semantics are always the same: snapshot for params, commit for meters.
 
-If you extend Seqlok's capabilities (e.g. observer bindings, MWMR ring topologies), check any new feature against these
+If you extend SeqWire's capabilities (e.g. observer bindings, MWMR ring topologies), check any new feature against these
 invariants first and keep the **kernel** firmly in the SWMR + seqlock model.
 
 ---
 
 ## Summary
 
-The concurrency model of Seqlok in one line:
+The concurrency model of SeqWire in one line:
 
 > **One writer per domain, shared memory guarded by seqlocks, exposed through scoped callbacks (`within` / `publish`) and seqlock-guarded snapshots, so coherent use is the default.**
 

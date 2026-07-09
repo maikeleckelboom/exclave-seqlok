@@ -1,12 +1,12 @@
 # Backing & Plane Layout
 
-Deterministic, allocation-free memory mapping for Seqlok.
+Deterministic, allocation-free memory mapping for SeqWire.
 
 This doc explains how a validated **Plan** turns into concrete shared memory **Backings** and **TypedArray views**,
 including plane layout, packing rules, and how `mapViews` ties it together.
 
-It's written for people working _inside_ Seqlok (or doing advanced diagnostics), not for everyday users of
-`@exclave/seqlok`.
+It's written for people working _inside_ SeqWire (or doing advanced diagnostics), not for everyday users of
+`@exclave/seqwire`.
 
 ---
 
@@ -25,7 +25,7 @@ import {
   acceptHandoff,
   bindController,
   bindProcessor,
-} from "@exclave/seqlok";
+} from "@exclave/seqwire";
 
 const spec = defineSpec(/* ... */);
 
@@ -231,7 +231,7 @@ Common properties:
 
 - All expect a **validated Plan**.
 - All enforce `bytesTotal` and per-plane byte-length invariants.
-- All throw typed `SeqlokError`s from the `backing.*` or `env.*` domains on failure.
+- All throw typed `SeqWireError`s from the `backing.*` or `env.*` domains on failure.
 
 Bindings work against the union `Backing` abstraction; they do not care which flavor produced it.
 
@@ -304,12 +304,12 @@ Internally, `mapViews` treats this variant specially:
 Typical deployment:
 
 - A WASM DSP engine (Rust/C/C++) owns a shared `WebAssembly.Memory`.
-- JS bindings treat it as a backing and map Seqlok's views into that memory.
+- JS bindings treat it as a backing and map SeqWire's views into that memory.
 
 Constraints:
 
 - Growing `memory` **after** binding is allowed as long as the original layout stays valid.
-- Shrinking `memory` or reusing it for a different Plan is undefined behavior from Seqlok's POV.
+- Shrinking `memory` or reusing it for a different Plan is undefined behavior from SeqWire's POV.
 
 ---
 
@@ -430,10 +430,10 @@ Environment-domain preconditions (roughly):
 Allocators check these once and throw `env.*` codes if shared memory is unavailable. Callers are expected to fail fast
 and either:
 
-- disable Seqlok-backed features, or
+- disable SeqWire-backed features, or
 - refuse configurations that claim to be "real-time" without SAB support.
 
-There is **no** postMessage/clone "fallback mode"; copying would violate Seqlok's core guarantees.
+There is **no** postMessage/clone "fallback mode"; copying would violate SeqWire's core guarantees.
 
 ---
 

@@ -51,13 +51,13 @@ function assertNoProofFiles(tarballPath: string, packageRoot: string): void {
 
   if (forbidden.length > 0) {
     throw new Error(
-      `@exclave/seqlok tarball contains private proof files:\n${forbidden.join("\n")}`,
+      `@exclave/seqwire tarball contains private proof files:\n${forbidden.join("\n")}`,
     );
   }
 }
 
 const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const tempRoot = mkdtempSync(join(tmpdir(), "exclave-seqlok-pack-"));
+const tempRoot = mkdtempSync(join(tmpdir(), "exclave-seqwire-pack-"));
 
 try {
   const packOutput = runPnpm(
@@ -95,7 +95,7 @@ import {
   buildHandoff,
   defineSpec,
   planLayout
-} from "@exclave/seqlok";
+} from "@exclave/seqwire";
 
 const spec = defineSpec(({ param, meter }) => ({
   params: {
@@ -117,12 +117,12 @@ controller.params.set("nested.count", 7);
 controller.params.stage("nested.words", (view) => view.set([1, 2]));
 processor.params.within((params) => {
   if (params.nested.count !== 7 || params.nested.words[1] !== 2) {
-    throw new Error("packed @exclave/seqlok param flow failed");
+    throw new Error("packed @exclave/seqwire param flow failed");
   }
 });
 processor.meters.publish((meters) => meters.signed(-3));
 if (controller.meters.snapshot().signed !== -3) {
-  throw new Error("packed @exclave/seqlok meter flow failed");
+  throw new Error("packed @exclave/seqwire meter flow failed");
 }
 `.trimStart(),
   );
@@ -134,7 +134,7 @@ if (controller.meters.snapshot().signed !== -3) {
         private: true,
         type: "module",
         dependencies: {
-          "@exclave/seqlok": tarballSpec,
+          "@exclave/seqwire": tarballSpec,
         },
       },
       null,
@@ -146,13 +146,7 @@ if (controller.meters.snapshot().signed !== -3) {
 
   const installedPackageJson = JSON.parse(
     readFileSync(
-      join(
-        consumerRoot,
-        "node_modules",
-        "@exclave",
-        "seqlok",
-        "package.json",
-      ),
+      join(consumerRoot, "node_modules", "@exclave", "seqwire", "package.json"),
       "utf8",
     ),
   ) as {

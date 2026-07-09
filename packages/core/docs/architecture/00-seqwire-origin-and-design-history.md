@@ -1,6 +1,6 @@
-# Seqlok Origin & Design History
+# SeqWire Origin & Design History
 
-> A short backstory: what problems Seqlok set out to solve, and which design bets shaped the architecture you see in the
+> A short backstory: what problems SeqWire set out to solve, and which design bets shaped the architecture you see in the
 > rest of these docs.
 
 This document is **background**, not a spec.
@@ -9,9 +9,9 @@ Think of this as the director's commentary track.
 
 ---
 
-## 1. Where Seqlok came from
+## 1. Where SeqWire came from
 
-Seqlok grew out of a very specific pain:
+SeqWire grew out of a very specific pain:
 
 - Real-time code (audio, simulation, high-frequency visuals) runs in its own thread / worklet.
 - UI lives on the main thread.
@@ -33,13 +33,13 @@ The obvious building blocks were:
 - `Atomics`,
 - A small concurrency discipline that we could actually reason about.
 
-Everything else in Seqlok is layered on top of that starting point.
+Everything else in SeqWire is layered on top of that starting point.
 
 ---
 
 ### 1.1 The real origin: the AudioWorklet quantum
 
-The immediate trigger for Seqlok was the Web Audio / AudioWorklet processing model:
+The immediate trigger for SeqWire was the Web Audio / AudioWorklet processing model:
 
 - The audio engine calls `AudioWorkletProcessor.process()` in fixed-size quanta
   (e.g. 128 frames ≈ 2.67ms at 48 kHz).
@@ -59,7 +59,7 @@ The hard problem is to bridge "chaotic UI time" to "deterministic audio quanta"
 without allocations, without locks, and without ever observing torn state
 mid-quantum.
 
-Seqlok's design – two SWMR domains, a planned memory plan, seqlock-based
+SeqWire's design – two SWMR domains, a planned memory plan, seqlock-based
 snapshots, and a type-first spec DSL – is a direct answer to that constraint.
 
 ---
@@ -145,7 +145,7 @@ That's what `defineSpec` and the various `ParamKeys<S>`, `MeterKeys<S>`, `ParamV
 
 ## 3. Principles that emerged as we iterated
 
-As Seqlok matured, a few principles solidified and shaped the current architecture.
+As SeqWire matured, a few principles solidified and shaped the current architecture.
 
 ### 3.1 Functional core, OO at the edges
 
@@ -178,7 +178,7 @@ We chose a **fail-fast** error model:
 
 Errors are tagged by domain (`spec.*`, `plan.*`, `backing.*`, `handoff.*`, `binding.*`, `orchestration.*`) so that
 failures can be understood and surfaced cleanly.
-The rationale is spelled out in `05-seqlok-error-system-and-fail-fast-philosophy.md`.
+The rationale is spelled out in `05-seqwire-error-system-and-fail-fast-philosophy.md`.
 
 ### 3.3 Layering is non-negotiable
 
@@ -195,33 +195,33 @@ The goal: no “god objects”, no cycles, clear ownership of responsibilities.
 
 ## 4. How to read the rest of the docs
 
-If you want to understand Seqlok's design in order:
+If you want to understand SeqWire's design in order:
 
-1. `01-seqlok-goals-and-non-goals.md`
+1. `01-seqwire-goals-and-non-goals.md`
    Why this library exists, and what it explicitly refuses to do.
 
-2. `02-seqlok-intellectual-heritage.md`
+2. `02-seqwire-intellectual-heritage.md`
    The ideas it builds on (seqlocks, SWMR, shared memory patterns, etc.).
 
-3. `03-seqlok-concurrency-model-and-roles.md`
+3. `03-seqwire-concurrency-model-and-roles.md`
    Controller vs processor, params vs meters, seqlock behaviour.
 
-4. `04-seqlok-dsl-overview-and-rationale.md`
+4. `04-seqwire-dsl-overview-and-rationale.md`
    The spec DSL and type-inference story.
 
-5. `05-seqlok-error-system-and-fail-fast-philosophy.md`
+5. `05-seqwire-error-system-and-fail-fast-philosophy.md`
    How and why failures are surfaced.
 
 6. `06-object-model-rationale.md`
    Why the core is function-centric and not OO.
 
-7. `07-seqlok-api-shape-rationale.md`
+7. `07-seqwire-api-shape-rationale.md`
    Why the core functions take the arguments they do (spec / plan / backing / handoff).
 
 8. `08–09`
    The low-level primitives and backing plan.
 
-9. `11-seqlok-e2e-flow-visual-guide.md`
+9. `11-seqwire-e2e-flow-visual-guide.md`
    A picture of it all working together, end-to-end.
 
 This `00` document is just the small bit of story glue before all that: the snapshot of what we were trying to achieve

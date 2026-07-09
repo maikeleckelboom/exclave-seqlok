@@ -1,6 +1,6 @@
 # Performance & Benchmarks
 
-Generated benchmarking output for `@exclave/seqlok`.
+Generated benchmarking output for `@exclave/seqwire`.
 
 This folder captures how fast key operations are and which micro-ops are currently measured. Files here are generated
 by the benchmark harness and may be overwritten; do not hand-edit them.

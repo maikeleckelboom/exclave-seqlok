@@ -1,12 +1,12 @@
 # Error Model
 
-Seqlok throws `SeqlokError` for structured library errors. Each error has a code, message, and typed details payload. Use `isSeqlokError(...)` when catching unknown values at an application boundary.
+SeqWire throws `SeqWireError` for structured library errors. Each error has a code, message, and typed details payload. Use `isSeqWireError(...)` when catching unknown values at an application boundary.
 
 ```ts twoslash
-import { getErrorMeta, interpretHealth, isSeqlokError } from "@exclave/seqlok";
+import { getErrorMeta, interpretHealth, isSeqWireError } from "@exclave/seqwire";
 
 export function classify(error: unknown) {
-  if (!isSeqlokError(error)) {
+  if (!isSeqWireError(error)) {
     return { status: "unknown" };
   }
 

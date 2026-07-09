@@ -1,21 +1,21 @@
-# Seqlok Spec & DSL: Overview and Rationale
+# SeqWire Spec & DSL: Overview and Rationale
 
 > _The spec is the "truth of the device"; everything else is derived._
 
 This document explains:
 
-- What a **Spec** is in Seqlok
+- What a **Spec** is in SeqWire
 - How the **DSL** is structured
 - What the design **does and does not** allow
 - How the spec feeds into the **Spec → Plan → Backing → Handoff → Bindings** pipeline
 
-If you're defining devices, binding controllers/processors, or extending Seqlok, this is your reference.
+If you're defining devices, binding controllers/processors, or extending SeqWire, this is your reference.
 
 ---
 
 ## 1. What is a Spec?
 
-In Seqlok, a **spec** is a _pure description_ of:
+In SeqWire, a **spec** is a _pure description_ of:
 
 - Which **params** (inputs) a device exposes
 - Which **meters** (outputs) it produces
@@ -99,7 +99,7 @@ Behavior and UI concerns live in _other_ layers.
 
 ### 2.2 Schema-First and Deterministic
 
-Given the same `defineSpec` call, Seqlok must always:
+Given the same `defineSpec` call, SeqWire must always:
 
 - Produce the same **plan** (same plane sizes, same offsets)
 - Allocate the same **backing** for shared memory
@@ -339,7 +339,7 @@ processor.params.within((p) => {
 });
 ```
 
-Internally, Seqlok stores **indices** (e.g. `0, 1, 2`) in an integer plane, not raw strings. This keeps the memory plan
+Internally, SeqWire stores **indices** (e.g. `0, 1, 2`) in an integer plane, not raw strings. This keeps the memory plan
 compact and friendly to Wasm/FFI.
 
 > **Note:** See `14-enum-arrays-runtime-behavior.md` for details on how enum arrays map strings to indices at runtime.
@@ -564,7 +564,7 @@ Two specs that describe the same structure should be treated as equivalent for t
 
 ## 7. Anti-Patterns and Misuses
 
-Some patterns are _possible_ in TypeScript, but break Seqlok's design assumptions.
+Some patterns are _possible_ in TypeScript, but break SeqWire's design assumptions.
 
 ### 7.1 Storing Spec-Derived Views Globally
 
@@ -640,7 +640,7 @@ const spec = defineSpec(() => ({
 }));
 ```
 
-Seqlok expects `defineSpec` calls to be:
+SeqWire expects `defineSpec` calls to be:
 
 - Top-level
 - Deterministic
@@ -652,7 +652,7 @@ Dynamic spec mutation breaks those expectations.
 
 ## 8. How the DSL Feeds the Pipeline
 
-The spec is the **root** of the Seqlok pipeline:
+The spec is the **root** of the SeqWire pipeline:
 
 ```text
 Spec → Plan → Backing → Handoff → Bindings
@@ -704,13 +704,13 @@ When you define a new spec, check:
 - [ ] The spec is top-level, deterministic, and not dynamically mutated
 - [ ] You’re comfortable with the fact that the spec schema is **frozen** once planned and allocated
 
-If all of these are true, you're using the DSL the way Seqlok's architecture expects.
+If all of these are true, you're using the DSL the way SeqWire's architecture expects.
 
 ---
 
 ## 10. Summary
 
-The Seqlok DSL:
+The SeqWire DSL:
 
 - Describes **what** shared state exists (params + meters)
 - Avoids saying **how** it is used in UI or DSP

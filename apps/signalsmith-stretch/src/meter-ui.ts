@@ -1,4 +1,4 @@
-import type { PublishedMeters } from "./seqlok-spec";
+import type { PublishedMeters } from "./seqwire-spec";
 
 interface MeterChannelUi {
   displayPeakPercent: number;
@@ -33,10 +33,10 @@ const METER_SCALE_TICKS = [-60, -48, -36, -24, -12, -6, 0, 6] as const;
 
 export function renderMeterPanel(): string {
   return `
-    <section class="meter-panel" aria-label="Seqlok RMS level meters">
+    <section class="meter-panel" aria-label="SeqWire RMS level meters">
       <div class="meter-panel-heading">
         <div>
-          <h2>Seqlok RMS meters</h2>
+          <h2>SeqWire RMS meters</h2>
           <p>Post-stretch output</p>
         </div>
         <output id="publishFact" class="meter-runtime readout">0 publishes; 0 dropped; 0 frames</output>

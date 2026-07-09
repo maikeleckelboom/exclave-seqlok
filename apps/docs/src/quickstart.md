@@ -1,8 +1,8 @@
 # Quickstart
 
-This is the smallest complete Seqlok flow: one spec defines the boundary contract, layout is planned once, backing is allocated once, and the runtime side binds from a handoff.
+This is the smallest complete SeqWire flow: one spec defines the boundary contract, layout is planned once, backing is allocated once, and the runtime side binds from a handoff.
 
-## Seqlok Flow
+## SeqWire Flow
 
 `defineSpec`, `planLayout`, `allocatePacked`, and `buildHandoff` happen before the runtime side binds. The controller can already exist on the main side while a handoff is bound in a worker, an AudioWorklet, or another timing-sensitive runtime.
 
@@ -40,7 +40,7 @@ import {
   buildHandoff,
   defineSpec,
   planLayout,
-} from "@exclave/seqlok";
+} from "@exclave/seqwire";
 
 const spec = defineSpec((api) => ({
   id: "quickstart/control",
@@ -112,7 +112,7 @@ worker.postMessage({ type: "boundary-handoff", handoff });
 When the transport value is `unknown`, treat it as untrusted until `acceptHandoff(...)` validates the protocol version, plan shape, packing mode, and backing sizes.
 
 ```ts
-import { acceptHandoff, bindProcessor } from "@exclave/seqlok";
+import { acceptHandoff, bindProcessor } from "@exclave/seqwire";
 
 declare const message: MessageEvent;
 

@@ -1,13 +1,13 @@
-import { SeqlokError } from "../../src/errors/error";
+import { SeqWireError } from "../../src/errors/error";
 
 import type { ErrorCode, ErrorPayload } from "../../src/errors/registry";
 
-export function expectSeqlokError<C extends ErrorCode>(
+export function expectSeqWireError<C extends ErrorCode>(
   thrown: unknown,
   code: C,
-): asserts thrown is SeqlokError<C> {
-  if (!(thrown instanceof SeqlokError)) {
-    throw new Error(`Expected SeqlokError<${code}>, got ${String(thrown)}`);
+): asserts thrown is SeqWireError<C> {
+  if (!(thrown instanceof SeqWireError)) {
+    throw new Error(`Expected SeqWireError<${code}>, got ${String(thrown)}`);
   }
   if (thrown.code !== code) {
     throw new Error(`Expected code ${code}, got ${String(thrown.code)}`);
@@ -15,7 +15,7 @@ export function expectSeqlokError<C extends ErrorCode>(
 }
 
 export function getDetails<C extends ErrorCode>(
-  err: SeqlokError<C>,
+  err: SeqWireError<C>,
 ): ErrorPayload<C> {
   return err.details;
 }

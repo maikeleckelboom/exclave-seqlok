@@ -1,6 +1,6 @@
-# Seqlok: Goals and Non-Goals
+# SeqWire: Goals and Non-Goals
 
-**Purpose:** Define what Seqlok _is for_ and what it explicitly refuses to do.
+**Purpose:** Define what SeqWire _is for_ and what it explicitly refuses to do.
 
 ---
 
@@ -23,12 +23,12 @@ These contexts have very different constraints:
 | `postMessage` cost acceptable | **No large copies per quantum**     |
 | Can use promises & closures   | **Must avoid allocations in loops** |
 
-**The gap Seqlok fills:**
+**The gap SeqWire fills:**
 
 > A coherent, atomic, type-safe way to share state between these worlds
 > **without** sacrificing real-time behavior on the processor side.
 
-Seqlok sits **below** app logic and **above** raw `SharedArrayBuffer + Atomics`. It focuses on one thing: **fast,
+SeqWire sits **below** app logic and **above** raw `SharedArrayBuffer + Atomics`. It focuses on one thing: **fast,
 predictable, shared memory coordination** between a "Controller" and a "Processor".
 
 ---
@@ -37,10 +37,10 @@ predictable, shared memory coordination** between a "Controller" and a "Processo
 
 ### 1. Real-Time Friendly Communication
 
-Seqlok is designed so the **Processor side** (AudioWorklet, RT worker, tight simulation loop) can:
+SeqWire is designed so the **Processor side** (AudioWorklet, RT worker, tight simulation loop) can:
 
 - Read params without taking OS locks
-- Avoid object allocations on the hot path (Seqlok itself doesn't allocate in `within`/`publish`)
+- Avoid object allocations on the hot path (SeqWire itself doesn't allocate in `within`/`publish`)
 - Use operations that are **bounded and predictable** (small retry loops, no syscalls)
 - Work against **cache-friendly, tightly packed** memory layouts
 
@@ -53,7 +53,7 @@ It uses a **seqlock-based protocol** under the hood:
 - Writes are short, bounded critical sections (update a few scalars/arrays, bump counters).
 
 **Why this matters:** An AudioWorklet callback typically has ~3ms per quantum at 44.1kHz. A single GC pause or blocking
-lock is enough to glitch audio. Seqlok's read path is designed to be predictable and free from JS-level allocations.
+lock is enough to glitch audio. SeqWire's read path is designed to be predictable and free from JS-level allocations.
 
 ---
 
@@ -69,7 +69,7 @@ processor.params.within((p) => {
   const coeffs = p.coeffs; // coeffs correspond to ratio = 1.5
 });
 
-// ❌ TORN READ (what Seqlok prevents):
+// ❌ TORN READ (what SeqWire prevents):
 // ratio might be 1.5 while coeffs are still from ratio = 1.0
 ```
 
@@ -88,7 +88,7 @@ This is crucial for:
 
 ### 3. SWMR Only: Single-Writer Multiple-Reader
 
-Seqlok enforces **strict ownership** per data domain:
+SeqWire enforces **strict ownership** per data domain:
 
 - **Params domain:**
 
@@ -109,7 +109,7 @@ This design:
 - Keeps the mental model clear:
   **Controller owns inputs; Processor owns outputs.**
 
-If your system needs true multi-writer concurrency on the _same_ fields, Seqlok is not the right primitive.
+If your system needs true multi-writer concurrency on the _same_ fields, SeqWire is not the right primitive.
 
 ---
 
@@ -131,7 +131,7 @@ const spec = defineSpec(({ param, meter }) => ({
 }));
 ```
 
-From this spec, Seqlok derives:
+From this spec, SeqWire derives:
 
 - A **deterministic memory plan** (planes, offsets, element counts)
 - Clear TS types for controller and processor bindings
@@ -150,7 +150,7 @@ Specs are **structural and stable**: once planned, both sides know exactly what�
 
 ### 5. Type Safety Throughout
 
-Seqlok leans heavily on TypeScript so that many illegal states are just **unrepresentable**:
+SeqWire leans heavily on TypeScript so that many illegal states are just **unrepresentable**:
 
 ```ts
 // ✅ Type-safe: TS knows 'waveform' is 'sine' | 'square' | 'saw'
@@ -180,7 +180,7 @@ rare runtime bugs.
 
 ### 6. Explicit Fail-Fast Philosophy
 
-Seqlok operates at a **primitive level**: memory plan, shared buffers, concurrency. At this level, many errors are
+SeqWire operates at a **primitive level**: memory plan, shared buffers, concurrency. At this level, many errors are
 fundamentally **unrecoverable** without risking corruption.
 
 If you:
@@ -190,7 +190,7 @@ If you:
 - Pass malformed or incompatible handoffs
 - Attempt to bind with a mismatched spec/plan
 
-Seqlok will throw a typed `SeqlokError` _immediately_.
+SeqWire will throw a typed `SeqWireError` _immediately_.
 
 It will **not**:
 
@@ -209,7 +209,7 @@ The philosophy is simple:
 
 ### Shared Memory Model: SharedArrayBuffer + Atomics
 
-Seqlok assumes:
+SeqWire assumes:
 
 - `SharedArrayBuffer` is available and enabled
 
@@ -225,13 +225,13 @@ There is **no fallback** mode without SAB:
 2. Polyfills using `postMessage` would break real-time assumptions.
 3. “Degraded modes” are more dangerous than explicit failure here.
 
-If SAB is not available, Seqlok should not be used.
+If SAB is not available, SeqWire should not be used.
 
 ---
 
 ### Concurrency Model: SWMR Only
 
-Seqlok's roles are fixed:
+SeqWire's roles are fixed:
 
 ```text
 Controller:
@@ -253,7 +253,7 @@ It will **never** grow support for:
 - Bidirectional writes to the same domain
 
 If you need multi-writer semantics, use a different concurrency primitive and accept the extra complexity/overhead.
-Seqlok optimizes for the **single-writer case** and will not compromise that.
+SeqWire optimizes for the **single-writer case** and will not compromise that.
 
 ---
 
@@ -289,7 +289,7 @@ This immutability is what enables:
 
 ### Not a Generic State Library
 
-Seqlok is **not** Redux, Zustand, Jotai, Valtio, or any other general-purpose state management solution.
+SeqWire is **not** Redux, Zustand, Jotai, Valtio, or any other general-purpose state management solution.
 
 It does **not** provide:
 
@@ -310,7 +310,7 @@ then you should probably use a standard UI state library instead.
 
 ### Not a Networking Protocol
 
-Seqlok operates within **one process**, via shared memory.
+SeqWire operates within **one process**, via shared memory.
 
 It does **not** provide:
 
@@ -319,14 +319,14 @@ It does **not** provide:
 - Conflict resolution
 - Eventually-consistent replication
 
-For multi-node / over-the-network sync, look at CRDT-based systems (Yjs, Automerge, etc.) or tailored protocols. Seqlok
+For multi-node / over-the-network sync, look at CRDT-based systems (Yjs, Automerge, etc.) or tailored protocols. SeqWire
 simply gives you a very fast, very structured **in-process shared state**.
 
 ---
 
 ### Not a Serialization Format
 
-Seqlok's in-memory plan is:
+SeqWire's in-memory plan is:
 
 - **Not human-readable**
 - **Not stable** across major versions by design
@@ -340,16 +340,16 @@ It is an implementation detail optimized for:
 
 To store or send data:
 
-- **Read** values out of Seqlok
+- **Read** values out of SeqWire
 - Serialize them via JSON, MessagePack, Protobuf, etc.
 
-Do not treat Seqlok's backing buffer as a long-term storage format.
+Do not treat SeqWire's backing buffer as a long-term storage format.
 
 ---
 
 ### Not an Actor System or Task Scheduler
 
-Seqlok is about **data**, not about **control flow**.
+SeqWire is about **data**, not about **control flow**.
 
 It does **not** provide:
 
@@ -362,16 +362,16 @@ It's closer to:
 
 > “A shared, concurrently safe struct with strong rules”
 
-than to Akka/Erlang actors or a job system. You can certainly build such systems _on top of_ Seqlok, but Seqlok itself
+than to Akka/Erlang actors or a job system. You can certainly build such systems _on top of_ SeqWire, but SeqWire itself
 stays focused on the shared state problem.
 
 ---
 
 ### Not a Full AudioParam Replacement
 
-Seqlok works very well with Web Audio, but it is **not** a drop-in replacement for `AudioParam`.
+SeqWire works very well with Web Audio, but it is **not** a drop-in replacement for `AudioParam`.
 
-**Seqlok params:**
+**SeqWire params:**
 
 - Written from the Controller, read by the Processor
 - Typically updated once per audio quantum (e.g., every 128 frames)
@@ -385,7 +385,7 @@ Seqlok works very well with Web Audio, but it is **not** a drop-in replacement f
 
 The intended pattern:
 
-- Use Seqlok for **device state**:
+- Use SeqWire for **device state**:
 
   - modes, enumerations, multi-dimensional arrays, configuration blobs
 
@@ -401,11 +401,11 @@ They complement each other; neither fully replaces the other.
 
 ### vs `postMessage`
 
-| Feature               | `postMessage`                | Seqlok                                    |
+| Feature               | `postMessage`                | SeqWire                                    |
 | :-------------------- | :--------------------------- | :---------------------------------------- |
 | Data movement         | Structured clone (copies)    | Zero-copy shared memory                   |
 | Latency               | Message-queue dependent (ms) | Immediate load/store (plus Atomics)       |
-| Real-time suitability | ❌ GC & queuing can glitch   | ✅ No allocations on hot path (in Seqlok) |
+| Real-time suitability | ❌ GC & queuing can glitch   | ✅ No allocations on hot path (in SeqWire) |
 | Coherence             | Per-message, not cross-field | ✅ Coherent snapshots via seqlock         |
 
 **Use `postMessage` when:**
@@ -418,12 +418,12 @@ They complement each other; neither fully replaces the other.
 
 ### vs Raw SharedArrayBuffer + Atomics
 
-| Feature        | Raw SAB + Atomics                    | Seqlok                            |
+| Feature        | Raw SAB + Atomics                    | SeqWire                            |
 | :------------- | :----------------------------------- | :-------------------------------- |
 | Type safety    | Manual casting / indexing            | Rich TS types, no `any`           |
 | Layout         | Hand-written offsets & magic numbers | Automatic, deterministic planning |
 | Concurrency    | DIY protocol                         | Built-in SWMR seqlock             |
-| Error handling | Easy silent corruption               | Typed `SeqlokError` on violation  |
+| Error handling | Easy silent corruption               | Typed `SeqWireError` on violation  |
 | Dev ergonomics | Low-level, error-prone               | High-level, role-based bindings   |
 
 **Use raw SAB + Atomics when:**
@@ -436,7 +436,7 @@ They complement each other; neither fully replaces the other.
 
 ### vs Web Audio `AudioParam`
 
-| Feature         | `AudioParam`                | Seqlok                                    |
+| Feature         | `AudioParam`                | SeqWire                                    |
 | :-------------- | :-------------------------- | :---------------------------------------- |
 | Time resolution | Sample-accurate             | Per-quantum (per `process` call)          |
 | Automation      | Built-in scheduling & ramps | Manual (or via AudioParam)                |
@@ -445,14 +445,14 @@ They complement each other; neither fully replaces the other.
 
 The sweet spot:
 
-- Use Seqlok for _configuration/state_ and metering (e.g. mode, buffers, analysis).
+- Use SeqWire for _configuration/state_ and metering (e.g. mode, buffers, analysis).
 - Use AudioParam for _control signals_ that must match the sample clock exactly.
 
 ---
 
 ## Target Use Cases
 
-Seqlok is designed for scenarios with:
+SeqWire is designed for scenarios with:
 
 - A **Controller** (UI/main/host)
 - A **Processor** (AudioWorklet/worker/simulation loop)
@@ -555,14 +555,14 @@ const spec = defineSpec(({ param, meter }) => ({
 
 ## What Success Looks Like
 
-You should reach for Seqlok when:
+You should reach for SeqWire when:
 
 1. You have a **real-time or latency-sensitive loop** in another agent.
 2. State must flow **both directions** (params → Processor, meters → Controller).
 3. **Coherence matters** — inconsistent reads would be meaningful bugs.
 4. **Type safety is non-negotiable** — you want the compiler to catch misuse.
 
-If all four are true, Seqlok is likely the right tool.
+If all four are true, SeqWire is likely the right tool.
 
 If only one or two are true, you might be better served by:
 
@@ -574,20 +574,20 @@ If only one or two are true, you might be better served by:
 
 ## Summary
 
-**Seqlok is:**
+**SeqWire is:**
 
 - A **shared-memory synchronization primitive** for JS/Wasm
 - Designed for **real-time SWMR communication** between Controller and Processor
 - **Schema-first**, with deterministic plan from a typed DSL
 - **Type-safe**, with zero `any` and strong TS integration
-- **Fail-fast**, with structured `SeqlokError` instead of silent corruption
+- **Fail-fast**, with structured `SeqWireError` instead of silent corruption
 
-**Seqlok is not:**
+**SeqWire is not:**
 
 - A full state management library
 - A networking or persistence layer
 - An actor system or RPC framework
 - A drop-in replacement for all of Web Audio's scheduling mechanisms
 
-Use Seqlok when you need **coherent, type-safe, real-time state sync across agents**. For everything else, simpler tools
+Use SeqWire when you need **coherent, type-safe, real-time state sync across agents**. For everything else, simpler tools
 are often better.

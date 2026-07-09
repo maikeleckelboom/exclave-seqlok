@@ -1,15 +1,15 @@
-# Seqlok
+# SeqWire
 
-Seqlok is a typed shared-memory contract for coherent runtime state. It uses a seqlock-backed shared-memory protocol internally, while exposing higher-level spec, layout, handoff, controller, processor, and observer bindings.
+SeqWire is a typed shared-memory contract for coherent runtime state. It uses a seqlock-backed shared-memory protocol internally, while exposing higher-level spec, layout, handoff, controller, processor, and observer bindings.
 
-The npm org `@exclave` stays the package scope. `@exclave/seqlok` is the package name and Seqlok is the standalone product identity.
+The npm org `@exclave` stays the package scope. `@exclave/seqwire` is the package name and SeqWire is the standalone product identity.
 
 The package is ESM-only, typed, MIT licensed, and marked `sideEffects: false`.
 
 ## Install
 
 ```sh
-pnpm add @exclave/seqlok
+pnpm add @exclave/seqwire
 ```
 
 ## Flow
@@ -36,7 +36,7 @@ import {
   buildHandoff,
   defineSpec,
   planLayout,
-} from "@exclave/seqlok";
+} from "@exclave/seqwire";
 
 const spec = defineSpec(({ param, meter }) => ({
   params: {
@@ -94,23 +94,23 @@ Grouped publishing maps unprefixed keys under one exact schema group; it is not 
 
 ## Package Surface
 
-This package publishes one runtime package: `@exclave/seqlok`. Internal base, schema, and primitive layers are implementation details unless exported from the root package or `@exclave/seqlok/diagnostics`.
+This package publishes one runtime package: `@exclave/seqwire`. Internal base, schema, and primitive layers are implementation details unless exported from the root package or `@exclave/seqwire/diagnostics`.
 
 The packed package must not contain `workspace:*` runtime dependencies. Run:
 
 ```sh
-pnpm -F @exclave/seqlok run test:pack
+pnpm -F @exclave/seqwire run test:pack
 ```
 
 ## Development
 
 ```sh
-pnpm -F @exclave/seqlok run build
-pnpm -F @exclave/seqlok run test
-pnpm -F @exclave/seqlok run test:types
-pnpm -F @exclave/seqlok run bench
+pnpm -F @exclave/seqwire run build
+pnpm -F @exclave/seqwire run test
+pnpm -F @exclave/seqwire run test:types
+pnpm -F @exclave/seqwire run bench
 ```
 
 ## Documentation
 
-The VitePress docs site lives in `apps/docs`. Historical design notes remain under `packages/core/docs`; treat them as architecture history when they go beyond the current public package boundary.
+The VitePress docs site lives in `apps/docs`. Architecture notes remain under `packages/core/docs`; treat them as supporting rationale when they go beyond the current public package boundary.

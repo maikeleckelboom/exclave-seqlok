@@ -9,7 +9,7 @@ import {
   type Handoff,
   type ObserverBinding,
   type SpecAstInput,
-} from "@exclave/seqlok";
+} from "@exclave/seqwire";
 
 export interface StretchControls {
   readonly active: boolean;

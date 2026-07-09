@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Convenience helpers for constructing and throwing SeqlokError instances.
+ * Convenience helpers for constructing and throwing SeqWireError instances.
  *
  * @remarks
  * - Wraps {@link createError} for common, cross-cutting error patterns.

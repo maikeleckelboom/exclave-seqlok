@@ -1,12 +1,12 @@
-# 🧠 Onboarding: The Seqlok Mindset
+# 🧠 Onboarding: The SeqWire Mindset
 
 **"You are not in the Event Loop anymore."**
 
-If you are coming from standard React, Node, or Vue development, Seqlok requires you to unlearn a few habits. In standard JavaScript, you wait for an event (click, fetch) and then react. In Seqlok's hot path, we do not wait. We **poll**.
+If you are coming from standard React, Node, or Vue development, SeqWire requires you to unlearn a few habits. In standard JavaScript, you wait for an event (click, fetch) and then react. In SeqWire's hot path, we do not wait. We **poll**.
 
-## The Mental Shift: Standard JS vs. Seqlok
+## The Mental Shift: Standard JS vs. SeqWire
 
-| Feature       | Standard JavaScript (The "easy" way)                   | Seqlok Hot Path (The "fast" way)                                        |
+| Feature       | Standard JavaScript (The "easy" way)                   | SeqWire Hot Path (The "fast" way)                                        |
 | :------------ | :----------------------------------------------------- | :---------------------------------------------------------------------- |
 | **Execution** | **Event-Driven:** "Wake me up when the user clicks."   | **Loop-Driven:** "Check the user status. Check again. Check again."     |
 | **Memory**    | **Garbage Collected:** `const x = { val: 1 }` is fine. | **Static Allocation:** Creating objects is forbidden. Reuse everything. |
@@ -29,20 +29,20 @@ This rule applies to **hot path loops** (processor ticks, observer frames). It i
 
 ## Thinking in Bytes: The Spec DSL (No Classes Allowed)
 
-JavaScript developers are used to JSON (`{ "x": 10, "y": 20 }`). They rarely think about **memory layouts** (structs). In Seqlok, you don't pass objects; you pass **offsets** into shared memory.
+JavaScript developers are used to JSON (`{ "x": 10, "y": 20 }`). They rarely think about **memory layouts** (structs). In SeqWire, you don't pass objects; you pass **offsets** into shared memory.
 
-If a developer doesn't understand that `Float32` takes 4 bytes, they will align their memory incorrectly and read garbage data. The Spec DSL exists so you only have to describe the layout once; Seqlok then gives you strongly-typed, zero-allocation views over that layout.
+If a developer doesn't understand that `Float32` takes 4 bytes, they will align their memory incorrectly and read garbage data. The Spec DSL exists so you only have to describe the layout once; SeqWire then gives you strongly-typed, zero-allocation views over that layout.
 
-In standard TypeScript, you might write a class to manage data. **In Seqlok, you define a Spec.**
+In standard TypeScript, you might write a class to manage data. **In SeqWire, you define a Spec.**
 
-We do not create "view classes" or wrapper objects. Instead, you define the memory structure once using the DSL. Seqlok generates the optimized views for you automatically inside the `within` and `snapshot` callbacks.
+We do not create "view classes" or wrapper objects. Instead, you define the memory structure once using the DSL. SeqWire generates the optimized views for you automatically inside the `within` and `snapshot` callbacks.
 
 ### The Pattern: `defineSpec`
 
 Instead of writing a class with getters and setters, you describe the layout data types:
 
 ```ts
-import { defineSpec } from "@exclave/seqlok";
+import { defineSpec } from "@exclave/seqwire";
 
 // 1. Define the structure (the "schema")
 export const boidSpec = defineSpec(({ param, meter }) => ({
@@ -99,7 +99,7 @@ processor.params.within((p) => {
 
 ## Visualizing the Hot Path Loop
 
-The standard Event Loop (A) is "push"-based. The Seqlok loop (B) is "pull"-based.
+The standard Event Loop (A) is "push"-based. The SeqWire loop (B) is "pull"-based.
 
 ```mermaid
 sequenceDiagram
@@ -107,7 +107,7 @@ sequenceDiagram
         participant E as Event Loop
         participant H as Handler
     end
-    box "Seqlok Worker (Hot Path)"
+    box "SeqWire Worker (Hot Path)"
         participant L as While(True)
         participant M as Memory
     end
@@ -131,11 +131,11 @@ sequenceDiagram
 
 ## 🛠️ Deployment & Troubleshooting
 
-Because Seqlok uses `SharedArrayBuffer`, browsers treat it as a "dangerous" feature (due to Spectre/Meltdown security risks). It will **fail silently** if your server is not configured correctly.
+Because SeqWire uses `SharedArrayBuffer`, browsers treat it as a "dangerous" feature (due to Spectre/Meltdown security risks). It will **fail silently** if your server is not configured correctly.
 
 ### 1. The "Security Wall" (Required Headers)
 
-You cannot use Seqlok on a deployed website (Vercel, Netlify, AWS) without these two HTTP headers. If these are missing, `SharedArrayBuffer` will be undefined.
+You cannot use SeqWire on a deployed website (Vercel, Netlify, AWS) without these two HTTP headers. If these are missing, `SharedArrayBuffer` will be undefined.
 
 ```http
 Cross-Origin-Opener-Policy: same-origin
@@ -154,7 +154,7 @@ This isolates your browser process so it cannot share memory with cross-origin p
 A "Heisenbug" is a bug that disappears or changes behavior when you try to study it.
 
 **The Trap:**
-If you add `console.log()` inside a Seqlok reader loop to debug a race condition, the bug will vanish.
+If you add `console.log()` inside a SeqWire reader loop to debug a race condition, the bug will vanish.
 
 - **Reason:** `console.log` is extremely slow (milliseconds). The Seqlock retry loop is extremely fast (nanoseconds).
 - **Result:** By logging, you artificially slow down the reader, making it "miss" the collision window with the writer. You will think the code is fixed, delete the log, and it will break again.
@@ -166,14 +166,14 @@ Use a **Flight Recorder** pattern. Write error codes or key state to a pre-alloc
 
 ## Bootstrapping & Environment Safety
 
-Seqlok provides built-in utilities to verify the environment before you even attempt to allocate memory. Using these is safer than writing your own checks because they handle edge cases (like Node vs Browser vs Electron).
+SeqWire provides built-in utilities to verify the environment before you even attempt to allocate memory. Using these is safer than writing your own checks because they handle edge cases (like Node vs Browser vs Electron).
 
 ### A. Asserting Environment Support
 
 Don't wait for a crash. Fail fast during initialization using `assertSabSupport`.
 
 ```ts
-import { assertSabSupport } from "@exclave/seqlok";
+import { assertSabSupport } from "@exclave/seqwire";
 
 function initDevice() {
   try {
@@ -194,13 +194,13 @@ function initDevice() {
 If you want to feature-detect without crashing, use `probeEnv`.
 
 ```ts
-import { probeEnv } from "@exclave/seqlok";
+import { probeEnv } from "@exclave/seqwire";
 
 const env = probeEnv();
 
 if (env.kind === "browser" && !env.crossOriginIsolated) {
   console.warn(
-    "Running in degraded mode: Seqlok disabled due to missing COOP/COEP.",
+    "Running in degraded mode: SeqWire disabled due to missing COOP/COEP.",
   );
   // Fallback logic here
 }
@@ -210,17 +210,17 @@ if (env.kind === "browser" && !env.crossOriginIsolated) {
 
 ## Troubleshooting with `interpretHealth`
 
-Seqlok errors are structured. Instead of parsing error strings, use the `interpretHealth` utility to decide how to react to a crash.
+SeqWire errors are structured. Instead of parsing error strings, use the `interpretHealth` utility to decide how to react to a crash.
 
 This is particularly useful for UI feedback ("Do I tell the user to reload, or just retry?").
 
 ```ts
-import { isSeqlokError, getErrorMeta, interpretHealth } from "@exclave/seqlok";
+import { isSeqWireError, getErrorMeta, interpretHealth } from "@exclave/seqwire";
 
 try {
-  // ... seqlok operations ...
+  // ... seqwire operations ...
 } catch (err) {
-  if (isSeqlokError(err)) {
+  if (isSeqWireError(err)) {
     // 1. Get metadata about this specific error code
     const meta = getErrorMeta(err.code);
 
@@ -252,5 +252,5 @@ try {
 ## Further Reading
 
 - **Architecture – Concurrency Model and Roles** – deeper dive into Controller vs Processor vs Observer domains.
-- **Architecture – Error System and Fail-Fast Philosophy** – details on `isSeqlokError`, `interpretHealth`, and recovery strategies.
-- **From Pipe to Hub: Understanding Seqlok's Architecture** – how Seqlok composes SWSR domains, rings, hubs, and observers into system-level MWMR.
+- **Architecture – Error System and Fail-Fast Philosophy** – details on `isSeqWireError`, `interpretHealth`, and recovery strategies.
+- **From Pipe to Hub: Understanding SeqWire's Architecture** – how SeqWire composes SWSR domains, rings, hubs, and observers into system-level MWMR.

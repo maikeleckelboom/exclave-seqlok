@@ -346,7 +346,7 @@ proc.params.within((v) => {
 });
 ```
 
-This plays nicely with Seqlok's design:
+This plays nicely with SeqWire's design:
 
 - The **controller** is ergonomic and expressive (labels).
 - The **processor** is tight and numeric (indices).

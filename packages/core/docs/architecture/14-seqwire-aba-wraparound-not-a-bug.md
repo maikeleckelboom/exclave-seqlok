@@ -38,10 +38,10 @@ days    = seconds / (60 * 60 * 24) ≈ 24.85 days
 So you need roughly **25 days** of _continuous_ 1 kHz writes with a reader that started before this marathon and never
 successfully completed or retried during that entire period.
 
-In Seqlok's intended domains (WebAudio worklets, RT graphics, short-lived workers), that's completely outside realistic
+In SeqWire's intended domains (WebAudio worklets, RT graphics, short-lived workers), that's completely outside realistic
 session lifetimes.
 
-### Why this is not a practical bug for Seqlok
+### Why this is not a practical bug for SeqWire
 
 - Our read protocol checks **pre/post equality** of both `LOCK` and `SEQ` and requires `LOCK` to be even.
 - A single complete write changes `LOCK` by +2 and `SEQ` by +1. Any write between the two reads will make either `LOCK`
@@ -58,14 +58,14 @@ So:
 
 ### Our stance and future-proofing
 
-- For current Seqlok targets, the ABA wraparound scenario is a **theoretical edge case**, not a practical production
+- For current SeqWire targets, the ABA wraparound scenario is a **theoretical edge case**, not a practical production
   risk.
 - If we ever need **strict mathematical immunity** (no assumptions about uptime or update rate), we can extend the
   seqlock state with a small **generation counter** (e.g. an extra `u32`), and compare `(SEQ, GEN)` pairs. That would be
   shipped as an **ABI-versioned** plan change.
 
 So when reviewers see "32-bit counter" and immediately suspect an ABA bug, they're not wrong to be cautious – the ABA
-problem is real and subtle – but in Seqlok's concrete deployment model, the wraparound path to ABA is effectively
+problem is real and subtle – but in SeqWire's concrete deployment model, the wraparound path to ABA is effectively
 unreachable.
 
 [1]: https://en.wikipedia.org/wiki/ABA_problem?utm_source=chatgpt.com "ABA problem"

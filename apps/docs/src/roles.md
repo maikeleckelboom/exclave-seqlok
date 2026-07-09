@@ -1,6 +1,6 @@
 # Controller, Processor, and Observer Roles
 
-Seqlok exposes separate role bindings because each side has different authority and timing pressure.
+SeqWire exposes separate role bindings because each side has different authority and timing pressure.
 
 ## Controller
 

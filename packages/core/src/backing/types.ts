@@ -14,7 +14,7 @@
 import type { PlaneKey } from "../primitives/planes";
 
 /**
- * Supported memory backing strategies for Seqlok's memory planes.
+ * Supported memory backing strategies for SeqWire's memory planes.
  *
  * @remarks
  * - `packed`: single SharedArrayBuffer for all planes.

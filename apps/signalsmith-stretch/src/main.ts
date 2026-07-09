@@ -1,14 +1,10 @@
 import "./styles.css";
 
+import { createMeterUi, renderMeterPanel, renderMeterUi } from "./meter-ui";
 import {
-  createMeterUi,
-  renderMeterPanel,
-  renderMeterUi,
-} from "./meter-ui";
-import {
-  createSeqlokMeterNode,
-  disposeSeqlokMeterNode,
-  type SeqlokMeterWorkletNode,
+  createSeqWireMeterNode,
+  disposeSeqWireMeterNode,
+  type SeqWireMeterWorkletNode,
 } from "./meter-node";
 import {
   createSignalsmithStretchSession,
@@ -20,7 +16,7 @@ import {
   writeStretchControls,
   type SignalsmithStretchSession,
   type StretchControls,
-} from "./seqlok-spec";
+} from "./seqwire-spec";
 import {
   createSignalsmithStretch,
   type SignalsmithSchedule,
@@ -49,7 +45,7 @@ interface LoadedSource {
 
 interface Runtime {
   readonly audioContext: AudioContext;
-  readonly meterNode: SeqlokMeterWorkletNode;
+  readonly meterNode: SeqWireMeterWorkletNode;
   readonly node: SignalsmithStretchNode;
 }
 
@@ -59,7 +55,7 @@ interface DemoState {
   controls: StretchControls;
   loadRequest: number;
   loadedSource: LoadedSource | null;
-  meterNode: SeqlokMeterWorkletNode | null;
+  meterNode: SeqWireMeterWorkletNode | null;
   meterUiFrame: number | null;
   node: SignalsmithStretchNode | null;
   playheadSeconds: number;
@@ -138,7 +134,7 @@ window.addEventListener("beforeunload", () => {
     cancelAnimationFrame(state.meterUiFrame);
   }
   if (state.meterNode) {
-    disposeSeqlokMeterNode(state.meterNode);
+    disposeSeqWireMeterNode(state.meterNode);
   }
   state.node?.disconnect();
   void state.audioContext?.close();
@@ -340,17 +336,23 @@ function handleControlInput(): void {
 }
 
 async function loadDefaultSource(): Promise<void> {
-  await loadSource(DEFAULT_SOURCE.fileName, DEFAULT_SOURCE.label, async (runtime) => {
-    const response = await fetch(DEFAULT_SOURCE.url);
-    if (!response.ok) {
-      throw new Error(`Unable to fetch ${DEFAULT_SOURCE.url}: ${response.status.toString()}`);
-    }
-    const arrayBuffer = await response.arrayBuffer();
-    const audioBuffer = await runtime.audioContext.decodeAudioData(
-      arrayBuffer.slice(0),
-    );
-    return createDecodedPcmSource(audioBuffer);
-  });
+  await loadSource(
+    DEFAULT_SOURCE.fileName,
+    DEFAULT_SOURCE.label,
+    async (runtime) => {
+      const response = await fetch(DEFAULT_SOURCE.url);
+      if (!response.ok) {
+        throw new Error(
+          `Unable to fetch ${DEFAULT_SOURCE.url}: ${response.status.toString()}`,
+        );
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      const audioBuffer = await runtime.audioContext.decodeAudioData(
+        arrayBuffer.slice(0),
+      );
+      return createDecodedPcmSource(audioBuffer);
+    },
+  );
 }
 
 async function loadSource(
@@ -379,7 +381,11 @@ async function loadSource(
     state.controls = { ...readStretchControls(state.session), active: false };
     writeStretchControls(state.session, state.controls);
     await configureNode(runtime.node);
-    await scheduleNode({ active: false, inputSeconds: 0, reason: "Source ready." });
+    await scheduleNode({
+      active: false,
+      inputSeconds: 0,
+      reason: "Source ready.",
+    });
     render();
   } catch (error) {
     setError(error);
@@ -402,7 +408,10 @@ async function ensureRuntime(): Promise<Runtime> {
     numberOfOutputs: 1,
     outputChannelCount: [2],
   });
-  const meterNode = await createSeqlokMeterNode(audioContext, state.session.handoff);
+  const meterNode = await createSeqWireMeterNode(
+    audioContext,
+    state.session.handoff,
+  );
 
   node.connect(meterNode);
   meterNode.connect(audioContext.destination);
@@ -728,8 +737,7 @@ function render(): void {
   if (!loaded) {
     elements.fileName.textContent = "Loading bundled loop";
     elements.loadedSource.textContent = "Official Signalsmith demo loop.";
-    elements.sourceMeta.textContent =
-      `loading | ${plan.id} | ${plan.bytesTotal.toString()} bytes`;
+    elements.sourceMeta.textContent = `loading | ${plan.id} | ${plan.bytesTotal.toString()} bytes`;
     renderPlayhead();
     return;
   }
@@ -802,10 +810,7 @@ function setError(error: unknown): void {
     error instanceof Error ? error.message : String(error);
 }
 
-function must<T extends Element>(
-  selector: string,
-  ctor: new () => T,
-): T {
+function must<T extends Element>(selector: string, ctor: new () => T): T {
   const element = appRoot.querySelector(selector);
   if (!(element instanceof ctor)) {
     throw new Error(`Missing element ${selector}.`);

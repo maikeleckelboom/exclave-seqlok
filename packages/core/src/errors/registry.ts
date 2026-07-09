@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Central error registry with metadata for Seqlok.
+ * Central error registry with metadata for SeqWire.
  *
  * @remarks
  * - Type-safe mapping of error codes to their detail shapes

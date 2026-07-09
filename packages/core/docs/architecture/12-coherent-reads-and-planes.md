@@ -50,7 +50,7 @@ doc stays at the architectural level.
 
 ## 2. Roles and coherence guarantees
 
-Seqlok's bindings are built around three roles:
+SeqWire's bindings are built around three roles:
 
 - **Processor** – hot path, real-time work.
 - **Controller** – cold path, orchestration and UI logic.
@@ -326,7 +326,7 @@ If you need strict coherence, you should read via an observer-style path instead
 
 ## 6. Memory planes: what lives where
 
-Seqlok separates data by **type family** into planes. Each plane is a TypedArray over a shared backing; the planner
+SeqWire separates data by **type family** into planes. Each plane is a TypedArray over a shared backing; the planner
 decides sizes and offsets based on the spec.
 
 ### 6.1 Param planes

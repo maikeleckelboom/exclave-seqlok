@@ -1,4 +1,4 @@
-# ADR-00Y: MWMR System Architecture via Seqlok Domains + Observers + Rings
+# ADR-00Y: MWMR System Architecture via SeqWire Domains + Observers + Rings
 
 **Status**: Proposed
 **Date**: 2025-11-16
@@ -6,17 +6,17 @@
 
 **Related**:
 
-- ADR-001 – Seqlok Core Golden Flow
+- ADR-001 – SeqWire Core Golden Flow
 - ADR-002 – Memory Growth & Swap via Handoff Sequences
-- ADR-00Z – Observer Binding Role in `@exclave/seqlok`
-- ADR-00X - Historical System-Level Composition Proposal
-- ADR-010 – Ring Primitive in `@exclave/seqlok` (SWSR queue)
+- ADR-00Z – Observer Binding Role in `@exclave/seqwire`
+- ADR-00X - Superseded System-Level Composition Proposal
+- ADR-010 – Ring Primitive in `@exclave/seqwire` (SWSR queue)
 
 ---
 
 ## 1. Context
 
-Seqlok core provides rock-solid **SWMR** primitives with seqlock-based coherence. The golden flow is frozen:
+SeqWire core provides rock-solid **SWMR** primitives with seqlock-based coherence. The golden flow is frozen:
 
 ```txt
 defineSpec
@@ -43,7 +43,7 @@ Complex real-time systems require:
 3. Real-time guarantees (predictable latency, no allocations in hot paths).
 4. Clear authority boundaries (who owns what, in which runtime).
 
-Naively extending Seqlok primitives to allow many writers per plane would:
+Naively extending SeqWire primitives to allow many writers per plane would:
 
 - break SWMR invariants,
 - complicate seqlock semantics,
@@ -96,7 +96,7 @@ The **system** is a graph of such domains wired with:
 - one or more **rings** for **fan-in** (many writers → hub/governor),
 - an optional registry domain for discovery/co-ordination.
 
-`@exclave/seqlok` knows only about **domains** and the ring primitive itself. MWMR lives above it in topology code and drivers.
+`@exclave/seqwire` knows only about **domains** and the ring primitive itself. MWMR lives above it in topology code and drivers.
 
 ### 3.2 New Binding Role: `bindObserver` (delegated to ADR-00Z)
 
@@ -128,11 +128,11 @@ System-level MWMR uses **intent buses** built from the SWSR ring primitive (ADR-
 
 The ring primitive:
 
-- lives in `@exclave/seqlok` as a generic, semantic-free SWSR queue,
+- lives in `@exclave/seqwire` as a generic, semantic-free SWSR queue,
 - operates over `SharedArrayBuffer` / shared Wasm memory with a fixed ABI,
 - is composed into MPSC patterns by higher-level topology code and drivers.
 
-Rings **do not** expose Seqlok planes directly. They transport **intents**, not shared state.
+Rings **do not** expose SeqWire planes directly. They transport **intents**, not shared state.
 
 ---
 
@@ -142,7 +142,7 @@ This ADR formally locks per-domain SWMR invariants.
 
 ### 4.1 Per-domain SWMR invariants
 
-For any Seqlok domain `Domain<S>`:
+For any SeqWire domain `Domain<S>`:
 
 1. There is at most one `ControllerBinding<S>` instance allowed to write params.
 2. There is at most one `ProcessorBinding<S>` instance allowed to write meters.
@@ -231,13 +231,13 @@ Patterns:
   - Any number of observers attach via `bindObserver`.
   - Observers only ever call `snapshot` / `version`.
 
-No code outside controller/processor bindings writes into Seqlok planes, regardless of how many agents you have.
+No code outside controller/processor bindings writes into SeqWire planes, regardless of how many agents you have.
 
 ---
 
 ## 6. Orchestration Responsibilities
 
-This ADR clarifies that **orchestration is not** a concern of `@exclave/seqlok` or `bindObserver`:
+This ADR clarifies that **orchestration is not** a concern of `@exclave/seqwire` or `bindObserver`:
 
 - The "driver" (DeckDriver / DomainOrchestrator / SystemManager) is responsible for:
 
@@ -246,7 +246,7 @@ This ADR clarifies that **orchestration is not** a concern of `@exclave/seqlok` 
   - owning engine lifecycle (spawn → configure → prime → preWarm → swap via `SwapTicket`),
   - respecting higher-level mode semantics (takeover/edit/passive).
 
-ADR-00X preserves the historical topology-tool proposal. Current guidance is neutral: drivers own run-time policy, and topology remains an architectural layer above the prototype core.
+ADR-00X records the superseded topology-tool proposal. Current guidance is neutral: drivers own run-time policy, and topology remains an architectural layer above the core package.
 
 ---
 
@@ -270,10 +270,10 @@ ADR-00X preserves the historical topology-tool proposal. Current guidance is neu
 
 We achieve system-level MWMR by:
 
-- composing multiple SWMR Seqlok domains,
+- composing multiple SWMR SeqWire domains,
 - adding `bindObserver` for many-reader fan-out,
 - using rings (via the core ring primitive) for many-writer fan-in,
 - orchestrating growth via handoff sequences and `SwapTicket`s,
 - maintaining frame-accurate swap semantics for real-time contexts.
 
-Seqlok's primitives stay simple and strict, while complex real-time apps (Dekzer, agent swarms, etc.) get a solid MWMR architecture on top.
+SeqWire's primitives stay simple and strict, while complex real-time apps (Dekzer, agent swarms, etc.) get a solid MWMR architecture on top.

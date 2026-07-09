@@ -2,7 +2,7 @@ import { fileURLToPath, URL } from "node:url";
 
 import { defineConfig } from "vite";
 
-const boundarySource = fileURLToPath(
+const seqwireSource = fileURLToPath(
   new URL("../../packages/core/src/index.ts", import.meta.url),
 );
 
@@ -21,7 +21,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@exclave/seqlok": boundarySource,
+      "@exclave/seqwire": seqwireSource,
     },
   },
   server: {

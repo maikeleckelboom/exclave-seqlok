@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import { allocateWasm } from "../../src/backing/allocate-wasm";
-import { isSeqlokError } from "../../src/errors/error";
+import { isSeqWireError } from "../../src/errors/error";
 import { planLayout } from "../../src/plan/layout";
 import { defineSpec } from "../../src/spec/define";
 
@@ -114,7 +114,7 @@ describe("allocateWasm: existing memory growth", () => {
       throw new Error("Expected allocateWasm to throw for grow failure");
     }
 
-    if (!isSeqlokError(thrown)) {
+    if (!isSeqWireError(thrown)) {
       throw thrown as Error;
     }
 

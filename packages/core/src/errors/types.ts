@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Centralized error type exports for Seqlok.
+ * Centralized error type exports for SeqWire.
  *
  * @remarks
  * - Re-exports all error types from their respective modules.

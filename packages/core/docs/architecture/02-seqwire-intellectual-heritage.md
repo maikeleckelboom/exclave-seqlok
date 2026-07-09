@@ -1,17 +1,17 @@
-# Seqlok: Intellectual Heritage & Reading List
+# SeqWire: Intellectual Heritage & Reading List
 
-_A conceptual map of the ideas behind Seqlok_
+_A conceptual map of the ideas behind SeqWire_
 
-Seqlok doesn't invent new physics – it assembles proven systems concepts and adapts them to JavaScript,
+SeqWire doesn't invent new physics – it assembles proven systems concepts and adapts them to JavaScript,
 SharedArrayBuffer, Web Audio, Workers, and Wasm.
 
-This document is a guided reading list and a map from "classic ideas" → "how Seqlok uses them."
+This document is a guided reading list and a map from "classic ideas" → "how SeqWire uses them."
 
 ---
 
 ## TL;DR
 
-Seqlok = **Shared memory** + **Version numbers** + **Scope safety**
+SeqWire = **Shared memory** + **Version numbers** + **Scope safety**
 
 - 🔒 **SharedArrayBuffer** → Memory both threads can access
 - 🔄 **Seqlocks** → Version numbers to detect mid-read changes
@@ -38,9 +38,9 @@ Tie the lifetime of a resource (file, lock, buffer) to a scope so it's automatic
 - 📚 [cppreference: RAII](https://en.cppreference.com/w/cpp/language/raii.html)
 - 📚 [GeeksforGeeks: Resource Acquisition Is Initialization](https://www.geeksforgeeks.org/cpp-resource-acquisition-is-initialization/)
 
-**How Seqlok applies this idea**
+**How SeqWire applies this idea**
 
-JavaScript doesn't have destructors, but Seqlok simulates RAII with **scope-bound callbacks**:
+JavaScript doesn't have destructors, but SeqWire simulates RAII with **scope-bound callbacks**:
 
 ```ts
 // processor side (real-time code)
@@ -81,7 +81,7 @@ Readers run without taking a lock, but they detect when a writer changed data mi
 - 📚 [DPDK: `rte_seqlock`](https://doc.dpdk.org/api/rte__seqlock_8h.html)
 - 📚 [Lock-free reads through data replication](https://www.dgoldblatt.com/lock-free-reads-through-data-replication.html)
 
-**The "hard way" vs Seqlok**
+**The "hard way" vs SeqWire**
 
 Naive manual seqlock usage:
 
@@ -98,7 +98,7 @@ do {
 } while (seqBefore !== seqAfter || (seqBefore & 1) === 1);
 ```
 
-The Seqlok way:
+The SeqWire way:
 
 ```ts
 // processor-side, coherent param read
@@ -110,7 +110,7 @@ processor.params.within((params) => {
 });
 ```
 
-**How Seqlok uses seqlocks**
+**How SeqWire uses seqlocks**
 
 - Param domain has a seqlock → `params.within(...)` uses it internally.
 - Meter domain has a seqlock → `meters.publish(...)` (processor) and `meters.snapshot(...)` (controller) use it internally.
@@ -134,9 +134,9 @@ Exactly one actor is allowed to mutate a dataset; many actors may read from it c
 - 📚 [h5py: SWMR documentation](https://docs.h5py.org/en/stable/swmr.html)
 - 📚 [MathWorks: SWMR example](https://www.mathworks.com/help/matlab/import_export/read-and-write-data-concurrently-using-single-writermultiple-reader-swmr.html)
 
-**How Seqlok applies SWMR**
+**How SeqWire applies SWMR**
 
-Seqlok uses SWMR as a **design rule** at the domain level:
+SeqWire uses SWMR as a **design rule** at the domain level:
 
 - **Params:**
 
@@ -167,7 +167,7 @@ Keep "things that change state" (commands) separate from "things that read state
 - 📚 [Martin Fowler: CQRS](https://martinfowler.com/bliki/CQRS.html)
 - 📚 [CQRS: A Deep Dive into Command Query Responsibility Segregation](https://solutionsarchitecture.medium.com/cqrs-a-deep-dive-into-command-query-responsibility-segregation-4fd83d79f756)
 
-**Naive vs Seqlok**
+**Naive vs SeqWire**
 
 Naive shared object:
 
@@ -189,7 +189,7 @@ state.peak = computePeak(buffer); // writes
 // no ownership, no separation, potential torn reads if shared
 ```
 
-Seqlok's CQRS-style split:
+SeqWire's CQRS-style split:
 
 ```ts
 // ✅ controller side (UI / host)
@@ -208,12 +208,12 @@ processor.params.within((params) => {
 });
 ```
 
-**How Seqlok applies CQRS**
+**How SeqWire applies CQRS**
 
 - **Commands** → params (what the controller wants the device to do).
 - **Queries** → meters (what the device is currently doing / reporting).
 
-Seqlok applies CQRS **at the shared-memory boundary**, not just at API or HTTP level.
+SeqWire applies CQRS **at the shared-memory boundary**, not just at API or HTTP level.
 
 ---
 
@@ -232,7 +232,7 @@ SharedArrayBuffer gives JavaScript agents a common block of memory; Atomics prov
 - 📚 [What JavaScript SharedArrayBuffer Actually Lets You Do](https://medium.com/@AlexanderObregon/what-javascript-sharedarraybuffer-actually-lets-you-do-9589f449fd75)
 - 📚 [SharedArrayBuffer and Memory Management in JavaScript](https://medium.com/@artemkhrenov/sharedarraybuffer-and-memory-management-in-javascript-06738cda8f51)
 
-**Naive vs Seqlok**
+**Naive vs SeqWire**
 
 Naive SAB usage:
 
@@ -251,7 +251,7 @@ const u32 = new Uint32Array(sab);
 // no schema, no safety, lots of magic numbers.
 ```
 
-Seqlok approach (golden flow):
+SeqWire approach (golden flow):
 
 ```ts
 const spec = defineSpec(({ param, meter }) => ({
@@ -275,7 +275,7 @@ const accepted = acceptHandoff(handoffFromMain);
 const processor = bindProcessor(accepted);
 ```
 
-Seqlok uses SAB/Wasm as the raw medium, but:
+SeqWire uses SAB/Wasm as the raw medium, but:
 
 - The **Spec** describes structure.
 - The **Plan** computes deterministic layout.
@@ -287,7 +287,7 @@ Seqlok uses SAB/Wasm as the raw medium, but:
 
 ## The Synthesis
 
-All of the above combine into Seqlok's core model:
+All of the above combine into SeqWire's core model:
 
 ```text
 RAII-style scoping   +   seqlock synchronization   +   SWMR & CQRS discipline
@@ -316,7 +316,7 @@ Spec  →  Plan  →  Backing  →  Handoff  →  Bindings
 
 ---
 
-## Mental Models for Seqlok
+## Mental Models for SeqWire
 
 These analogies help new developers reason about the system.
 
@@ -343,7 +343,7 @@ These analogies help new developers reason about the system.
 
 ---
 
-## From Naive Shared State to Seqlok
+## From Naive Shared State to SeqWire
 
 A concrete "aha" comparison:
 
@@ -360,7 +360,7 @@ const gain = audioParams.gain; // could see a half-write if truly shared
 You'd need custom locking, manual versioning, and disciplined usage to make this safe.
 
 ```ts
-// ✅ Seqlok-style
+// ✅ SeqWire-style
 
 // controller / UI:
 controller.params.set("gain", slider.value);
@@ -410,13 +410,13 @@ the API.
 
 7. Compare **seqlocks vs RCU vs classic locks**.
 8. Study **cache coherence** and false sharing for performance tuning.
-9. Look at **Linux kernel / DPDK** seqlock usage and map those patterns to Seqlok's plan.
+9. Look at **Linux kernel / DPDK** seqlock usage and map those patterns to SeqWire's plan.
 
 ---
 
 ## For Code Reviewers
 
-When reviewing Seqlok usage:
+When reviewing SeqWire usage:
 
 - ✅ **Scoped access (RAII-style)**
 
@@ -438,7 +438,7 @@ When reviewing Seqlok usage:
   - Params are used as **inputs** (commands), meters as **outputs** (telemetry).
   - No "hidden command" encoded in meters or "hidden telemetry" stored in params.
 
-If these invariants hold, the code is aligned with Seqlok's design principles and with the literature linked above.
+If these invariants hold, the code is aligned with SeqWire's design principles and with the literature linked above.
 
 ---
 
@@ -450,7 +450,7 @@ If these invariants hold, the code is aligned with Seqlok's design principles an
 - **CQRS** — Command–Query Responsibility Segregation; separate models for “doing” and “asking.”
 - **SharedArrayBuffer (SAB)** — Shared memory buffer usable across workers/agents in JS.
 - **Atomics** — JS operations (`Atomics.load`, `Atomics.store`, etc.) that provide ordering and atomicity on shared memory.
-- **Params** — Seqlok’s domain for control inputs (what the controller asks the device to do).
-- **Meters** — Seqlok’s domain for telemetry outputs (what the device reports back).
+- **Params** — SeqWire’s domain for control inputs (what the controller asks the device to do).
+- **Meters** — SeqWire’s domain for telemetry outputs (what the device reports back).
 - **Controller** — Side that owns params and reads meters (typically UI/host).
 - **Processor** — Side that reads params and owns meters (typically RT/DSP/worker code).

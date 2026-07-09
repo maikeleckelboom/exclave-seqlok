@@ -106,8 +106,7 @@ async function installAudioProbe(page: Page): Promise<void> {
     ): AudioNode | void {
       const result = connect.call(this, destination, output, input);
       const probe = window.__signalsmithAudioProbe;
-      const connectsToDestination =
-        destination instanceof AudioDestinationNode;
+      const connectsToDestination = destination instanceof AudioDestinationNode;
 
       if (
         connectsToDestination &&

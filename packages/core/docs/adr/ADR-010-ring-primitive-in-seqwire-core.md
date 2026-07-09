@@ -1,4 +1,4 @@
-# ADR-010: Ring Primitive in `@exclave/seqlok`
+# ADR-010: Ring Primitive in `@exclave/seqwire`
 
 **Status**: Accepted
 **Date**: 2025-11-19
@@ -6,17 +6,17 @@
 
 **Related**:
 
-- ADR-001 – Seqlok Core Golden Flow
+- ADR-001 – SeqWire Core Golden Flow
 - ADR-002 – Memory Growth & Swap via Handoff Sequences
 - ADR-00Y – MWMR System Architecture via Domains + Observers + Rings
-- ADR-00X - Historical System-Level Composition Proposal
-- ADR-00Z – Observer Binding Role in `@exclave/seqlok`
+- ADR-00X - Superseded System-Level Composition Proposal
+- ADR-00Z – Observer Binding Role in `@exclave/seqwire`
 
 ---
 
 ## 1. Context
 
-`@exclave/seqlok` currently exposes:
+`@exclave/seqwire` currently exposes:
 
 - seqlock-based **params/meters** primitives (snapshot/publish),
 - a deterministic layout pipeline: `spec → plan → backing → handoff → bindings`,
@@ -37,14 +37,14 @@ Real-time systems like Dekzer also need a way to express **control flow**:
 
 ADR-00Y and ADR-00X assume a **command ring / intent bus** but originally treated it as a named package extraction.
 
-This ADR decides that the underlying **ring primitive** is fundamental enough to live directly in `@exclave/seqlok`
+This ADR decides that the underlying **ring primitive** is fundamental enough to live directly in `@exclave/seqwire`
 alongside `seqlock`.
 
 ---
 
 ## 2. Decision
 
-We introduce a **generic, single-writer / single-reader (SWSR) ring primitive** in `@exclave/seqlok/src/primitives` with
+We introduce a **generic, single-writer / single-reader (SWSR) ring primitive** in `@exclave/seqwire/src/primitives` with
 these properties:
 
 - lives next to `seqlock` and other low-level primitives,
@@ -59,7 +59,7 @@ these properties:
 
 Higher-level MPSC / MPMC patterns (MWMR intent buses) are built on top of this primitive by topology code and product drivers.
 
-The primitive is part of `@exclave/seqlok` **only as a mechanism**. All command semantics remain outside core.
+The primitive is part of `@exclave/seqwire` **only as a mechanism**. All command semantics remain outside core.
 
 ---
 
@@ -256,7 +256,7 @@ This allows:
 
 ## 7. Consequences
 
-- `@exclave/seqlok` now exposes **two fundamental concurrency primitives**:
+- `@exclave/seqwire` now exposes **two fundamental concurrency primitives**:
 
   1. **Seqlock** – for bidirectional state sync (params/meters).
   2. **Ring primitive** – for unidirectional command queues (intent buses).
@@ -275,6 +275,6 @@ This allows:
 
 This ADR is the normative source for:
 
-- the presence and layout of the ring primitive in `@exclave/seqlok`,
+- the presence and layout of the ring primitive in `@exclave/seqwire`,
 - its relationship to MWMR system design (ADR-00Y),
 - its role relative to `bindObserver` and drivers described in ADR-00X / ADR-00Z.

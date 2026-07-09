@@ -1,7 +1,7 @@
 {
   "files": [
     {
-      "filepath": "/home/libs/seqlok/packages/core/bench/array-vs-stage-and-meters.bench.ts",
+      "filepath": "/home/libs/seqwire/packages/core/bench/array-vs-stage-and-meters.bench.ts",
       "groups": [
         {
           "fullName": "bench/array-vs-stage-and-meters.bench.ts > MeterWriter sugar: set vs stage, direct vs named",
@@ -86,7 +86,7 @@
       ]
     },
     {
-      "filepath": "/home/libs/seqlok/packages/core/bench/e2e-pipeline.bench.ts",
+      "filepath": "/home/libs/seqwire/packages/core/bench/e2e-pipeline.bench.ts",
       "groups": [
         {
           "fullName": "bench/e2e-pipeline.bench.ts > End-to-end pipeline: plan, allocate, handoff, bind",
@@ -171,7 +171,7 @@
       ]
     },
     {
-      "filepath": "/home/libs/seqlok/packages/core/bench/observer-reads.bench.ts",
+      "filepath": "/home/libs/seqwire/packages/core/bench/observer-reads.bench.ts",
       "groups": [
         {
           "fullName": "bench/observer-reads.bench.ts > Observer read-path benchmarks",
@@ -306,7 +306,7 @@
       ]
     },
     {
-      "filepath": "/home/libs/seqlok/packages/core/bench/param-operations.bench.ts",
+      "filepath": "/home/libs/seqwire/packages/core/bench/param-operations.bench.ts",
       "groups": [
         {
           "fullName": "bench/param-operations.bench.ts > Parameter operations: controller hot paths",
@@ -516,7 +516,7 @@
       ]
     },
     {
-      "filepath": "/home/libs/seqlok/packages/core/bench/real-world-scenarios.bench.ts",
+      "filepath": "/home/libs/seqwire/packages/core/bench/real-world-scenarios.bench.ts",
       "groups": [
         {
           "fullName": "bench/real-world-scenarios.bench.ts > Parameter operations: DJ-style controller ↔ processor",
@@ -726,7 +726,7 @@
       ]
     },
     {
-      "filepath": "/home/libs/seqlok/packages/core/bench/seqlock.bench.ts",
+      "filepath": "/home/libs/seqwire/packages/core/bench/seqlock.bench.ts",
       "groups": [
         {
           "fullName": "bench/seqlock.bench.ts > Seqlock (micro): tryRead vs publish (uncontended)",

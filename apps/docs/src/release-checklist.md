@@ -1,6 +1,6 @@
 # Release Checklist
 
-Run these checks before publishing `@exclave/seqlok`.
+Run these checks before publishing `@exclave/seqwire`.
 
 ```sh
 pnpm install
@@ -12,15 +12,15 @@ pnpm build
 pnpm run docs
 pnpm docs:build
 pnpm test:pack
-pnpm --filter @exclave/seqlok pack
+pnpm --filter @exclave/seqwire pack
 ```
 
 ## Package Checks
 
-- `packages/core/package.json` is named `@exclave/seqlok`.
+- `packages/core/package.json` is named `@exclave/seqwire`.
 - `private` is absent from `packages/core/package.json`.
 - `license`, `repository`, `keywords`, `publishConfig`, `sideEffects`, `exports`, and `files` are correct.
-- `pnpm --filter @exclave/seqlok pack` includes only release files.
+- `pnpm --filter @exclave/seqwire pack` includes only release files.
 - The packed package installs in a fresh consumer.
 - The installed package has no `workspace:*` runtime dependencies.
 
@@ -31,20 +31,20 @@ pnpm --filter @exclave/seqlok pack
 - Anonymous ids are deterministic.
 - Expanded param and meter kinds are covered by tests.
 - Binding factories return structured errors for invalid call shapes.
-- `SeqlokError` narrowing works for unknown catches.
+- `SeqWireError` narrowing works for unknown catches.
 
 ## Documentation Review
 
-- Install and quickstart import `@exclave/seqlok`.
+- Install and quickstart import `@exclave/seqwire`.
 - Twoslash examples compile against workspace source or built declarations.
 - Blog and concept pages describe the current API, not the old prototype branch.
 - Audio examples are framed as the clearest first use case, not the only domain.
-- Migration pages use `Seqlok` only as historical context and `seqlock` only as the primitive term.
+- Public docs use `SeqWire` as the product identity and `seqlock` only as the primitive term.
 
 ## Publish Steps
 
 ```sh
-pnpm --filter @exclave/seqlok pack
-pnpm --filter @exclave/seqlok publish --access public --dry-run
-pnpm --filter @exclave/seqlok publish --access public
+pnpm --filter @exclave/seqwire pack
+pnpm --filter @exclave/seqwire publish --access public --dry-run
+pnpm --filter @exclave/seqwire publish --access public
 ```

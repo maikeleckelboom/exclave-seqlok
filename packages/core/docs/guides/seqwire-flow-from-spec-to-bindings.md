@@ -1,8 +1,8 @@
-# Seqlok Golden Flow: From Spec to Bindings
+# SeqWire Golden Flow: From Spec to Bindings
 
 > *How a param/meter schema becomes shared memory + bindings.*
 
-This guide describes the **end-to-end pipeline** that Seqlok follows for all
+This guide describes the **end-to-end pipeline** that SeqWire follows for all
 shared-memory bindings:
 
 > **Spec → Plan → Allocate → Handoff → Bind Controller → Bind Consumers**
@@ -14,7 +14,7 @@ It explains how a param/meter schema becomes:
 
 all over a single planned backing.
 
-There are no shortcuts in `@seqlok/core`: every binding follows this flow in order.
+There are no shortcuts in `@seqwire/core`: every binding follows this flow in order.
 
 ---
 
@@ -50,7 +50,7 @@ import {
   bindController,
   bindProcessor,
   // future: bindObserver, bindTelemetry, ...
-} from '@seqlok/core';
+} from '@seqwire/core';
 
 // ── Spec ───────────────────────────────────────────────────────────────────────
 
@@ -406,7 +406,7 @@ No copies, no extra handoffs: just more bindings over the same seqlock-protected
 
 ## 5. Cross-language golden flow
 
-The same stages apply in C/C++/Rust bindings that want to be Seqlok-compatible:
+The same stages apply in C/C++/Rust bindings that want to be SeqWire-compatible:
 
 ```cpp
 // C++ sketch (API names illustrative)
@@ -442,7 +442,7 @@ Any implementation that:
 * follows **Spec → Plan → Allocate → Handoff → Bind Controller → Bind Consumers** in this domain order, and
 * respects the same SWMR / seqlock semantics,
 
-is a valid Seqlok pipeline, even if the exact function names differ.
+is a valid SeqWire pipeline, even if the exact function names differ.
 
 ---
 
@@ -451,7 +451,7 @@ is a valid Seqlok pipeline, even if the exact function names differ.
 1. **Ordering is non-negotiable**
 
 * Spec → Plan → Allocate → Handoff → Bind Controller → Bind Consumers is the
-  only legal dependency chain inside `@seqlok/core`.
+  only legal dependency chain inside `@seqwire/core`.
 * Higher-level helpers may wrap stages, but they cannot merge or reorder domains.
 
 2. **No hidden planning or allocation**
