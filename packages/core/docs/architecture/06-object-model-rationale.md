@@ -1,8 +1,8 @@
-# Seqlok Object Model & Non-OOP Core Rationale (Golden Flow Edition)
+# SeqWire Object Model & Non-OOP Core Rationale (Golden Flow Edition)
 
-> Why the Seqlok **kernel** is function-centric and not object-oriented – and why that's intentional, not an accident.
+> Why the SeqWire **kernel** is function-centric and not object-oriented – and why that's intentional, not an accident.
 
-The Seqlok core is deliberately **not** designed as a set of stateful objects or contexts. Instead, it is built on:
+The SeqWire core is deliberately **not** designed as a set of stateful objects or contexts. Instead, it is built on:
 
 - Algebraic data types (`SpecInput`, `Plan<S>`, `Backing`, `Handoff`, bindings)
 - Pure or "pure-ish" functions between them
@@ -11,9 +11,9 @@ The Seqlok core is deliberately **not** designed as a set of stateful objects or
 Object-oriented APIs are allowed – and expected – **on top** of this (orchestration, framework adapters, app code).
 The kernel itself stays functional for reasons of correctness, analyzability, portability, and layering.
 
-This version of the document assumes the **golden flow** is the only supported, canonical way to wire Seqlok:
+This version of the document assumes the **golden flow** is the only supported, canonical way to wire SeqWire:
 
-- **Owner / main side:** `defineSpec` → `planLayout` → `allocateShared` → `buildHandoff` → `bindController`
+- **Owner / main side:** `defineSpec` → `planLayout` → `allocatePacked` → `buildHandoff` → `bindController`
 - **Worker / processor side:** `acceptHandoff` → `bindProcessor`
 
 Everything below is written in terms of that flow, with the **plan** explicitly threaded into `bindController`:
@@ -26,7 +26,7 @@ bindController(spec, plan, backing, options?);
 
 ## 1. Design Principle
 
-**Design principle.** The Seqlok core models concurrency and memory layout using **data + functions**, not “big objects
+**Design principle.** The SeqWire core models concurrency and memory layout using **data + functions**, not “big objects
 with methods".
 
 At the kernel level, APIs are shaped like the golden flow:
@@ -35,7 +35,7 @@ At the kernel level, APIs are shaped like the golden flow:
 // owner / main
 const spec = defineSpec(/* ... */); // DSL → SpecInput
 const plan = planLayout(spec); // SpecInput → Plan<S>
-const backing = allocateShared(plan); // Plan<S> → Backing
+const backing = allocatePacked(plan); // Plan<S> → Backing
 const handoff = buildHandoff(plan, backing); // Plan<S> × Backing → Handoff
 const controller = bindController(spec, plan, backing); // SpecInput × Plan<S> × Backing → ControllerBinding<S>
 
@@ -54,7 +54,7 @@ Higher layers (orchestration, worklet helpers, React/Vue bindings, app code) are
 But the **concurrency kernel** itself is _not_ expressed as:
 
 ```ts
-const ctx = new SeqlokContext(spec);
+const ctx = new SeqWireContext(spec);
 ctx.allocate();
 const controller = ctx.createController();
 const handoff = ctx.buildHandoff();
@@ -73,14 +73,14 @@ Traditional OO shines when you want:
 - Behavioral polymorphism (virtual methods, overrides)
 - “Tell, don’t ask”: send messages and let the object decide
 
-Seqlok's problem space is different:
+SeqWire's problem space is different:
 
 - `SharedArrayBuffer` + `Atomics`
 - Single-Writer / Multiple-Reader (SWMR) discipline
 - Strict, shared **plan** across threads / workers / runtimes
 - Seqlock-style coherence protocols
 
-The questions Seqlok needs to answer are:
+The questions SeqWire needs to answer are:
 
 - **Spatial:**
   Which bytes belong to which logical field (key → plane → offset)?
@@ -96,7 +96,7 @@ Those are **memory-model** and **type-theory** questions, not "class hierarchy" 
 In that context, "hidden mutable state behind method calls" is not a feature – it's a liability.
 
 > **Thesis.**
-> OO's strengths (encapsulation, behavioral polymorphism, dynamic dispatch) do not address Seqlok's primary concerns
+> OO's strengths (encapsulation, behavioral polymorphism, dynamic dispatch) do not address SeqWire's primary concerns
 > (plan determinism, alias safety, atomic coherence). For a shared-memory concurrency kernel, explicit data and pure-ish
 > operations are more valuable than opaque object state.
 
@@ -104,11 +104,11 @@ In that context, "hidden mutable state behind method calls" is not a feature –
 
 ## 3. Functions + data are easier to reason about (and verify)
 
-Seqlok's core operations in the golden flow are intentionally shaped like **total functions** on immutable inputs
+SeqWire's core operations in the golden flow are intentionally shaped like **total functions** on immutable inputs
 wherever possible:
 
 - `planLayout(spec): Plan<S>`
-- `allocateShared(plan): Backing`
+- `allocatePacked(plan): Backing`
 - `buildHandoff(plan, backing): Handoff`
 - `acceptHandoff(handoff): AcceptedHandoff<S>`
 - `bindController(spec, plan, backing, options?): ControllerBinding<S>`
@@ -123,7 +123,7 @@ Owner / main:
 ```ts
 const spec = defineSpec(/* ... */);
 const plan = planLayout(spec);
-const backing = allocateShared(plan);
+const backing = allocatePacked(plan);
 const handoff = buildHandoff(plan, backing);
 const controller = bindController(spec, plan, backing);
 ```
@@ -138,10 +138,10 @@ const processor = bindProcessor(accepted);
 Preconditions and postconditions are explicit:
 
 - If `planLayout(spec)` succeeds, `plan` encodes a valid, non-overlapping layout.
-- If `allocateShared(plan)` succeeds, `backing` is large enough and aligned for that plan.
+- If `allocatePacked(plan)` succeeds, `backing` is large enough and aligned for that plan.
 - If `buildHandoff(plan, backing)` succeeds, the handoff envelope consistently describes `plan` + `backing`.
 - If `acceptHandoff(handoff)` succeeds, the processor has a verified `AcceptedHandoff<S>` view.
-- If `bindController(spec, plan, backing)` or `bindProcessor(accepted)` succeeds, Seqlok has proven that the
+- If `bindController(spec, plan, backing)` or `bindProcessor(accepted)` succeeds, SeqWire has proven that the
   spec/plan/backing/handoff chain is compatible for this binding.
 
 This shape is friendly to:
@@ -153,7 +153,7 @@ This shape is friendly to:
 A stateful "context" object, by contrast, accumulates hidden state:
 
 ```ts
-const ctx = new SeqlokContext(spec);
+const ctx = new SeqWireContext(spec);
 ctx.allocate();
 const controller = ctx.createController();
 ```
@@ -183,7 +183,7 @@ call.
 
 ## 4. Cross-runtime and polyglot friendliness
 
-Seqlok targets:
+SeqWire targets:
 
 - Browsers (SAB + Workers / AudioWorklet)
 - Node / Deno (`worker_threads`)
@@ -192,7 +192,7 @@ Seqlok targets:
 The golden flow is intentionally **portable**:
 
 - `Plan<S>` is a plain data structure describing the layout.
-- `allocateShared(plan)` constructs raw shared memory for that layout.
+- `allocatePacked(plan)` constructs raw shared memory for that layout.
 - `buildHandoff(plan, backing)` serializes the plan/backing relationship into a portable envelope.
 - `acceptHandoff(handoff)` re-establishes a verified view of the same layout on the processor side.
 - `bindController(spec, plan, backing, options?)` and `bindProcessor(accepted, options?)` map typed views on top of the
@@ -207,7 +207,7 @@ Any language with:
 can re-implement the core behavior against the same invariants.
 
 > **Design goal.**
-> No part of Seqlok's correctness should depend on JavaScript's `class` model or method dispatch. The semantics should
+> No part of SeqWire's correctness should depend on JavaScript's `class` model or method dispatch. The semantics should
 > be
 > expressible purely as "data + functions" along the golden flow, so an equivalent implementation in another language is
 > straightforward.
@@ -219,7 +219,7 @@ verification unnecessarily harder.
 
 ## 5. Layered architecture vs big objects
 
-Seqlok enforces a strict layering:
+SeqWire enforces a strict layering:
 
 - `primitives` – atomics, seqlock
 - `spec` – DSL and spec types
@@ -234,7 +234,7 @@ Each layer has a small, explicit API and depends on a restricted set of lower la
 The golden flow function signatures **encode those dependencies**:
 
 - `planLayout(spec)` lives in `plan`
-- `allocateShared(plan)` lives in `backing`
+- `allocatePacked(plan)` lives in `backing`
 - `buildHandoff(plan, backing)` lives in `handoff`
 - `acceptHandoff(handoff)` lives in `handoff`
 - `bindController(spec, plan, backing, options?)` and `bindProcessor(accepted, options?)` live in `binding`
@@ -254,7 +254,7 @@ Over time, that leads to:
 - Weaker enforcement of layer rules
 
 > **Intent.**
-> Seqlok's kernel is closer to a well-designed C library with strong types than to a classical OO "engine" object. The
+> SeqWire's kernel is closer to a well-designed C library with strong types than to a classical OO "engine" object. The
 > golden flow is expressed as a sequence of explicit module calls; their relationships are visible in the type
 > signatures.
 
@@ -286,7 +286,7 @@ These can wrap the golden flow:
 // example sketch: orchestration helper (could be OO, could be functional)
 export function createControllerKit<S extends SpecInput>(spec: S) {
   const plan = planLayout(spec);
-  const backing = allocateShared(plan);
+  const backing = allocatePacked(plan);
   const handoff = buildHandoff(plan, backing);
   const controller = bindController(spec, plan, backing);
 
@@ -319,7 +319,7 @@ layer goes wrong, the core invariants remain intact.
 
 When reviewers ask:
 
-> “Why not have a `SeqlokContext` that hides spec/plan/backing and just gives me `.allocate()`, `.bind()`,
+> “Why not have a `SeqWireContext` that hides spec/plan/backing and just gives me `.allocate()`, `.bind()`,
 > `.handoff()`?”
 
 You can answer along these lines, in terms of the golden flow:
@@ -336,7 +336,7 @@ You can answer along these lines, in terms of the golden flow:
 - We want explicit flows:
 
   ```ts
-  defineSpec → planLayout → allocateShared → buildHandoff → acceptHandoff → bind*
+  defineSpec → planLayout → allocatePacked → buildHandoff → acceptHandoff → bind*
   ```
 
 3. **Layering**
@@ -358,7 +358,7 @@ You can answer along these lines, in terms of the golden flow:
 
 A concise line you can reuse:
 
-> We chose not to make the Seqlok core OO because the problem is about **memory and time**, not “objects and methods”.
+> We chose not to make the SeqWire core OO because the problem is about **memory and time**, not “objects and methods”.
 > OO is a great tool for orchestration and UI integration; it's the wrong tool for defining a portable, verifiable
 > concurrency kernel. The golden flow gives us that kernel.
 
@@ -366,9 +366,9 @@ A concise line you can reuse:
 
 ## 8. Summary
 
-- The Seqlok **core** is intentionally non-OOP and organized around a single **golden flow**:
+- The SeqWire **core** is intentionally non-OOP and organized around a single **golden flow**:
 
-  - Owner / main: `defineSpec` → `planLayout` → `allocateShared` → `buildHandoff` →
+  - Owner / main: `defineSpec` → `planLayout` → `allocatePacked` → `buildHandoff` →
     `bindController(spec, plan, backing, options?)`
   - Worker / processor: `acceptHandoff` → `bindProcessor(accepted, options?)`
 

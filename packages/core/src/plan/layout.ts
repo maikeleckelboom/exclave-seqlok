@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Memory layout planning for Seqlok shared state.
+ * Memory layout planning for SeqWire shared state.
  *
  * @remarks
  * - Transforms a high-level spec into a concrete memory layout plan.
@@ -118,6 +118,9 @@ export function planLayout<S extends SpecInput>(
     planes,
     params: paramSlots as Readonly<{
       [K in keyof S["params"]]: EntrySlot;
+    }>,
+    paramDefs: paramsObj as Readonly<{
+      [K in keyof S["params"]]: ParamDef;
     }>,
     meters: meterSlots as Readonly<{
       [K in keyof S["meters"]]: EntrySlot;

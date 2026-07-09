@@ -1,3 +1,5 @@
+import { hasAcceptedHandoffRuntimeBrand } from "../../handoff/accepted-brand";
+
 import type { Backing } from "../../backing/types";
 import type { Handoff, AcceptedHandoff } from "../../handoff/types";
 import type { SpecInput } from "../../spec/types";
@@ -18,8 +20,7 @@ export function isAcceptedHandoff<S extends SpecInput>(
   value: unknown,
 ): value is AcceptedHandoff<S> {
   return (
-    typeof value === "object" &&
-    value !== null &&
+    hasAcceptedHandoffRuntimeBrand(value) &&
     "packing" in value &&
     "plan" in value &&
     !("version" in value)
@@ -29,15 +30,15 @@ export function isAcceptedHandoff<S extends SpecInput>(
 export function backingFromAccepted<S extends SpecInput>(
   accepted: AcceptedHandoff<S>,
 ): Backing {
-  if (accepted.packing === "shared") {
+  if (accepted.packing === "packed") {
     return {
-      kind: "shared",
+      kind: "packed",
       sab: accepted.sab,
     };
   }
 
   return {
-    kind: "shared-partitioned",
+    kind: "partitioned",
     planes: accepted.planes,
   };
 }

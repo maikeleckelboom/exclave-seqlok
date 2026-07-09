@@ -7,11 +7,11 @@
 **Related**:
 
 - ADR-00Y — MWMR System Architecture via Domains + Observers + Rings
-- ADR-00Z — Observer Binding Role in `@exclave/boundary`
-- ADR-010 — Ring Primitive in `@exclave/boundary`
+- ADR-00Z — Observer Binding Role in `@exclave/seqwire`
+- ADR-010 — Ring Primitive in `@exclave/seqwire`
 - ADR-00C — Meter Writes & Snapshot `into` (Controller side)
 - ADR-00F — ControllerParams.hydrate() for Cold-Path Bulk Updates
-- ADR-00X - Historical System-Level Composition Proposal
+- ADR-00X - Superseded System-Level Composition Proposal
 
 ---
 
@@ -48,7 +48,7 @@ This ADR **formalizes the invariants** those decisions imply and establishes nor
 
 ### 2.1 Primitive-Level Semantics (Immutable)
 
-`@exclave/boundary` primitives are **strictly** single-writer:
+`@exclave/seqwire` primitives are **strictly** single-writer:
 
 - **Seqlock planes** (params/meters): **SWMR**
 
@@ -83,13 +83,13 @@ Many Readers (ObserverBindings)
 
 ### 2.3 Per-Domain Authority
 
-For any Seqlok domain `Domain<S>`:
+For any SeqWire domain `Domain<S>`:
 
 1. **Exactly one** `ControllerBinding<S>` instance (params writer)
 2. **Exactly one** `ProcessorBinding<S>` instance (meters writer)
 3. **Zero or more** `ObserverBinding<S>` instances (read-only)
 
-No code outside these bindings writes to Seqlok planes, regardless of system complexity.
+No code outside these bindings writes to SeqWire planes, regardless of system complexity.
 
 ---
 
@@ -126,10 +126,10 @@ These rules are **hard constraints**. Any violation is an architectural defect:
 - All state mutations flow: `Producer → Ring → Hub → Controller → Plane`
 - No direct cross-thread calls to `controller.params.*` or `processor.meters.*`
 
-6. **Cross-process boundaries use IPC, not Seqlok**
+6. **Cross-process boundaries use IPC, not SeqWire**
 
-- Seqlok operates within a single address space (renderer, main, worker)
-- Electron renderer ↔ main, OS processes: use IPC/sockets, not shared Seqlok backings
+- SeqWire operates within a single address space (renderer, main, worker)
+- Electron renderer ↔ main, OS processes: use IPC/sockets, not shared SeqWire backings
 
 ---
 
@@ -279,7 +279,7 @@ const deckSpec = defineSpec({
   /* ... */
 });
 const deckPlan = planLayout(deckSpec);
-const deckBacking = allocateShared(deckPlan);
+const deckBacking = allocatePacked(deckPlan);
 const deckHandoff = buildHandoff(deckPlan, deckBacking);
 
 // ─────────────────────────────────────────────────────────
@@ -374,7 +374,7 @@ function renderParticles() {
 
 **Key properties:**
 
-- **Golden flow**: `defineSpec → planLayout → allocateShared → buildHandoff` (ADR-001)
+- **Golden flow**: `defineSpec → planLayout → allocatePacked → buildHandoff` (ADR-001)
 - **Main, MIDI**: Observers + ring producers (no writes to planes)
 - **Deck worker**: Single controller + ring consumer (only params writer)
 - **AudioWorklet**: Single processor (only meter writer)
@@ -443,7 +443,7 @@ function renderParticles() {
 
 This ADR formalizes the MWMR model established by ADR-00Y, ADR-00Z, and ADR-010:
 
-- **Primitives** (`@exclave/boundary`): SWMR planes + SWSR rings
+- **Primitives** (`@exclave/seqwire`): SWMR planes + SWSR rings
 - **System topology and drivers**: MWMR via composition
 - **Hard rule**: "MWMR exists only at the system topology level, never at the primitive/memory level"
 

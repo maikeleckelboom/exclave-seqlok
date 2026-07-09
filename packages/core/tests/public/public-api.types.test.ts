@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
 
-import * as boundary from "../../src";
+import * as seqwire from "../../src";
 
 describe("Public API Surface (Runtime Exports)", () => {
   it("exports the expected value symbols and nothing else", () => {
-    const runtimeExports = Object.keys(boundary).sort();
+    const runtimeExports = Object.keys(seqwire).sort();
 
     const expectedExports: string[] = [
       // SPEC
@@ -14,9 +14,9 @@ describe("Public API Surface (Runtime Exports)", () => {
       "planLayout",
 
       // BACKING
-      "allocateShared",
-      "allocateSharedPartitioned",
-      "allocateWasmShared",
+      "allocatePacked",
+      "allocatePartitioned",
+      "allocateWasm",
 
       // BINDING
       "bindController",
@@ -29,8 +29,8 @@ describe("Public API Surface (Runtime Exports)", () => {
       "verifyHandoff",
 
       // ERRORS + HEALTH
-      "BoundaryError",
-      "isBoundaryError",
+      "SeqWireError",
+      "isSeqWireError",
       "getErrorMeta",
       "getErrorMessage",
       "isErrorCode",
@@ -53,9 +53,6 @@ describe("Public API Surface (Runtime Exports)", () => {
       "allocateSwsrRing",
       "bindSwsrRingProducer",
       "bindSwsrRingConsumer",
-
-      // CONTEXT
-      "createSharedContext",
     ].sort();
 
     expect(runtimeExports).toEqual(expectedExports);
@@ -66,17 +63,17 @@ describe("Public API Surface (Runtime Exports)", () => {
     const code = "diagnostics.counterInvalid";
 
     // The code should be recognized by the public isErrorCode helper.
-    expect(boundary.isErrorCode(code)).toBe(true);
+    expect(seqwire.isErrorCode(code)).toBe(true);
 
     // Meta should come back with the expected basic shape.
-    const meta = boundary.getErrorMeta(code);
+    const meta = seqwire.getErrorMeta(code);
     expect(meta.severity).toBe("warning");
     expect(meta.recoverable).toBe(true);
     expect(meta.boundarySafe).toBe(false);
 
     // InterpretHealth should be callable via the public surface and
     // return a structured status + label + hint.
-    const health = boundary.interpretHealth(meta);
+    const health = seqwire.interpretHealth(meta);
 
     // Narrow: we do not re-specify the exact mapping here, only that
     // it returns a known status and operator-facing strings.
@@ -88,6 +85,6 @@ describe("Public API Surface (Runtime Exports)", () => {
   });
 
   it("does not define a default export", () => {
-    expect("default" in boundary).toBe(false);
+    expect("default" in seqwire).toBe(false);
   });
 });

@@ -1,17 +1,16 @@
 # Error Model
 
-Exclave Boundary throws `BoundaryError` for structured library errors. Each error has a code, message, and typed details payload. Use `isBoundaryError(...)` when catching unknown values at an application boundary.
+SeqWire throws `SeqWireError` for structured library errors. Each error has a code, message, and typed details payload. Use `isSeqWireError(...)` when catching unknown values at an application boundary.
 
 ```ts twoslash
-import { getErrorMeta, interpretHealth, isBoundaryError } from "@exclave/boundary";
+import { getErrorMeta, interpretHealth, isSeqWireError } from "@exclave/seqwire";
 
 export function classify(error: unknown) {
-  if (!isBoundaryError(error)) {
-    return { status: "unknown" as const };
+  if (!isSeqWireError(error)) {
+    return { status: "unknown" };
   }
 
   error.code;
-  // ^?
 
   const meta = getErrorMeta(error.code);
   const health = interpretHealth(meta);

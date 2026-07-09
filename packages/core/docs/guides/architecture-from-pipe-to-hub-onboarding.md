@@ -1,8 +1,8 @@
-# 📘 Seqlok Architecture: From Pipe to Hub
+# 📘 SeqWire Architecture: From Pipe to Hub
 
 _A story for newcomers_
 
-Welcome to Seqlok. To understand why the system looks the way it does (MWMR, rings, hubs, observers), it helps to start
+Welcome to SeqWire. To understand why the system looks the way it does (MWMR, rings, hubs, observers), it helps to start
 from the simplest thing that could possibly work and watch where it breaks.
 
 We didn't build a complex system because we wanted to. We built it because the simple version hit a wall.
@@ -148,7 +148,7 @@ to remember.
 
 These descriptions are intentionally informal. They are here to build intuition, not to replace the technical reference.
 
-### `@exclave/boundary` - the physics
+### `@exclave/seqwire` - the physics
 
 You can think of `core` as the **physics engine** of the shared state:
 
@@ -178,7 +178,7 @@ You can think of topology helpers as the **blueprint and wiring**:
 
 ### Your driver / application - the logic
 
-Finally, there is **your application code**, which plugs Seqlok into a concrete product:
+Finally, there is **your application code**, which plugs SeqWire into a concrete product:
 
 - It defines **what the commands mean**:
 
@@ -220,4 +220,4 @@ The idea there is:
 For now, it is enough to remember the big picture:
 
 > Use mailboxes (rings) and a hub to keep the **memory** simple (SWSR) while the **system** feels flexible (MWMR).
-> Seqlok's layering helps separate those concerns cleanly.
+> SeqWire's layering helps separate those concerns cleanly.

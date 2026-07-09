@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   createError,
-  isBoundaryError,
-  type BoundaryError,
+  isSeqWireError,
+  type SeqWireError,
 } from "../../src/errors/error";
 
-describe("BoundaryError: Serialization & Type Identity", () => {
+describe("SeqWireError: Serialization & Type Identity", () => {
   it("serializes to a minimal, stable JSON structure omitting sensitive details and causes", () => {
     const err = createError("backing.wasmMemoryNotShared", "wrapped", {
       detail: "WebAssembly.Memory.buffer is not SharedArrayBuffer",
@@ -14,15 +14,15 @@ describe("BoundaryError: Serialization & Type Identity", () => {
       shared: false,
     });
 
-    expect(isBoundaryError(err)).toBe(true);
+    expect(isSeqWireError(err)).toBe(true);
 
     // Simulate the serialization/deserialization cycle
     const json = JSON.parse(JSON.stringify(err)) as ReturnType<
-      BoundaryError["toJSON"]
+      SeqWireError["toJSON"]
     >;
 
     // Verify core identity fields
-    expect(json.name).toBe("BoundaryError");
+    expect(json.name).toBe("SeqWireError");
     expect(json.code).toBe("backing.wasmMemoryNotShared");
     expect(typeof json.message).toBe("string");
 
@@ -35,14 +35,14 @@ describe("BoundaryError: Serialization & Type Identity", () => {
     expect("cause" in json).toBe(false);
   });
 
-  it("correctly distinguishes BoundaryError instances from generic errors and plain objects", () => {
-    const boundaryErr = createError("env.unsupported", "Feature unavailable", {
+  it("correctly distinguishes SeqWireError instances from generic errors and plain objects", () => {
+    const seqwireErr = createError("env.unsupported", "Feature unavailable", {
       feature: "SharedArrayBuffer",
       reason: "Missing COOP/COEP",
     });
 
     // Positive validation
-    expect(isBoundaryError(boundaryErr)).toBe(true);
+    expect(isSeqWireError(seqwireErr)).toBe(true);
 
     // Negative validation cases
     const genericError = new Error("Standard JS Error");
@@ -54,9 +54,9 @@ describe("BoundaryError: Serialization & Type Identity", () => {
     const nullValue = null;
     const primitiveValue = 42;
 
-    expect(isBoundaryError(genericError)).toBe(false);
-    expect(isBoundaryError(mimickedShape)).toBe(false);
-    expect(isBoundaryError(nullValue)).toBe(false);
-    expect(isBoundaryError(primitiveValue)).toBe(false);
+    expect(isSeqWireError(genericError)).toBe(false);
+    expect(isSeqWireError(mimickedShape)).toBe(false);
+    expect(isSeqWireError(nullValue)).toBe(false);
+    expect(isSeqWireError(primitiveValue)).toBe(false);
   });
 });

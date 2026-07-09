@@ -1,12 +1,14 @@
-# Exclave Boundary
+# SeqWire
 
-This repository contains `@exclave/boundary`, a typed shared-memory boundary substrate for coherent state, deterministic layout, explicit handoff, and timing-sensitive runtimes. It demonstrates authored contracts, deterministic layout planning, shared backing allocation, explicit handoff artifacts, role-specific bindings, diagnostics, tests, benchmarks, and release smoke checks.
+SeqWire is a typed shared-memory contract for coherent runtime state. It uses a seqlock-backed shared-memory protocol internally, while exposing higher-level spec, layout, handoff, controller, processor, and observer bindings.
 
-Exclave Boundary is the public package. Integration code should import `@exclave/boundary`.
+This repository contains the `@exclave/seqwire` package, docs, tests, benchmarks, support tooling, and release smoke checks. Integration code should import `@exclave/seqwire`.
 
 ## What This Is
 
-Exclave Boundary makes a runtime boundary explicit:
+SeqWire lets you define a runtime state contract once, plan its shared-memory layout, hand it across a worker, worklet, or WASM-oriented boundary, and read or write coherent state through role-specific bindings.
+
+It makes a runtime boundary explicit:
 
 - what fields exist across the boundary
 - where they live in shared memory
@@ -15,28 +17,27 @@ Exclave Boundary makes a runtime boundary explicit:
 - how readers avoid half-written state
 - how a runtime receives its memory contract without hidden process state
 
-The current vocabulary is controller, processor, observer, params, and meters. Those names describe roles in the boundary substrate, not a complete application framework.
+The current vocabulary is controller, processor, observer, params, and meters. Those names describe roles in the shared-memory contract, not a complete application framework.
 
 ## Install
 
 ```sh
-pnpm add @exclave/boundary
+pnpm add @exclave/seqwire
 ```
 
-`@exclave/boundary` is ESM-only, typed, and published as one package. Internal base, schema, and primitive layers are kept inside the package rather than exposed as workspace runtime dependencies.
+`@exclave/seqwire` is ESM-only, typed, and published as one package. Internal base, schema, and primitive layers are kept inside the package rather than exposed as workspace runtime dependencies.
 
 ## Quickstart
 
 ```ts
 import {
-  acceptHandoff,
-  allocateShared,
+  allocatePacked,
   bindController,
   bindProcessor,
   buildHandoff,
   defineSpec,
   planLayout,
-} from "@exclave/boundary";
+} from "@exclave/seqwire";
 
 const spec = defineSpec(({ param, meter }) => ({
   params: {
@@ -55,11 +56,12 @@ const spec = defineSpec(({ param, meter }) => ({
 }));
 
 const plan = planLayout(spec);
-const backing = allocateShared(plan);
+const backing = allocatePacked(plan);
 const handoff = buildHandoff(plan, backing);
 
 const controller = bindController(spec, plan, backing);
-const processor = bindProcessor(acceptHandoff(handoff));
+const processor = bindProcessor(handoff);
+const runtimeState = 1;
 
 controller.params.set("runtime.enabled", true);
 controller.params.set("runtime.count", 42);
@@ -69,9 +71,9 @@ controller.params.stage("runtime.payload", (payload) => {
 
 processor.params.within((params) => {
   if (params.runtime.enabled) {
-    processor.meters.publish((meters) => {
-      meters.state(1);
-      meters.delta(-1);
+    processor.meters.publish((writer) => {
+      writer.set("runtime.state", runtimeState);
+      writer.set("runtime.delta", -1);
     });
   }
 });
@@ -81,18 +83,55 @@ console.log(controller.meters.snapshot());
 
 Authored specs may use nested namespaces. Write APIs use explicit canonical string keys, and processor read views expose nested aliases such as `params.runtime.enabled`.
 
-## Package Boundary
+## Meter Publishing
 
-- `packages/core` publishes `@exclave/boundary`.
+Use `.set()` for the lowest-level explicit canonical-key surface:
+
+```ts
+processor.meters.publish((writer) => {
+  writer.set("runtime.delta", -1);
+});
+```
+
+Use `writer.setGroup()` when a group object belongs inside one larger coherent publish section:
+
+```ts
+processor.meters.publish((writer) => {
+  writer.setGroup("runtime", {
+    state: runtimeState,
+    delta: -1,
+  });
+});
+```
+
+Use `publishGroup()` when you already have one complete typed group object:
+
+```ts
+processor.meters.publishGroup("runtime", {
+  state: runtimeState,
+  delta: -1,
+});
+```
+
+Use `writer.set(...)` for partial or dynamic key updates. Use `setGroup(...)`
+and `publishGroup(...)` only when publishing a complete schema group.
+
+Grouped keys are unprefixed under the exact schema group, so `delta` maps to
+`runtime.delta` in the `runtime` group. `publishGroup()` is the convenience
+path. Hard hot paths should benchmark it against direct `writer.set()` calls.
+
+## Package Surface
+
+- `packages/core` publishes `@exclave/seqwire`.
 - The package is MIT licensed, ESM, typed, and marked `sideEffects: false`.
 - The packed output includes built `dist` files, `README.md`, `LICENSE`, and `package.json`.
-- The release smoke test packs the package, installs the tarball into a fresh consumer, imports `@exclave/boundary`, and verifies there are no `workspace:*` runtime dependencies.
+- The release smoke test packs the package, installs the tarball into a fresh consumer, imports `@exclave/seqwire`, and verifies there are no `workspace:*` runtime dependencies.
 
 ## Documentation
 
 - [Docs site source](apps/docs/src/index.md)
 - [Package README](packages/core/README.md)
-- [Historical design docs](packages/core/docs/INDEX.md)
+- [Architecture docs](packages/core/docs/INDEX.md)
 
 Run the docs site locally:
 

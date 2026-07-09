@@ -1,6 +1,6 @@
 # API Reference
 
-This page covers the public `@exclave/boundary` surface. Internal folders such as backing planes, seqlock primitives, and validation helpers are implementation details unless exported from the root package or diagnostics subpath.
+This page covers the public `@exclave/seqwire` surface. Internal folders such as backing planes, seqlock primitives, and validation helpers are implementation details unless exported from the root package or diagnostics subpath.
 
 ## Spec
 
@@ -14,10 +14,10 @@ Supported params include `f32`, `i32`, `u32`, `bool`, `enum`, and arrays for `f3
 Supported meters include `f32`, `f64`, `i32`, `u32`, `bool`, `enum`, and arrays for `f32`, `f64`, `u32`, and `bool`.
 
 ```ts twoslash
-import { defineSpec, type CanonicalSpecFromAst } from "@exclave/boundary";
+import { defineSpec, type CanonicalSpecFromAst } from "@exclave/seqwire";
 
 const authored = {
-  id: "api/spec" as const,
+  id: "api/spec",
   params: {
     filter: {
       cutoff: { kind: "f32", min: 20, max: 20_000 },
@@ -27,45 +27,111 @@ const authored = {
 
 const spec = defineSpec(authored);
 type Canonical = CanonicalSpecFromAst<typeof authored>;
-//   ^?
-
-spec.params["filter.cutoff"];
-// ^?
 ```
 
 ## Plan and Backing
 
-- `planLayout(spec)` returns a deterministic memory plan.
-- `allocateShared(plan)` creates single-buffer shared backing.
-- `allocateSharedPartitioned(plan)` creates per-plane shared backing.
-- `allocateWasmShared(plan, memory)` attaches compatible shared WebAssembly memory.
+- `planLayout(spec)` returns a deterministic memory plan, including canonical param definitions used by observer snapshots.
+- `allocatePacked(plan)` creates packed backing.
+- `allocatePartitioned(plan)` creates partitioned backing.
+- `allocateWasm(plan, memory)` attaches compatible shared WebAssembly memory.
 
 ## Binding
 
 - `bindController(spec, plan, backing, options?)`
-- `bindProcessor(source, options?)`
-- `bindProcessor(spec, plan, backing, options?)`
+- `bindProcessor(handoff, options?)`
+- `bindProcessor(acceptedHandoff, options?)`
+- `bindProcessor(plan, backing, options?)`
 - `bindObserver(source, options?)`
 - `bindObserver(spec, plan, backing, options?)`
 
-`source` can be a handoff, accepted handoff, or shared context where supported.
+Observer `source` can be a handoff or accepted handoff. Observer snapshots decode enum params to labels for explicit spec triples and handoff-derived sources.
 
-Role-specific public types include `ControllerBinding`, `ProcessorBinding`, `ObserverBinding`, `ControllerParams`, `ProcessorParams`, `ObserverParams`, `ControllerMeters`, `ProcessorMeters`, `ObserverMeters`, `ParamValueFor`, `MeterValueFor`, `ParamsSnapshot`, and `MetersSnapshot`.
+Role-specific public types include `ControllerBinding`, `ProcessorBinding`, `ObserverBinding`, `ControllerParams`, `ProcessorParams`, `ObserverParams`, `ControllerMeters`, `ProcessorMeters`, `ObserverMeters`, `ParamValueFor`, `MeterValueFor`, `ScalarParamPatch`, `HydratePatch`, `ParamsSnapshot`, and `MetersSnapshot`.
+
+### ControllerParams
+
+`controller.params` is the controller-side write surface for params.
+
+| Member | Contract |
+| --- | --- |
+| `set(key, value)` | Set one scalar param. |
+| `update(patch)` | Apply a scalar-only micro-batch and publish once. |
+| `stage(key, callback)` | Open the explicit hot-path write window for one array param. |
+| `hydrate(patch)` | Load cold-path scalar and array state; array values may be copied. |
+| `snapshot(...)` | Read params; pass `{ keys, into }` to reuse array buffers. |
+| `version()` | Return the current param update sequence. |
+
+`update(...)` does not accept array params. Use `stage(...)` for hot-path array writes or `hydrate(...)` when loading saved state.
+
+### ControllerMeters
+
+`controller.meters` is the controller-side read surface for meters. Processors publish meters.
+
+| Member | Contract |
+| --- | --- |
+| `snapshot(...)` | Read meters; pass `{ keys, into }` to reuse array buffers. |
+| `version()` | Return the current meter update sequence. |
+
+### ProcessorMeters
+
+`processor.meters` is the processor-side write surface for meters.
+
+| Member | Contract |
+| --- | --- |
+| `publish(callback)` | Run one coherent meter publish section. |
+| `publishGroup(group, values)` | Publish one exact schema meter group with unprefixed group keys. |
+| `version()` | Return the current meter update sequence. |
+
+Inside `publish(...)`, `writer.set(key, value)` still accepts fully qualified scalar meter keys such as `"runtime.blockSamples"`. `writer.setGroup(group, values)` accepts the same group value shape used by `publishGroup(...)` and keeps the write inside the enclosing coherent meter publish section.
+
+```ts twoslash
+import { defineSpec, type MeterGroupValues } from "@exclave/seqwire";
+
+const spec = defineSpec(({ meter }) => ({
+  id: "api/meters",
+  meters: {
+    runtime: {
+      blockSamples: meter.u32(),
+      state: meter.enum(["idle", "running"]),
+    },
+  },
+}));
+
+type RuntimeMeters = MeterGroupValues<typeof spec, "runtime">;
+
+const values: RuntimeMeters = {
+  blockSamples: 128,
+  state: 1,
+};
+
+declare const processor: import("@exclave/seqwire").ProcessorBinding<
+  typeof spec
+>;
+
+processor.meters.publishGroup("runtime", values);
+
+processor.meters.publish((writer) => {
+  writer.setGroup("runtime", values);
+  writer.set("runtime.blockSamples", 256);
+});
+```
+
+Grouped publishing is for exact schema groups: `publishGroup("runtime", values)` maps every unprefixed key in `values` to canonical meter keys under `runtime.*`. It is not arbitrary object flattening. Derived values, such as enum indices or split frame counters, should still be constructed explicitly before publishing. `publishGroup(...)` is convenience-oriented; benchmark it before using it in a hard hot path.
 
 ## Handoff
 
 - `buildHandoff(plan, backing)` creates a boundary artifact.
-- `buildHandoff(context)` creates a boundary artifact from a shared context.
 - `acceptHandoff(handoff)` validates and normalizes a received artifact.
 - `verifyHandoff(localPlan, remotePlan)` compares plan identity and byte length.
 
 ## Diagnostics and Errors
 
-- `BoundaryError` is the structured error class.
-- `isBoundaryError(value)` narrows unknown errors.
+- `SeqWireError` is the structured error class.
+- `isSeqWireError(value)` narrows unknown errors.
 - `getErrorMeta(code)` and `getErrorMessage(code)` expose registry metadata.
 - `interpretHealth(error)` maps known error domains to health guidance.
 
-Diagnostics exports live at `@exclave/boundary/diagnostics`.
+Diagnostics exports live at `@exclave/seqwire/diagnostics`.
 
 See [Diagnostics](/diagnostics) and [Error Model](/error-model) for integration guidance.

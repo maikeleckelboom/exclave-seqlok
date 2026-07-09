@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 
-import { allocateWasmShared } from "../../src/backing/allocate-wasm-shared";
-import { isBoundaryError } from "../../src/errors/error";
+import { allocateWasm } from "../../src/backing/allocate-wasm";
+import { isSeqWireError } from "../../src/errors/error";
 import { planLayout } from "../../src/plan/layout";
 import { defineSpec } from "../../src/spec/define";
 
@@ -9,8 +9,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("Allocate Wasm Shared: Memory Constructor Failure Path", () => {
-  it("throws a typed BoundaryError when WebAssembly.Memory constructor throws", () => {
+describe("allocateWasm: memory constructor failure path", () => {
+  it("throws a typed SeqWireError when WebAssembly.Memory constructor throws", () => {
     // Arrange
     const spec = defineSpec(({ param, meter }) => ({
       id: "test",
@@ -32,23 +32,23 @@ describe("Allocate Wasm Shared: Memory Constructor Failure Path", () => {
     }
 
     vi.stubGlobal("WebAssembly", {
-      Memory: ThrowingMemory as unknown as typeof WebAssembly.Memory,
-    } as unknown as typeof WebAssembly);
+      Memory: ThrowingMemory as typeof WebAssembly.Memory,
+    });
 
     // Act/Assert
     try {
-      allocateWasmShared(plan);
+      allocateWasm(plan);
       // If we get here, ctor did not throw as expected
       expect(false).toBe(true);
     } catch (e: unknown) {
       // Narrow using our official guard, no unsafe casts
-      if (!isBoundaryError(e)) {
+      if (!isSeqWireError(e)) {
         throw e;
       }
-      // Code path caught by allocateWasmShared when ctor fails
+      // Code path caught by allocateWasm when ctor fails
       expect(e.code).toBe("backing.wasmMemoryNotShared");
       expect(e.message).toMatch(/Failed to attach shared WebAssembly\.Memory/i);
-      expect(e.details.where).toBe("allocateWasmShared");
+      expect(e.details.where).toBe("allocateWasm");
     }
   });
 });

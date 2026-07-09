@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  allocateShared,
+  allocatePacked,
   bindController,
   bindObserver,
   bindProcessor,
@@ -12,6 +12,8 @@ import {
   planLayout,
   acceptHandoff,
 } from "../../src";
+
+import type { PackedBacking } from "../../src/backing/types";
 
 describe("observer binding – coverage edges", () => {
   const spec = defineSpec(({ param, meter }) => ({
@@ -28,7 +30,7 @@ describe("observer binding – coverage edges", () => {
 
   it("supports object-form, varargs, and empty-subset snapshots", () => {
     const plan = planLayout(spec);
-    const backing = allocateShared(plan);
+    const backing = allocatePacked(plan);
     const controller = bindController(spec, plan, backing);
     const observer = bindObserver(spec, plan, backing);
 
@@ -94,7 +96,7 @@ describe("observer binding – coverage edges", () => {
 
   it("exposes version information for params and meters", () => {
     const plan = planLayout(spec);
-    const backing = allocateShared(plan);
+    const backing = allocatePacked(plan);
     const controller = bindController(spec, plan, backing);
     const observer = bindObserver(spec, plan, backing);
 
@@ -127,7 +129,7 @@ describe("observer binding – coverage edges", () => {
 
   it("handles dispose idempotency and safeguards", () => {
     const plan = planLayout(spec);
-    const backing = allocateShared(plan);
+    const backing = allocatePacked(plan);
     const observer = bindObserver(spec, plan, backing);
 
     // Dispose once
@@ -159,7 +161,7 @@ describe("observer binding – coverage edges", () => {
 
   it("accepts and respects budget/policy options", () => {
     const plan = planLayout(spec);
-    const backing = allocateShared(plan);
+    const backing = allocatePacked(plan);
 
     // This test verifies the options are passed through without error.
     // Checking actual spin logic requires contention; here we just hit the branches.
@@ -181,7 +183,7 @@ describe("observer binding – coverage edges", () => {
     expect(() => observer.meters.snapshot()).not.toThrow();
   });
 
-  it("rejects undersized shared backings", () => {
+  it("rejects undersized packed backings", () => {
     const bigSpec = defineSpec(({ param, meter }) => ({
       params: {
         a: param.f32(),
@@ -199,7 +201,10 @@ describe("observer binding – coverage edges", () => {
 
     // Deliberately allocate a SAB smaller than plan.bytesTotal
     const undersizedSab = new SharedArrayBuffer(bigPlan.bytesTotal - 4);
-    const smallBacking = { kind: "shared", sab: undersizedSab } as const;
+    const smallBacking: PackedBacking = {
+      kind: "packed",
+      sab: undersizedSab,
+    };
 
     expect(() => {
       bindObserver(bigSpec, bigPlan, smallBacking);
@@ -228,7 +233,7 @@ describe("observer binding – coverage edges", () => {
 
     expect(() => {
       bindObserver(partitionedSpec, plan, {
-        kind: "shared-partitioned",
+        kind: "partitioned",
         planes,
       });
     }).toThrow("Partitioned backing plane undersized for plan");

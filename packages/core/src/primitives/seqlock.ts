@@ -14,7 +14,7 @@
  *   by primitives tests.
  *
  * @remarks
- * This module is an internal implementation detail of `@exclave/boundary`.
+ * This module is an internal implementation detail of `@exclave/seqwire`.
  * Runtime bindings call into it indirectly via higher-level helpers.
  *
  * Functions {@link createSeqPair} and {@link tryRead} exist primarily for
@@ -48,7 +48,7 @@ export interface SeqPair {
  * @remarks
  * This helper is primarily used in primitives tests.
  *
- * @throws {@link import('../errors').BoundaryError}
+ * @throws {@link import('../errors').SeqWireError}
  * - `internal.assertionFailed` – if indices are out of range or equal.
  *
  * @internal

@@ -1,0 +1,23 @@
+{
+  "name": "@exclave/signalsmith-stretch",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "check": "pnpm run test:types && pnpm run build",
+    "dev": "vite --host 127.0.0.1",
+    "preview": "vite preview --host 127.0.0.1",
+    "test:browser": "playwright test --config playwright.config.ts",
+    "test:types": "tsc -p tsconfig.json --noEmit --pretty"
+  },
+  "dependencies": {
+    "@exclave/seqwire": "workspace:*"
+  },
+  "devDependencies": {
+    "@playwright/test": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

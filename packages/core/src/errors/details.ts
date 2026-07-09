@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Shared, cross-domain error detail types for Seqlok.
+ * Shared, cross-domain error detail types for SeqWire.
  *
  * @remarks
  * - This module defines only structural detail interfaces that are reused

@@ -2,7 +2,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { allocateShared } from "../../src/backing/allocate-shared";
+import { allocatePacked } from "../../src/backing/allocate-packed";
 import { mapViews } from "../../src/backing/map-views";
 import {
   validateMeterSlots,
@@ -34,7 +34,7 @@ describe("observer snapshots", () => {
     }));
 
     const plan = planLayout(spec);
-    const backing = allocateShared(plan);
+    const backing = allocatePacked(plan);
     const mapped = mapViews(plan, backing);
 
     const paramSlots = validateParamSlots(
@@ -96,7 +96,7 @@ describe("observer snapshots", () => {
     expect(curveValues[2]).toBeCloseTo(0.3);
     expect(curveValues[3]).toBeCloseTo(0.4);
 
-    const paramsSubset = paramsSnapshot(["rate", "enabled"] as const);
+    const paramsSubset = paramsSnapshot(["rate", "enabled"]);
 
     expect(Object.keys(paramsSubset).sort()).toEqual(["enabled", "rate"]);
     expect(paramsSubset.rate).toBeCloseTo(1.25);
@@ -115,7 +115,7 @@ describe("observer snapshots", () => {
     expect(historyValues[1]).toBeCloseTo(0.22);
     expect(historyValues[2]).toBeCloseTo(0.33);
 
-    const metersSubset = metersSnapshot(["rms"] as const);
+    const metersSubset = metersSnapshot(["rms"]);
 
     expect(Object.keys(metersSubset)).toEqual(["rms"]);
     expect(metersSubset.rms).toBeCloseTo(0.4);
@@ -132,7 +132,7 @@ describe("observer snapshots", () => {
     }));
 
     const plan = planLayout(spec);
-    const backing = allocateShared(plan);
+    const backing = allocatePacked(plan);
     const mapped = mapViews(plan, backing);
 
     const paramSlots = validateParamSlots(

@@ -15,12 +15,18 @@ import {
   summarizeEnv,
 } from "../../src/diagnostics/env";
 
-import type { BoundaryError } from "../../src/errors/error";
+import type { SeqWireError } from "../../src/errors/error";
+
+function fakeEnv(
+  globalLike: Partial<EnvGlobal> & Record<string, unknown>,
+): EnvGlobal {
+  return globalLike as EnvGlobal;
+}
 
 describe("env.weird-global", () => {
   it("classifies weird object with no standard globals as unknown", () => {
     // Deliberately weird object: no window, self, process, or standard properties
-    const weirdGlobal = {
+    const weirdGlobal = fakeEnv({
       someRandomProperty: "foo",
       anotherWeirdThing: 42,
       nestedObject: {
@@ -28,7 +34,7 @@ describe("env.weird-global", () => {
           value: "bar",
         },
       },
-    } as unknown as EnvGlobal;
+    });
 
     const summary = summarizeEnv(weirdGlobal);
 
@@ -37,12 +43,12 @@ describe("env.weird-global", () => {
   });
 
   it("does not crash when global has unexpected types for known properties", () => {
-    const weirdGlobal = {
+    const weirdGlobal = fakeEnv({
       window: 123,
       self: "not-a-worker",
       process: { version: 1 },
       SharedArrayBuffer: null,
-    } as unknown as EnvGlobal;
+    });
 
     const summary = summarizeEnv(weirdGlobal);
 
@@ -51,9 +57,9 @@ describe("env.weird-global", () => {
   });
 
   it("assertSabSupportFromSummary throws env.unsupported for weird env without SAB", () => {
-    const weirdGlobal = {
+    const weirdGlobal = fakeEnv({
       random: true,
-    } as unknown as EnvGlobal;
+    });
 
     const summary = summarizeEnv(weirdGlobal);
 
@@ -66,23 +72,20 @@ describe("env.weird-global", () => {
     try {
       assertSabSupportFromSummary("weird-global.test", summary);
     } catch (error) {
-      const boundaryError = error as BoundaryError<"env.unsupported">;
-      expect(boundaryError.code).toBe("env.unsupported");
-      expect(boundaryError.message).toContain("SharedArrayBuffer");
-      expect(boundaryError.details).toBeDefined();
-      expect(boundaryError.details).toHaveProperty(
-        "where",
-        "weird-global.test",
-      );
+      const seqwireError = error as SeqWireError<"env.unsupported">;
+      expect(seqwireError.code).toBe("env.unsupported");
+      expect(seqwireError.message).toContain("SharedArrayBuffer");
+      expect(seqwireError.details).toBeDefined();
+      expect(seqwireError.details).toHaveProperty("where", "weird-global.test");
     }
   });
 
   it("handles object with SharedArrayBuffer but no other standard globals", () => {
     // Weird hybrid: has SAB but nothing else standard
-    const hybridGlobal = {
+    const hybridGlobal = fakeEnv({
       SharedArrayBuffer: SharedArrayBuffer,
       weirdField: "test",
-    } as unknown as EnvGlobal;
+    });
 
     const summary = summarizeEnv(hybridGlobal);
 
@@ -93,13 +96,13 @@ describe("env.weird-global", () => {
   });
 
   it("handles object with null/undefined values", () => {
-    const nullishGlobal = {
+    const nullishGlobal = fakeEnv({
       window: null,
       self: undefined,
       process: null,
       SharedArrayBuffer: undefined,
       randomKey: "value",
-    } as unknown as EnvGlobal;
+    });
 
     const summary = summarizeEnv(nullishGlobal);
 
@@ -130,7 +133,7 @@ describe("env.weird-global", () => {
       // We intentionally do NOT expect summarizeEnv to fully handle this.
       // We only care that *if* something escapes, it is not a TypeError
       // caused by our own unsafe assumptions.
-      summarizeEnv(veryWeirdGlobal as unknown as EnvGlobal);
+      summarizeEnv(fakeEnv(veryWeirdGlobal));
     } catch (error) {
       thrown = error;
     }
@@ -146,12 +149,12 @@ describe("env.weird-global", () => {
 
   it("detects missing SAB even in partially standard environments", () => {
     // Has some standard properties but no SAB
-    const partialGlobal = {
+    const partialGlobal = fakeEnv({
       console: console,
       Object: Object,
       Array: Array,
       // No SharedArrayBuffer
-    } as unknown as EnvGlobal;
+    });
 
     const summary = summarizeEnv(partialGlobal);
 
@@ -164,13 +167,13 @@ describe("env.weird-global", () => {
     try {
       assertSabSupportFromSummary("partial-global.test", summary);
     } catch (error) {
-      const boundaryError = error as BoundaryError<"env.unsupported">;
-      expect(boundaryError.code).toBe("env.unsupported");
+      const seqwireError = error as SeqWireError<"env.unsupported">;
+      expect(seqwireError.code).toBe("env.unsupported");
     }
   });
 
   it("handles deeply nested weird structures without crashing", () => {
-    const deeplyWeird = {
+    const deeplyWeird = fakeEnv({
       level1: {
         level2: {
           level3: {
@@ -181,7 +184,7 @@ describe("env.weird-global", () => {
         },
       },
       totallyUnrelated: true,
-    } as unknown as EnvGlobal;
+    });
 
     const summary = summarizeEnv(deeplyWeird);
 
@@ -191,9 +194,9 @@ describe("env.weird-global", () => {
 
   it("correctly identifies when SAB is present but inaccessible", () => {
     // SAB property exists but is not the real constructor
-    const fakeGlobal = {
+    const fakeGlobal = fakeEnv({
       SharedArrayBuffer: "not-a-constructor",
-    } as unknown as EnvGlobal;
+    });
 
     const summary = summarizeEnv(fakeGlobal);
 

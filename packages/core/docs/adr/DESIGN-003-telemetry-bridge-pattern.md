@@ -2,7 +2,7 @@
 
 **Context**: hardware / out-of-process consumers
 **Target**: drones, lights, robots, mixers
-**Tech**: Node.js, UDP/TCP, `@exclave/boundary`
+**Tech**: Node.js, UDP/TCP, `@exclave/seqwire`
 
 ---
 
@@ -10,12 +10,12 @@
 
 A **Telemetry Bridge** is a runtime that:
 
-- attaches to a Seqlok domain as an **observer**;
+- attaches to a SeqWire domain as an **observer**;
 - periodically snapshots params/meters;
 - packs those values into a binary protocol;
 - sends them over UDP/TCP/serial.
 
-It never mutates Seqlok state. It just mirrors the current world into the outside world.
+It never mutates SeqWire state. It just mirrors the current world into the outside world.
 
 ---
 
@@ -28,7 +28,7 @@ Steps:
 3. Run a bounded-frequency loop (e.g. 20–60 Hz).
 4. In each tick:
 
-- snapshot Seqlok meters/params;
+- snapshot SeqWire meters/params;
 - fill a reusable packet buffer;
 - send via socket.
 
@@ -39,7 +39,7 @@ Steps:
 ```ts
 import dgram from "node:dgram";
 import { setTimeout as sleep } from "node:timers/promises";
-import { bindObserver } from "@exclave/boundary";
+import { bindObserver } from "@exclave/seqwire";
 
 // 1. Setup
 const socket = dgram.createSocket("udp4");

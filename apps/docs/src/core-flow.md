@@ -1,23 +1,38 @@
-# Boundary Flow
+# SeqWire Flow
 
-Exclave Boundary has one explicit flow. The steps are intentionally separate so layout ownership, backing allocation, and runtime capability transfer remain visible.
+SeqWire has one explicit flow. The steps are intentionally separate so layout ownership, backing allocation, and runtime capability transfer remain visible.
 
-```text
-defineSpec
-  -> planLayout
-  -> allocateShared / allocateSharedPartitioned / allocateWasmShared
-  -> buildHandoff
-  -> acceptHandoff
-  -> bindController / bindProcessor / bindObserver
+## Shared Backing Model
+
+The spec and plan make the shared-memory layout explicit. The backing is shared memory, not an event bus: each role has directional ownership over reads and writes.
+
+```mermaid
+flowchart LR
+  spec["Spec DSL<br/>params + meters"] --> plan["Memory plan<br/>stable layout"]
+  plan --> backing["SharedArrayBuffer backing<br/>params plane + meters plane"]
+
+  controller["Controller<br/>UI / main thread"]
+  processor["Processor<br/>worker / audio thread"]
+  observer["Observer<br/>diagnostics / monitoring"]
+
+  controller -->|writes params| backing
+  backing -->|reads meter snapshots| controller
+
+  backing -->|coherent param reads| processor
+  processor -->|publishes meters| backing
+
+  backing -.->|read-only snapshots| observer
 ```
+
+Controller code writes params and reads meters. Processor code reads params and publishes meters. Observer code reads without owning writes. The backing stays the single shared state surface underneath those roles.
 
 ## Stages
 
-| Stage | Responsibility | Boundary value |
+| Stage | Responsibility | Runtime value |
 | --- | --- | --- |
 | `defineSpec` | Author params and meters as a typed contract. | Canonical spec with dot keys. |
 | `planLayout` | Compute deterministic plane sizes, offsets, and hash identity. | Plan. |
-| `allocateShared` / `allocateSharedPartitioned` | Allocate backing memory that matches the plan. | Shared backing. |
+| `allocatePacked` / `allocatePartitioned` | Allocate backing memory that matches the plan. | Backing. |
 | `buildHandoff` | Package plan and backing descriptor for transfer. | Handoff. |
 | `acceptHandoff` | Validate the received artifact before binding. | Accepted handoff. |
 | `bindController` | Bind host-side param writes and meter reads. | Controller binding. |
@@ -36,4 +51,4 @@ This separation is the product. Avoid hiding plan or backing creation behind amb
 
 ## Timing-Sensitive Path
 
-The hot path should already have an accepted handoff and a bound processor. It should read params inside `processor.params.within(...)` and publish meters inside `processor.meters.publish(...)`. Spec authoring, planning, allocation, validation, and worker lifecycle work belong outside the tight loop.
+The hot path should already have a bound processor. It should read params inside `processor.params.within(...)` and publish meters inside `processor.meters.publish(...)`. Spec authoring, planning, allocation, validation, and worker lifecycle work belong outside the tight loop.

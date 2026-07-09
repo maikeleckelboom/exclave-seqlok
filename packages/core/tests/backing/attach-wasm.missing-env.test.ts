@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { allocateWasmShared } from "../../src/backing/allocate-wasm-shared";
-import { isBoundaryError } from "../../src/errors/error";
+import { allocateWasm } from "../../src/backing/allocate-wasm";
+import { isSeqWireError } from "../../src/errors/error";
 import { planLayout } from "../../src/plan/layout";
 import { defineSpec } from "../../src/spec/define";
 
@@ -9,8 +9,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("Allocate Wasm Shared: Constructor Failure Handling", () => {
-  it("wraps synchronous WebAssembly.Memory constructor errors into a typed BoundaryError", () => {
+describe("allocateWasm: constructor failure handling", () => {
+  it("wraps synchronous WebAssembly.Memory constructor errors into a typed SeqWireError", () => {
     // Define a minimal spec to generate a valid layout plan
     const spec = defineSpec(({ param, meter }) => ({
       id: "wasm-failure-test",
@@ -32,26 +32,26 @@ describe("Allocate Wasm Shared: Constructor Failure Handling", () => {
     }
 
     vi.stubGlobal("WebAssembly", {
-      Memory: ThrowingMemory as unknown as typeof WebAssembly.Memory,
-    } as unknown as typeof WebAssembly);
+      Memory: ThrowingMemory as typeof WebAssembly.Memory,
+    });
 
     let thrown: unknown;
 
     try {
-      allocateWasmShared(plan);
+      allocateWasm(plan);
     } catch (e) {
       thrown = e;
     }
 
     // Verify the error was caught, wrapped, and typed correctly
-    if (!isBoundaryError(thrown)) {
-      throw new Error("Expected allocateWasmShared to throw a BoundaryError");
+    if (!isSeqWireError(thrown)) {
+      throw new Error("Expected allocateWasm to throw a SeqWireError");
     }
 
     expect(thrown.code).toBe("backing.wasmMemoryNotShared");
     expect(thrown.message).toMatch(
       /Failed to attach shared WebAssembly\.Memory/i,
     );
-    expect(thrown.details.where).toBe("allocateWasmShared");
+    expect(thrown.details.where).toBe("allocateWasm");
   });
 });

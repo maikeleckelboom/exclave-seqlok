@@ -412,7 +412,7 @@ export default tseslint.config(
 
   // Base configuration for the project.
   {
-    name: "seqlok/base",
+    name: "seqwire/base",
     files: paths.allTs,
     languageOptions: {
       parser: tseslint.parser,
@@ -443,7 +443,7 @@ export default tseslint.config(
 
   // Configuration overrides for tests and examples.
   {
-    name: "seqlok/tests-and-examples",
+    name: "seqwire/tests-and-examples",
     files: [...paths.tests, ...paths.examples],
     languageOptions: {
       globals: { ...globals.vitest },
@@ -455,7 +455,7 @@ export default tseslint.config(
 
   // Configuration for regular expression-based rules.
   {
-    name: "seqlok/regex-bans",
+    name: "seqwire/regex-bans",
     files: ["**/*.{ts,tsx,js,jsx}"],
     plugins: {
       // @ts-expect-error -- eslint-plugin-regex doesn't have flat config types yet
@@ -466,7 +466,7 @@ export default tseslint.config(
 
   // Configuration for TypeScript declaration files (*.d.ts).
   {
-    name: "seqlok/type-declarations",
+    name: "seqwire/type-declarations",
     files: ["**/*.d.ts"],
     languageOptions: {
       parser: tseslint.parser,

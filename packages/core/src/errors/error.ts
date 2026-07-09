@@ -1,9 +1,9 @@
 /**
  * @fileoverview
- * Core error handling for Exclave Boundary.
+ * Core error handling for SeqWire.
  *
  * @remarks
- * - Defines the main `BoundaryError` class for all library errors.
+ * - Defines the main `SeqWireError` class for all library errors.
  * - Provides type-safe error creation and checking utilities.
  * - Integrates with the error registry for consistent error handling.
  */
@@ -11,12 +11,12 @@
 import type { ErrorCode, ErrorPayload } from "./registry";
 
 /**
- * Custom error class for @exclave/boundary library errors.
+ * Custom error class for @exclave/seqwire library errors.
  *
  * @template C - The error code type (must be a valid ErrorCode)
  */
-export class BoundaryError<C extends ErrorCode = ErrorCode> extends Error {
-  override readonly name = "BoundaryError";
+export class SeqWireError<C extends ErrorCode = ErrorCode> extends Error {
+  override readonly name = "SeqWireError";
   readonly code: C;
   readonly details: ErrorPayload<C>;
   override readonly cause?: unknown;
@@ -33,7 +33,7 @@ export class BoundaryError<C extends ErrorCode = ErrorCode> extends Error {
     if (cause !== undefined) {
       this.cause = cause;
     }
-    Object.setPrototypeOf(this, BoundaryError.prototype);
+    Object.setPrototypeOf(this, SeqWireError.prototype);
   }
 
   /**
@@ -46,13 +46,13 @@ export class BoundaryError<C extends ErrorCode = ErrorCode> extends Error {
 }
 
 /**
- * Type guard to check if an error is a BoundaryError.
+ * Type guard to check if an error is a SeqWireError.
  */
-export function isBoundaryError(e: unknown): e is BoundaryError {
+export function isSeqWireError(e: unknown): e is SeqWireError {
   return (
     !!e &&
     typeof e === "object" &&
-    (e as { name?: unknown }).name === "BoundaryError"
+    (e as { name?: unknown }).name === "SeqWireError"
   );
 }
 
@@ -63,7 +63,7 @@ export function isBoundaryError(e: unknown): e is BoundaryError {
  * @param message - Human-readable error message
  * @param details - Structured error details (type depends on error code)
  * @param cause - Optional underlying error that caused this error
- * @returns BoundaryError instance
+ * @returns SeqWireError instance
  *
  * @example
  * ```ts
@@ -78,6 +78,6 @@ export function createError<C extends ErrorCode>(
   message: string,
   details: ErrorPayload<C>,
   cause?: unknown,
-): BoundaryError<C> {
-  return new BoundaryError(code, message, details, cause);
+): SeqWireError<C> {
+  return new SeqWireError(code, message, details, cause);
 }

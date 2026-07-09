@@ -5,15 +5,14 @@ import {
   summarizeEnv,
   type EnvGlobal,
 } from "../../src/diagnostics/env";
-import { BoundaryError } from "../../src/errors/error";
+import { SeqWireError } from "../../src/errors/error";
 
 describe("Environment Diagnostics & Compatibility", () => {
   it("correctly identifies a Node.js-like environment based on process globals", () => {
     // Mock a Node.js environment with SAB support
     const env = summarizeEnv({
       process: { versions: { node: "20.0.0" } },
-      SharedArrayBuffer: (() =>
-        undefined) as unknown as typeof SharedArrayBuffer,
+      SharedArrayBuffer,
     } as EnvGlobal);
 
     expect(env.kind).toBe("node");
@@ -27,8 +26,7 @@ describe("Environment Diagnostics & Compatibility", () => {
     const env = summarizeEnv({
       document: {},
       crossOriginIsolated: true,
-      SharedArrayBuffer: (() =>
-        undefined) as unknown as typeof SharedArrayBuffer,
+      SharedArrayBuffer,
     } as EnvGlobal);
 
     expect(env.kind).toBe("browser");
@@ -52,9 +50,9 @@ describe("Environment Diagnostics & Compatibility", () => {
       thrown = error;
     }
 
-    expect(thrown).toBeInstanceOf(BoundaryError);
+    expect(thrown).toBeInstanceOf(SeqWireError);
 
-    const err = thrown as BoundaryError<"env.unsupported">;
+    const err = thrown as SeqWireError<"env.unsupported">;
     expect(err.code).toBe("env.unsupported");
     expect(err.details.feature).toBe("SharedArrayBuffer");
     expect(err.details.where).toBe("test.env.unsupported");
@@ -65,8 +63,7 @@ describe("Environment Diagnostics & Compatibility", () => {
     const summary = summarizeEnv({
       document: {},
       crossOriginIsolated: false,
-      SharedArrayBuffer: (() =>
-        undefined) as unknown as typeof SharedArrayBuffer,
+      SharedArrayBuffer,
     } as EnvGlobal);
 
     expect(summary.kind).toBe("browser");
@@ -80,9 +77,9 @@ describe("Environment Diagnostics & Compatibility", () => {
       thrown = error;
     }
 
-    expect(thrown).toBeInstanceOf(BoundaryError);
+    expect(thrown).toBeInstanceOf(SeqWireError);
 
-    const err = thrown as BoundaryError<"env.coopCoepRequired">;
+    const err = thrown as SeqWireError<"env.coopCoepRequired">;
     expect(err.code).toBe("env.coopCoepRequired");
     expect(err.details.context).toBe("browser");
     expect(err.details.where).toBe("test.env.coop-coep");

@@ -1,10 +1,10 @@
-# `@exclave/boundary` – Documentation Index
+# `@exclave/seqwire` – Documentation Index
 
-This folder is the historical design archive for Exclave Boundary.
+This folder contains architecture notes for SeqWire.
 
-It explains why the API looks the way it does, how coherence works, and how to plug Exclave Boundary into serious multi-threaded systems (workers, visualizers, telemetry, etc.).
+It explains why the API looks the way it does, how coherence works, and how to plug SeqWire into serious multi-threaded systems (workers, visualizers, telemetry, etc.).
 
-Many older files and filenames still use the Seqlok prototype name because they are retained as design history. Current public package docs should use Exclave Boundary and `@exclave/boundary`.
+Current public package docs should use SeqWire and `@exclave/seqwire`.
 
 Docs are grouped into:
 
@@ -24,7 +24,7 @@ Use these as entry points; each has its own `INDEX.md`.
   "Book chapters" that explain the package concepts, concurrency model, DSL, and golden flow.
 
 - **[adr/](./adr/INDEX.md)**
-  Architecture Decision Records and design docs. This is the canonical "why did we pick this?" archive.
+  Architecture Decision Records and design docs. This is the canonical "why did we pick this?" record.
 
 - **[guides/](./guides/INDEX.md)**
   Deep-dive guides and patterns built on top of the core API (mindset, MWMR story, enum helpers, etc.).
@@ -44,20 +44,20 @@ Use these as entry points; each has its own `INDEX.md`.
 
 Pick the path that matches your current job.
 
-### 2.1 "I just want to _use_ Exclave Boundary"
+### 2.1 "I just want to _use_ SeqWire"
 
 1. **Repo root `README.md`** – learn the golden flow:
 
-   > `defineSpec → planLayout → allocateShared/allocateWasmShared → buildHandoff → acceptHandoff → bindController / bindProcessor`
+   > `defineSpec → planLayout → allocatePacked/allocateWasm → buildHandoff → acceptHandoff → bindController / bindProcessor`
 
 2. Then skim these:
 
 - **Goals and boundaries**
-  [architecture/01-seqlok-goals-and-non-goals.md](./architecture/01-seqlok-goals-and-non-goals.md)
-  What Exclave Boundary is for, and where it deliberately stops.
+  [architecture/01-seqwire-goals-and-non-goals.md](./architecture/01-seqwire-goals-and-non-goals.md)
+  What SeqWire is for, and where it deliberately stops.
 
 - **End-to-end visual**
-  [architecture/16-seqlok-e2e-flow-visual-guide.md](./architecture/16-seqlok-e2e-flow-visual-guide.md)
+  [architecture/16-seqwire-e2e-flow-visual-guide.md](./architecture/16-seqwire-e2e-flow-visual-guide.md)
   The whole pipeline in pictures: spec → plan → backing → handoff → bindings.
 
 3. For UI + params/meters ergonomics:
@@ -66,7 +66,7 @@ Pick the path that matches your current job.
   [guides/enum-helpers.md](./guides/enum-helpers.md)
   How to keep UI controls and DSL enum definitions in lockstep.
 
-That's enough to integrate Exclave Boundary without absorbing every internal detail.
+That's enough to integrate SeqWire without absorbing every internal detail.
 
 ---
 
@@ -74,21 +74,21 @@ That's enough to integrate Exclave Boundary without absorbing every internal det
 
 Follow the **Architecture series** in roughly this order:
 
-1. [architecture/00-seqlok-origin-and-design-history.md](./architecture/00-seqlok-origin-and-design-history.md)
-2. [architecture/01-seqlok-goals-and-non-goals.md](./architecture/01-seqlok-goals-and-non-goals.md)
-3. [architecture/02-seqlok-intellectual-heritage.md](./architecture/02-seqlok-intellectual-heritage.md)
-4. [architecture/03-seqlok-concurrency-model-and-roles.md](./architecture/03-seqlok-concurrency-model-and-roles.md)
-5. [architecture/04-seqlok-dsl-overview-and-rationale.md](./architecture/04-seqlok-dsl-overview-and-rationale.md)
+1. [architecture/00-seqwire-origin-and-design-history.md](./architecture/00-seqwire-origin-and-design-history.md)
+2. [architecture/01-seqwire-goals-and-non-goals.md](./architecture/01-seqwire-goals-and-non-goals.md)
+3. [architecture/02-seqwire-intellectual-heritage.md](./architecture/02-seqwire-intellectual-heritage.md)
+4. [architecture/03-seqwire-concurrency-model-and-roles.md](./architecture/03-seqwire-concurrency-model-and-roles.md)
+5. [architecture/04-seqwire-dsl-overview-and-rationale.md](./architecture/04-seqwire-dsl-overview-and-rationale.md)
 6. [architecture/05-enum-arrays-runtime-behavior.md](./architecture/05-enum-arrays-runtime-behavior.md)
 7. [architecture/06-object-model-rationale.md](./architecture/06-object-model-rationale.md)
-8. [architecture/07-seqlok-api-shape-rationale.md](./architecture/07-seqlok-api-shape-rationale.md)
-9. [architecture/08-seqlok-api-and-naming-rationale.md](./architecture/08-seqlok-api-and-naming-rationale.md)
-10. [architecture/09-seqlok-api-reference.md](./architecture/09-seqlok-api-reference.md)
-11. [architecture/10-seqlok-primitives-and-seqlock.md](./architecture/10-seqlok-primitives-and-seqlock.md)
-12. [architecture/11-seqlok-backing-and-plane-layout.md](./architecture/11-seqlok-backing-and-plane-layout.md)
+8. [architecture/07-seqwire-api-shape-rationale.md](./architecture/07-seqwire-api-shape-rationale.md)
+9. [architecture/08-seqwire-api-and-naming-rationale.md](./architecture/08-seqwire-api-and-naming-rationale.md)
+10. [architecture/09-seqwire-api-reference.md](./architecture/09-seqwire-api-reference.md)
+11. [architecture/10-seqwire-primitives-and-seqlock.md](./architecture/10-seqwire-primitives-and-seqlock.md)
+12. [architecture/11-seqwire-backing-and-plane-layout.md](./architecture/11-seqwire-backing-and-plane-layout.md)
 13. [architecture/12-coherent-reads-and-planes.md](./architecture/12-coherent-reads-and-planes.md)
-14. [architecture/14-seqlok-aba-wraparound-not-a-bug.md](./architecture/14-seqlok-aba-wraparound-not-a-bug.md)
-15. [architecture/15-seqlok-error-system-and-fail-fast-philosophy.md](./architecture/15-seqlok-error-system-and-fail-fast-philosophy.md)
+14. [architecture/14-seqwire-aba-wraparound-not-a-bug.md](./architecture/14-seqwire-aba-wraparound-not-a-bug.md)
+15. [architecture/15-seqwire-error-system-and-fail-fast-philosophy.md](./architecture/15-seqwire-error-system-and-fail-fast-philosophy.md)
 16. [architecture/17-hot-vs-cold-path-design-philosophy.md](./architecture/17-hot-vs-cold-path-design-philosophy.md)
 
 Think of `architecture/` as the conceptual book; everything else hangs off it.
@@ -103,12 +103,12 @@ Use this cluster:
 
   - [guides/architecture-from-pipe-to-hub-onboarding.md](./guides/architecture-from-pipe-to-hub-onboarding.md)
     The whiteboard / noisy room / mailbox story of how we got to MWMR at the system level.
-  - [guides/onboarding-seqlok-mindset-and-hot-path.md](./guides/onboarding-seqlok-mindset-and-hot-path.md)
+  - [guides/onboarding-seqwire-mindset-and-hot-path.md](./guides/onboarding-seqwire-mindset-and-hot-path.md)
     Event-loop vs polling, zero-GC rule, and hot vs cold path thinking.
 
 - **Technical architecture:**
 
-  - [guides/understanding-seqlok-mwmr-from-pipe-to-hub.md](./guides/understanding-seqlok-mwmr-from-pipe-to-hub.md)
+  - [guides/understanding-seqwire-mwmr-from-pipe-to-hub.md](./guides/understanding-seqwire-mwmr-from-pipe-to-hub.md)
     From SWSR domains to system-level MWMR using rings, a hub controller, and observers.
   - [architecture/17-hot-vs-cold-path-design-philosophy.md](./architecture/17-hot-vs-cold-path-design-philosophy.md)
 
@@ -116,10 +116,10 @@ Use this cluster:
 
   - [adr/ADR-00Y-mwmr-architecture.md](./adr/ADR-00Y-mwmr-architecture.md)
   - [adr/ADR-00Z-observer-binding-role.md](./adr/ADR-00Z-observer-binding-role.md)
-  - [adr/ADR-010-ring-primitive-in-seqlok-core.md](./adr/ADR-010-ring-primitive-in-seqlok-core.md)
+  - [adr/ADR-010-ring-primitive-in-seqwire-core.md](./adr/ADR-010-ring-primitive-in-seqwire-core.md)
   - [adr/ADR-011-mwmr-ground-truth.md](./adr/ADR-011-mwmr-ground-truth.md)
 
-Together, these explain how Seqlok stays strictly SWMR at the primitive level while allowing MWMR at the system topology level.
+Together, these explain how SeqWire stays strictly SWMR at the primitive level while allowing MWMR at the system topology level.
 
 ---
 
@@ -131,10 +131,9 @@ You want the **Internals** and **Appendix**:
 - [internals/coherence-semantics-policy.md](./internals/coherence-semantics-policy.md)
 - [internals/diagnostics-seqlock-budgets-binding-level-contract.md](./internals/diagnostics-seqlock-budgets-binding-level-contract.md)
 
-Plus, for historical helpers and visual notes:
+Plus, for implementation helper notes:
 
-- [appendix/primitives-shelf-removed-helpers-v1.md](appendix/primitives-shelf-removed-helpers-v0.1.md)
-- [appendix/seqlok-visual-architecture-notes-v1.md](./appendix/seqlok-visual-architecture-notes-v1.md)
+- [appendix/primitives-shelf-removed-helpers-v0.1.md](./appendix/primitives-shelf-removed-helpers-v0.1.md)
 
 Use these when you're changing primitives, binding internals, or diagnostics behavior.
 

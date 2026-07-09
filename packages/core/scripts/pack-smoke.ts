@@ -38,8 +38,26 @@ function assertNoWorkspaceDeps(
   }
 }
 
+function assertNoProofFiles(tarballPath: string, packageRoot: string): void {
+  const contents = run("tar", ["-tf", tarballPath], packageRoot)
+    .split(/\r?\n/u)
+    .filter((line) => line.length > 0);
+  const forbidden = contents.filter(
+    (entry) =>
+      entry.includes("apps/signalsmith-stretch/") ||
+      entry.includes("signalsmith-stretch/vendor/") ||
+      entry.includes("signalsmith-stretch/generated/"),
+  );
+
+  if (forbidden.length > 0) {
+    throw new Error(
+      `@exclave/seqwire tarball contains private proof files:\n${forbidden.join("\n")}`,
+    );
+  }
+}
+
 const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const tempRoot = mkdtempSync(join(tmpdir(), "exclave-boundary-pack-"));
+const tempRoot = mkdtempSync(join(tmpdir(), "exclave-seqwire-pack-"));
 
 try {
   const packOutput = runPnpm(
@@ -58,6 +76,8 @@ try {
   const tarballPath = isAbsolute(tarballName)
     ? tarballName
     : join(tempRoot, tarballName);
+  assertNoProofFiles(tarballPath, packageRoot);
+
   const consumerRoot = join(tempRoot, "consumer");
   mkdirSync(consumerRoot);
   const tarballSpec = `file:${relative(consumerRoot, tarballPath).replace(
@@ -69,13 +89,13 @@ try {
     join(consumerRoot, "smoke.mjs"),
     `
 import {
-  allocateShared,
+  allocatePacked,
   bindController,
   bindProcessor,
   buildHandoff,
   defineSpec,
   planLayout
-} from "@exclave/boundary";
+} from "@exclave/seqwire";
 
 const spec = defineSpec(({ param, meter }) => ({
   params: {
@@ -89,7 +109,7 @@ const spec = defineSpec(({ param, meter }) => ({
   }
 }));
 const plan = planLayout(spec);
-const backing = allocateShared(plan);
+const backing = allocatePacked(plan);
 const controller = bindController(spec, plan, backing);
 const processor = bindProcessor(buildHandoff(plan, backing));
 
@@ -97,12 +117,12 @@ controller.params.set("nested.count", 7);
 controller.params.stage("nested.words", (view) => view.set([1, 2]));
 processor.params.within((params) => {
   if (params.nested.count !== 7 || params.nested.words[1] !== 2) {
-    throw new Error("packed @exclave/boundary param flow failed");
+    throw new Error("packed @exclave/seqwire param flow failed");
   }
 });
 processor.meters.publish((meters) => meters.signed(-3));
 if (controller.meters.snapshot().signed !== -3) {
-  throw new Error("packed @exclave/boundary meter flow failed");
+  throw new Error("packed @exclave/seqwire meter flow failed");
 }
 `.trimStart(),
   );
@@ -114,7 +134,7 @@ if (controller.meters.snapshot().signed !== -3) {
         private: true,
         type: "module",
         dependencies: {
-          "@exclave/boundary": tarballSpec,
+          "@exclave/seqwire": tarballSpec,
         },
       },
       null,
@@ -126,13 +146,7 @@ if (controller.meters.snapshot().signed !== -3) {
 
   const installedPackageJson = JSON.parse(
     readFileSync(
-      join(
-        consumerRoot,
-        "node_modules",
-        "@exclave",
-        "boundary",
-        "package.json",
-      ),
+      join(consumerRoot, "node_modules", "@exclave", "seqwire", "package.json"),
       "utf8",
     ),
   ) as {

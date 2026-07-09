@@ -1,6 +1,6 @@
 /**
  * @packageDocumentation
- * Plane identifiers and alignment helpers for Seqlok memory plans.
+ * Plane identifiers and alignment helpers for SeqWire memory plans.
  *
  * Each plane groups values by storage type to guarantee deterministic plan
  * and correct TypedArray alignment:

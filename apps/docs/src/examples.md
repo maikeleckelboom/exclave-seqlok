@@ -1,65 +1,59 @@
 # Examples
 
-Use Twoslash examples where the type system proves part of the boundary contract. Plain code blocks are used for transport sketches or operational commands.
+These examples show the public contract in code. The prose names the boundary guarantees; snippets keep transport sketches separate from the core API.
 
 ## Spec Inference and Canonical Keys
 
 ```ts twoslash
-import { defineSpec } from "@exclave/boundary";
+import { defineSpec } from "@exclave/seqwire";
 
-const spec = defineSpec(({ param, meter }) => ({
-  id: "examples/transport" as const,
+const spec = defineSpec((api) => ({
+  id: "examples/transport",
   params: {
     transport: {
-      enabled: param.bool(),
-      mode: param.enum(["idle", "active", "fault"]),
-      payload: param.u8.array(16),
+      enabled: api.param.bool(),
+      mode: api.param.enum(["idle", "active", "fault"]),
+      payload: api.param.u8.array(16),
     },
   },
   meters: {
     transport: {
-      state: meter.enum(["idle", "active", "fault"]),
-      drift: meter.i32(),
-      spectrum: meter.f32.array(8),
+      state: api.meter.enum(["idle", "active", "fault"]),
+      drift: api.meter.i32(),
+      spectrum: api.meter.f32.array(8),
     },
   },
 }));
-
-spec.params["transport.mode"];
-// ^?
-
-spec.meters["transport.spectrum"];
-// ^?
 ```
 
-The authored shape is nested, but the canonical spec uses dot keys. Those keys are accepted by controller and observer APIs.
+The authored shape is nested, while controller writes use canonical dot-key strings and processor or observer reads expose nested views.
 
 ## Controller Params
 
 ```ts twoslash
 import {
-  allocateShared,
+  allocatePacked,
   bindController,
   defineSpec,
   planLayout,
-} from "@exclave/boundary";
+} from "@exclave/seqwire";
 
-const spec = defineSpec(({ param, meter }) => ({
-  id: "examples/controller" as const,
+const spec = defineSpec((api) => ({
+  id: "examples/controller",
   params: {
     transport: {
-      enabled: param.bool(),
-      mode: param.enum(["idle", "active", "fault"]),
-      payload: param.u8.array(16),
+      enabled: api.param.bool(),
+      mode: api.param.enum(["idle", "active", "fault"]),
+      payload: api.param.u8.array(16),
     },
   },
   meters: {
-    frames: meter.u32(),
+    frames: api.meter.u32(),
   },
 }));
 
 const plan = planLayout(spec);
-const backing = allocateShared(plan);
+const backing = allocatePacked(plan);
 const controller = bindController(spec, plan, backing);
 
 controller.params.set("transport.enabled", true);
@@ -67,7 +61,6 @@ controller.params.set("transport.mode", "active");
 controller.params.stage("transport.payload", (payload) => {
   payload.set([1, 2, 3, 4]);
   payload;
-  // ^?
 });
 ```
 
@@ -77,43 +70,39 @@ Scalar enum params use labels on the controller side. Processor and meter enum v
 
 ```ts twoslash
 import {
-  acceptHandoff,
-  allocateShared,
+  allocatePacked,
   bindProcessor,
   buildHandoff,
   defineSpec,
   planLayout,
-} from "@exclave/boundary";
+} from "@exclave/seqwire";
 
-const spec = defineSpec(({ param, meter }) => ({
-  id: "examples/processor" as const,
+const spec = defineSpec((api) => ({
+  id: "examples/processor",
   params: {
     transport: {
-      enabled: param.bool(),
-      mode: param.enum(["idle", "active", "fault"]),
-      payload: param.u8.array(16),
+      enabled: api.param.bool(),
+      mode: api.param.enum(["idle", "active", "fault"]),
+      payload: api.param.u8.array(16),
     },
   },
   meters: {
-    frames: meter.u32(),
-    spectrum: meter.f32.array(8),
+    frames: api.meter.u32(),
+    spectrum: api.meter.f32.array(8),
   },
 }));
 
 const plan = planLayout(spec);
-const backing = allocateShared(plan);
-const accepted = acceptHandoff(buildHandoff(plan, backing));
-const processor = bindProcessor(accepted);
+const backing = allocatePacked(plan);
+const handoff = buildHandoff(plan, backing);
+const processor = bindProcessor(handoff);
 
 processor.params.within((params) => {
   params.transport.enabled;
-  // ^?
 
   params.transport.mode;
-  // ^?
 
   params.transport.payload;
-  // ^?
 });
 
 processor.meters.publish((meters) => {
@@ -121,7 +110,6 @@ processor.meters.publish((meters) => {
   meters.stage("spectrum", (spectrum) => {
     spectrum[0] = 0.25;
     spectrum;
-    // ^?
   });
 });
 ```
@@ -130,61 +118,57 @@ The nested aliases inside `within(...)` are read conveniences over the canonical
 
 ## Observer Snapshots
 
-Observers are read-only bindings for telemetry, inspection, or secondary consumers. They can bind from the same accepted handoff as the processor.
+Observers are read-only bindings for telemetry, inspection, or secondary consumers. They can bind from the same handoff as the processor.
 
 ```ts twoslash
 import {
-  acceptHandoff,
-  allocateShared,
+  allocatePacked,
   bindObserver,
   buildHandoff,
   defineSpec,
   planLayout,
-} from "@exclave/boundary";
+} from "@exclave/seqwire";
 
-const spec = defineSpec(({ param, meter }) => ({
-  id: "examples/observer" as const,
+const spec = defineSpec((api) => ({
+  id: "examples/observer",
   params: {
     transport: {
-      enabled: param.bool(),
-      mode: param.enum(["idle", "active", "fault"]),
+      enabled: api.param.bool(),
+      mode: api.param.enum(["idle", "active", "fault"]),
     },
   },
   meters: {
     transport: {
-      state: meter.enum(["idle", "active", "fault"]),
-      drift: meter.i32(),
+      state: api.meter.enum(["idle", "active", "fault"]),
+      drift: api.meter.i32(),
     },
   },
 }));
 
 const plan = planLayout(spec);
-const backing = allocateShared(plan);
-const accepted = acceptHandoff(buildHandoff(plan, backing));
-const observer = bindObserver(accepted);
+const backing = allocatePacked(plan);
+const handoff = buildHandoff(plan, backing);
+const observer = bindObserver(handoff);
 
-const params = observer.params.snapshot([
-  "transport.enabled",
-  "transport.mode",
-] as const);
-const meters = observer.meters.snapshot("transport.state", "transport.drift");
+observer.params.within((params) => {
+  params.transport.enabled;
+  params.transport.mode;
+});
 
-params["transport.mode"];
-// ^?
-
-meters["transport.state"];
-// ^?
+observer.params.snapshot(["transport.enabled", "transport.mode"]);
+observer.meters.snapshot("transport.state", "transport.drift");
 ```
 
-## BoundaryError Narrowing
+The observer receives enum param labels in snapshots, including when it binds from a handoff.
+
+## SeqWireError Narrowing
 
 ```ts twoslash
-import { isBoundaryError } from "@exclave/boundary";
+import { isSeqWireError } from "@exclave/seqwire";
 
 export function summarizeError(error: unknown) {
-  if (isBoundaryError(error)) {
+  if (isSeqWireError(error)) {
     error.code;
-    // ^?
 
     return error.toJSON();
   }
@@ -195,4 +179,4 @@ export function summarizeError(error: unknown) {
 
 ## Pack Smoke Shape
 
-The release smoke test installs the packed tarball in a fresh consumer and imports from `@exclave/boundary`. That catches missing files, workspace-only dependencies, and broken export maps before publish.
+The release smoke test installs the packed tarball in a fresh consumer and imports from `@exclave/seqwire`. That catches missing files, workspace-only dependencies, and broken export maps before publish.

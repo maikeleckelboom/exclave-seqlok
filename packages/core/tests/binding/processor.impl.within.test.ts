@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  allocateShared,
+  allocatePacked,
   bindProcessor,
   buildHandoff,
   defineSpec,
@@ -9,7 +9,7 @@ import {
   acceptHandoff,
 } from "../../src";
 import { mapViews } from "../../src/backing/map-views";
-import { isBoundaryError, type BoundaryError } from "../../src/errors/error";
+import { isSeqWireError, type SeqWireError } from "../../src/errors/error";
 
 describe("Processor Params: Coherent Read Transaction", () => {
   it("propagates binding.coherentRetryExhausted when lock contention exceeds budget", () => {
@@ -24,7 +24,7 @@ describe("Processor Params: Coherent Read Transaction", () => {
     }));
 
     const plan = planLayout(spec);
-    const backing = allocateShared(plan);
+    const backing = allocatePacked(plan);
     const handoff = buildHandoff(plan, backing);
     const accepted = acceptHandoff(handoff);
 
@@ -36,7 +36,7 @@ describe("Processor Params: Coherent Read Transaction", () => {
       },
     });
 
-    // Locate the Parameter Update (PU) lock index in the shared backing
+    // Locate the Parameter Update (PU) lock index in the packed backing.
     const mapped = mapViews(plan, backing);
     const lockIndex = plan.locks.PU.lock;
 
@@ -57,13 +57,13 @@ describe("Processor Params: Coherent Read Transaction", () => {
     }
 
     // Verify the error structure matches the expected contract
-    if (!isBoundaryError(thrown)) {
+    if (!isSeqWireError(thrown)) {
       throw new Error(
-        "Expected processor.params.within to throw a BoundaryError",
+        "Expected processor.params.within to throw a SeqWireError",
       );
     }
 
-    const err = thrown as BoundaryError<"binding.coherentRetryExhausted">;
+    const err = thrown as SeqWireError<"binding.coherentRetryExhausted">;
 
     expect(err.code).toBe("binding.coherentRetryExhausted");
     expect(err.details.where).toBe("processor.params.within");

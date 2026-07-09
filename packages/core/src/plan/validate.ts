@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Validation and planning utilities for Seqlok memory layouts.
+ * Validation and planning utilities for SeqWire memory layouts.
  *
  * @remarks
  * - Validates spec definitions before planning.

@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  allocateShared,
+  allocatePacked,
   bindController,
   bindObserver,
   bindProcessor,
   defineSpec,
   planLayout,
 } from "../../src";
-import { isBoundaryError } from "../../src/errors/error";
+import { isSeqWireError } from "../../src/errors/error";
 
 describe("binding invalid argument errors", () => {
   const spec = defineSpec(({ param }) => ({
@@ -26,8 +26,8 @@ describe("binding invalid argument errors", () => {
       thrown = error;
     }
 
-    expect(isBoundaryError(thrown)).toBe(true);
-    if (isBoundaryError(thrown)) {
+    expect(isSeqWireError(thrown)).toBe(true);
+    if (isSeqWireError(thrown)) {
       expect(thrown.code).toBe("binding.invalidArgs");
       expect(thrown.details.fn).toBe("bindController");
       expect(thrown.details.reason).toBe("missingPlan");
@@ -38,13 +38,13 @@ describe("binding invalid argument errors", () => {
     const plan = planLayout(spec);
     let thrown: unknown;
     try {
-      bindProcessor(spec, plan);
+      bindProcessor(plan as never);
     } catch (error) {
       thrown = error;
     }
 
-    expect(isBoundaryError(thrown)).toBe(true);
-    if (isBoundaryError(thrown)) {
+    expect(isSeqWireError(thrown)).toBe(true);
+    if (isSeqWireError(thrown)) {
       expect(thrown.code).toBe("binding.invalidArgs");
       expect(thrown.details.fn).toBe("bindProcessor");
       expect(thrown.details.reason).toBe("missingBacking");
@@ -60,20 +60,20 @@ describe("binding invalid argument errors", () => {
       thrown = error;
     }
 
-    expect(isBoundaryError(thrown)).toBe(true);
-    if (isBoundaryError(thrown)) {
+    expect(isSeqWireError(thrown)).toBe(true);
+    if (isSeqWireError(thrown)) {
       expect(thrown.code).toBe("binding.invalidArgs");
       expect(thrown.details.fn).toBe("bindObserver");
       expect(thrown.details.reason).toBe("missingBacking");
     }
   });
 
-  it("still accepts explicit controller/processor/observer triples", () => {
+  it("accepts explicit controller triple, processor plan/backing, and observer triple", () => {
     const plan = planLayout(spec);
-    const backing = allocateShared(plan);
+    const backing = allocatePacked(plan);
 
     const controller = bindController(spec, plan, backing);
-    const processor = bindProcessor(spec, plan, backing);
+    const processor = bindProcessor(plan, backing);
     const observer = bindObserver(spec, plan, backing);
 
     controller.params.set("gain", 0.75);

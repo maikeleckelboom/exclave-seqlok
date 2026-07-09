@@ -16,7 +16,7 @@ import { createError } from "../errors/error";
 import type { DiagnosticsCounterDetails } from "../errors/codes/diagnostics";
 
 /**
- * Names for diagnostics counters maintained by Seqlok's introspection layer.
+ * Names for diagnostics counters maintained by SeqWire's introspection layer.
  *
  * @remarks
  * These counters are **not** part of the core data path; they are meant
@@ -69,7 +69,7 @@ const MAX_COUNTER_VALUE = Number.MAX_SAFE_INTEGER;
  * Validate a single counter value and throw a diagnostics error when
  * the value is not a sane introspection metric.
  *
- * @throws BoundaryError<'diagnostics.counterInvalid'>
+ * @throws SeqWireError<'diagnostics.counterInvalid'>
  */
 function assertValidCounterValue(
   name: DiagnosticsCounterName,

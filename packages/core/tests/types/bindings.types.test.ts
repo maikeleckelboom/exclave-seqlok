@@ -2,14 +2,15 @@ import { describe, it, expectTypeOf } from "vitest";
 
 import {
   type Backing,
-  isSharedBacking,
-  isSharedPartitionedBacking,
-  isWasmSharedBacking,
-  type SharedBacking,
-  type SharedPartitionedBacking,
-  type WasmSharedBacking,
+  isPackedBacking,
+  isPartitionedBacking,
+  isWasmBacking,
+  type PackedBacking,
+  type PartitionedBacking,
+  type WasmBacking,
 } from "../../src/backing/types";
 
+import type { HydratePatch as RootHydratePatch } from "../../src";
 import type {
   ControllerMeters,
   ControllerParams,
@@ -21,35 +22,33 @@ import type {
 import type { SpecInput } from "../../src/spec/types";
 
 describe("Backing Union Type Guards (Signatures)", () => {
-  it("isSharedBacking(b: Backing): b is SharedBacking", () => {
-    expectTypeOf(isSharedBacking).parameter(0).toEqualTypeOf<Backing>();
-    expectTypeOf(isSharedBacking).guards.toEqualTypeOf<SharedBacking>();
+  it("isPackedBacking(b: Backing): b is PackedBacking", () => {
+    expectTypeOf(isPackedBacking).parameter(0).toEqualTypeOf<Backing>();
+    expectTypeOf(isPackedBacking).guards.toEqualTypeOf<PackedBacking>();
   });
 
-  it("isSharedPartitionedBacking(b: Backing): b is SharedPartitionedBacking", () => {
-    expectTypeOf(isSharedPartitionedBacking)
-      .parameter(0)
-      .toEqualTypeOf<Backing>();
+  it("isPartitionedBacking(b: Backing): b is PartitionedBacking", () => {
+    expectTypeOf(isPartitionedBacking).parameter(0).toEqualTypeOf<Backing>();
     expectTypeOf(
-      isSharedPartitionedBacking,
-    ).guards.toEqualTypeOf<SharedPartitionedBacking>();
+      isPartitionedBacking,
+    ).guards.toEqualTypeOf<PartitionedBacking>();
   });
 
-  it("isWasmSharedBacking(b: Backing): b is WasmSharedBacking", () => {
-    expectTypeOf(isWasmSharedBacking).parameter(0).toEqualTypeOf<Backing>();
-    expectTypeOf(isWasmSharedBacking).guards.toEqualTypeOf<WasmSharedBacking>();
+  it("isWasmBacking(b: Backing): b is WasmBacking", () => {
+    expectTypeOf(isWasmBacking).parameter(0).toEqualTypeOf<Backing>();
+    expectTypeOf(isWasmBacking).guards.toEqualTypeOf<WasmBacking>();
   });
 });
 
 describe("Backing Union Discriminants (Extract<> Mapping)", () => {
   it("maps discriminants to exact backing shapes", () => {
-    type C = Extract<Backing, { kind: "shared" }>;
-    type S = Extract<Backing, { kind: "shared-partitioned" }>;
-    type W = Extract<Backing, { kind: "wasm-shared" }>;
+    type C = Extract<Backing, { kind: "packed" }>;
+    type S = Extract<Backing, { kind: "partitioned" }>;
+    type W = Extract<Backing, { kind: "wasm" }>;
 
-    expectTypeOf<C>().toEqualTypeOf<SharedBacking>();
-    expectTypeOf<S>().toEqualTypeOf<SharedPartitionedBacking>();
-    expectTypeOf<W>().toEqualTypeOf<WasmSharedBacking>();
+    expectTypeOf<C>().toEqualTypeOf<PackedBacking>();
+    expectTypeOf<S>().toEqualTypeOf<PartitionedBacking>();
+    expectTypeOf<W>().toEqualTypeOf<WasmBacking>();
 
     // Key property types.
     expectTypeOf<C["sab"]>().toEqualTypeOf<SharedArrayBuffer>();
@@ -61,9 +60,9 @@ describe("Backing Union Discriminants (Extract<> Mapping)", () => {
 describe("Control-Flow Narrowing: Real-Value Runtime Checks", () => {
   it("narrows correctly in each branch", () => {
     const cases: Backing[] = [
-      { kind: "shared", sab: new SharedArrayBuffer(8) },
+      { kind: "packed", sab: new SharedArrayBuffer(8) },
       {
-        kind: "shared-partitioned",
+        kind: "partitioned",
         planes: {
           PF32: new SharedArrayBuffer(0),
           PI32: new SharedArrayBuffer(0),
@@ -76,23 +75,23 @@ describe("Control-Flow Narrowing: Real-Value Runtime Checks", () => {
         },
       },
       {
-        kind: "wasm-shared",
+        kind: "wasm",
         memory: new WebAssembly.Memory({
           shared: true,
           initial: 1,
           maximum: 1,
         }),
       },
-    ] as const;
+    ];
 
     for (const b of cases) {
-      if (isSharedBacking(b)) {
+      if (isPackedBacking(b)) {
         // Exact equality is safe post-narrow.
-        expectTypeOf(b).toEqualTypeOf<SharedBacking>();
-      } else if (isSharedPartitionedBacking(b)) {
-        expectTypeOf(b).toEqualTypeOf<SharedPartitionedBacking>();
-      } else if (isWasmSharedBacking(b)) {
-        expectTypeOf(b).toEqualTypeOf<WasmSharedBacking>();
+        expectTypeOf(b).toEqualTypeOf<PackedBacking>();
+      } else if (isPartitionedBacking(b)) {
+        expectTypeOf(b).toEqualTypeOf<PartitionedBacking>();
+      } else if (isWasmBacking(b)) {
+        expectTypeOf(b).toEqualTypeOf<WasmBacking>();
       } else {
         const _never: never = b;
       }
@@ -139,6 +138,19 @@ describe("binding (compile-time contracts)", () => {
 
     expectTypeOf<UpdateArg["mode"]>().toExtend<("a" | "b" | "c") | undefined>();
     expectTypeOf<("a" | "b" | "c") | undefined>().toExtend<UpdateArg["mode"]>();
+  });
+
+  it("root HydratePatch export accepts scalar and array params", () => {
+    type Patch = RootHydratePatch<S>;
+    type HydrateKeys = keyof Patch;
+    type AllParamKeys = "rate" | "coeffs" | "enabled" | "mode";
+
+    expectTypeOf<HydrateKeys>().toExtend<AllParamKeys>();
+    expectTypeOf<AllParamKeys>().toExtend<HydrateKeys>();
+    expectTypeOf<Patch["rate"]>().toExtend<number | undefined>();
+    expectTypeOf<Patch["coeffs"]>().toExtend<Float32Array | undefined>();
+    expectTypeOf<Patch["enabled"]>().toExtend<boolean | undefined>();
+    expectTypeOf<Patch["mode"]>().toExtend<("a" | "b" | "c") | undefined>();
   });
 
   it("MeterWriter has scalar writers and typed stage() for array meters", () => {

@@ -1,14 +1,14 @@
 # ADRs – Architecture Decision Records
 
-This folder contains **Architecture Decision Records (ADRs)** and related design docs for Exclave Boundary.
+This folder contains **Architecture Decision Records (ADRs)** and related design docs for SeqWire.
 
-Older ADRs may retain the Seqlok prototype name in titles or historical context. Current package references should use Exclave Boundary and `@exclave/boundary`.
+ADR titles and current package references should use SeqWire and `@exclave/seqwire`.
 
 An ADR is a small, permanent note that captures a **specific architectural decision**:
 
 > What did we decide, why, and what does it imply for the future?
 
-Think of ADRs as “git commits for architecture”: short, focused, and historical.
+Think of ADRs as “git commits for architecture”: short, focused, and durable.
 
 ---
 
@@ -64,7 +64,7 @@ We use three main doc types:
 
 - **Scope:** One concrete decision.
 - **Shape:** Short, focused, 1–3 pages.
-- **Lifetime:** Historical; never deleted, only superseded.
+- **Lifetime:** Durable; never deleted, only superseded.
 - **Audience:** Anyone asking "why did we choose this?".
 
 File pattern:
@@ -88,10 +88,10 @@ DESIGN-00X-short-title-kebab-case.md
 
 ### 3. ARCHITECTURE – System docs (`../architecture`)
 
-- **Scope:** Core concepts, mental models, and canonical descriptions of how Seqlok works.
+- **Scope:** Core concepts, mental models, and canonical descriptions of how SeqWire works.
 - **Shape:** “Book chapters” (origin, goals, concurrency model, DSL rationale, etc.).
 - **Lifetime:** Kept in sync with the actual system; updated over time.
-- **Audience:** Anyone trying to understand Seqlok as a whole.
+- **Audience:** Anyone trying to understand SeqWire as a whole.
 
 Use ADRs when the decision is made, DESIGN docs when you are still exploring options, and ARCHITECTURE docs when you
 want to explain the system as it stands.
@@ -194,7 +194,7 @@ This turns the ADR folder into a map of "why" instead of a graveyard of forgotte
 - [ADR-00D-primitives-internal-and-pruned.md](./ADR-00D-primitives-internal-and-pruned.md)
 - [ADR-00E-electron-multi-process-runtimes.md](./ADR-00E-electron-multi-process-runtimes.md)
 - [ADR-00F-controller-params-hydrate.md](./ADR-00F-controller-params-hydrate.md)
-- [ADR-00X-introduce-seqlok-compose-for-system-level-composition.md](./ADR-00X-introduce-seqlok-compose-for-system-level-composition.md)
+- [ADR-00X-introduce-seqwire-compose-for-system-level-composition.md](./ADR-00X-introduce-seqwire-compose-for-system-level-composition.md)
 - [ADR-00Y-mwmr-architecture.md](./ADR-00Y-mwmr-architecture.md)
 - [ADR-00Z-observer-binding-role.md](./ADR-00Z-observer-binding-role.md)
 

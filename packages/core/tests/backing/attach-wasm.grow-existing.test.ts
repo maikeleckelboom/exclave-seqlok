@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
-import { allocateWasmShared } from "../../src/backing/allocate-wasm-shared";
-import { isBoundaryError } from "../../src/errors/error";
+import { allocateWasm } from "../../src/backing/allocate-wasm";
+import { isSeqWireError } from "../../src/errors/error";
 import { planLayout } from "../../src/plan/layout";
 import { defineSpec } from "../../src/spec/define";
 
@@ -51,7 +51,7 @@ class FailingGrowFakeMemory {
   }
 }
 
-describe("Allocate Wasm Shared: existing memory growth", () => {
+describe("allocateWasm: existing memory growth", () => {
   it("grows undersized existing memory until it satisfies plan.bytesTotal", () => {
     const spec = defineSpec(({ param, meter }) => ({
       id: "wasm-grow-existing",
@@ -69,11 +69,11 @@ describe("Allocate Wasm Shared: existing memory growth", () => {
     const undersizedBytes = Math.max(1, plan.bytesTotal - WASM_PAGE_SIZE / 2);
 
     const fake = new GrowingFakeMemory(undersizedBytes);
-    const memory = fake as unknown as WebAssembly.Memory;
+    const memory = fake as WebAssembly.Memory;
 
-    const backing = allocateWasmShared(plan, memory);
+    const backing = allocateWasm(plan, memory);
 
-    expect(backing.kind).toBe("wasm-shared");
+    expect(backing.kind).toBe("wasm");
     expect(backing.memory).toBe(memory);
 
     // We should have grown at least once
@@ -100,26 +100,26 @@ describe("Allocate Wasm Shared: existing memory growth", () => {
     const undersizedBytes = Math.max(1, plan.bytesTotal - WASM_PAGE_SIZE / 2);
 
     const failing = new FailingGrowFakeMemory(undersizedBytes);
-    const memory = failing as unknown as WebAssembly.Memory;
+    const memory = failing as WebAssembly.Memory;
 
     let thrown: unknown;
 
     try {
-      allocateWasmShared(plan, memory);
+      allocateWasm(plan, memory);
     } catch (error) {
       thrown = error;
     }
 
     if (thrown === undefined) {
-      throw new Error("Expected allocateWasmShared to throw for grow failure");
+      throw new Error("Expected allocateWasm to throw for grow failure");
     }
 
-    if (!isBoundaryError(thrown)) {
+    if (!isSeqWireError(thrown)) {
       throw thrown as Error;
     }
 
     expect(thrown.code).toBe("backing.allocUndersized");
-    expect(thrown.details.where).toBe("allocateWasmShared.grow");
+    expect(thrown.details.where).toBe("allocateWasm.grow");
 
     if (
       "requestedBytes" in thrown.details &&

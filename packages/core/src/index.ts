@@ -1,9 +1,9 @@
 /**
  * @fileoverview
- * Core module for Exclave Boundary.
+ * Core module for SeqWire.
  *
  * @remarks
- * - Re-exports all public APIs for the @exclave/boundary package.
+ * - Re-exports all public APIs for the @exclave/seqwire package.
  * - Organized into logical sections: SPEC, PLAN, BACKING, BINDING, HANDOFF, and ERRORS.
  * - This is the main entry point for consumers of the library.
  */
@@ -30,9 +30,9 @@ export type {
 export { planLayout } from "./plan/layout";
 
 // BACKING
-export { allocateShared } from "./backing/allocate-shared";
-export { allocateSharedPartitioned } from "./backing/allocate-shared-partitioned";
-export { allocateWasmShared } from "./backing/allocate-wasm-shared";
+export { allocatePacked } from "./backing/allocate-packed";
+export { allocatePartitioned } from "./backing/allocate-partitioned";
+export { allocateWasm } from "./backing/allocate-wasm";
 
 // BINDING
 export { bindController } from "./binding/controller";
@@ -52,7 +52,11 @@ export type {
   ObserverMeters,
   ParamValueFor,
   ScalarParamPatch,
+  HydratePatch,
   MeterValueFor,
+  MeterGroup,
+  MeterGroupKey,
+  MeterGroupValues,
   ParamsSnapshot,
   MetersSnapshot,
   SnapshotParamsObject,
@@ -72,7 +76,7 @@ export { buildHandoff, acceptHandoff, verifyHandoff } from "./handoff/handoff";
 export type { Handoff, HandoffPacking, AcceptedHandoff } from "./handoff/types";
 
 // ERRORS
-export { BoundaryError, isBoundaryError } from "./errors/error";
+export { SeqWireError, isSeqWireError } from "./errors/error";
 export { getErrorMeta, getErrorMessage, isErrorCode } from "./errors/registry";
 export { interpretHealth } from "./errors/health";
 
@@ -128,7 +132,3 @@ export type {
   SwsrRingConsumer,
   SwsrRingStats,
 } from "./primitives/swsr-ring";
-
-// CONTEXT
-export type { SharedContext } from "./context/types";
-export { createSharedContext } from "./context/create";

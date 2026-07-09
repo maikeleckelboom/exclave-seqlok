@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Run scenarios under an Exclave Boundary diagnostics + health envelope.
+ * Run scenarios under a SeqWire diagnostics + health envelope.
  *
  * @remarks
  * This helper is intended for:
@@ -19,7 +19,7 @@
 import { resetCounters, snapshotCounters } from "./counters";
 import { exportDiagnosticsCounters } from "./export";
 import { endDiagnosticsSession, startDiagnosticsSession } from "./session";
-import { isBoundaryError } from "../errors/error";
+import { isSeqWireError } from "../errors/error";
 import { getDocsUrl, interpretHealth, isBoundarySafe } from "../errors/health";
 import { getErrorMeta } from "../errors/registry";
 
@@ -28,7 +28,7 @@ import type {
   DiagnosticsCountersSnapshot,
 } from "./counters";
 import type { DiagnosticsSession } from "./session";
-import type { BoundaryError } from "../errors/error";
+import type { SeqWireError } from "../errors/error";
 import type { HealthInterpretation } from "../errors/health";
 import type { ErrorMeta } from "../errors/registry";
 
@@ -72,14 +72,14 @@ export interface RunWithDiagnosticsResult<T> {
 
   /**
    * Value returned by the scenario when it succeeds.
-   * `undefined` when the scenario fails with a BoundaryError.
+   * `undefined` when the scenario fails with a SeqWireError.
    */
   readonly value: T | undefined;
 
   /**
-   * Boundary error thrown by the scenario, if any.
+   * SeqWire error thrown by the scenario, if any.
    */
-  readonly error: BoundaryError | undefined;
+  readonly error: SeqWireError | undefined;
 
   /**
    * Interpreted health view for the error, if any.
@@ -147,19 +147,19 @@ export interface RunWithDiagnosticsOptions {
   readonly thresholds?: DiagnosticsThresholds;
 
   /**
-   * Optional hook invoked when a BoundaryError is caught.
+   * Optional hook invoked when a SeqWireError is caught.
    */
-  readonly onBoundaryError?: (
-    error: BoundaryError,
+  readonly onSeqWireError?: (
+    error: SeqWireError,
     health: HealthInterpretation,
     meta: ErrorMeta,
   ) => void;
 
   /**
-   * Optional hook invoked when a non-Boundary error is caught.
+   * Optional hook invoked when a non-SeqWire error is caught.
    *
    * @remarks
-   * By default, non-Boundary errors are rethrown after diagnostics
+   * By default, non-SeqWire errors are rethrown after diagnostics
    * bookkeeping. This hook is for logging/telemetry only.
    */
   readonly onUnknownError?: (error: unknown) => void;
@@ -219,9 +219,9 @@ export function checkDiagnosticsThresholds(
 }
 
 /**
- * Internal helper to derive meta + health from a BoundaryError.
+ * Internal helper to derive meta + health from a SeqWireError.
  */
-function getMetaAndHealth(error: BoundaryError): {
+function getMetaAndHealth(error: SeqWireError): {
   meta: ErrorMeta;
   health: HealthInterpretation;
 } {
@@ -231,7 +231,7 @@ function getMetaAndHealth(error: BoundaryError): {
 }
 
 interface ErrorState {
-  error: BoundaryError | undefined;
+  error: SeqWireError | undefined;
   meta: ErrorMeta | undefined;
   health: HealthInterpretation | undefined;
 }
@@ -240,17 +240,17 @@ interface ErrorState {
  * Shared error handling for async/sync variants.
  *
  * @remarks
- * - Fills `errorState` for Boundary errors.
+ * - Fills `errorState` for SeqWire errors.
  * - Invokes hooks.
- * - Rethrows non-Boundary errors after `onUnknownError`.
+ * - Rethrows non-SeqWire errors after `onUnknownError`.
  */
 function handleCaughtError(
   caught: unknown,
   errorState: ErrorState,
-  onBoundaryError: RunWithDiagnosticsOptions["onBoundaryError"],
+  onSeqWireError: RunWithDiagnosticsOptions["onSeqWireError"],
   onUnknownError: RunWithDiagnosticsOptions["onUnknownError"],
 ): void {
-  if (isBoundaryError(caught)) {
+  if (isSeqWireError(caught)) {
     const error = caught;
     const { meta, health } = getMetaAndHealth(error);
 
@@ -258,8 +258,8 @@ function handleCaughtError(
     errorState.meta = meta;
     errorState.health = health;
 
-    if (onBoundaryError !== undefined) {
-      onBoundaryError(error, health, meta);
+    if (onSeqWireError !== undefined) {
+      onSeqWireError(error, health, meta);
     }
     return;
   }
@@ -268,7 +268,7 @@ function handleCaughtError(
     onUnknownError(caught);
   }
 
-  // Non-Boundary errors are considered programmer or environment bugs.
+  // Non-SeqWire errors are considered programmer or environment bugs.
   throw caught;
 }
 
@@ -279,7 +279,7 @@ interface BuildResultArgs<T> {
   readonly startedSession: DiagnosticsSession;
   readonly completedSession: DiagnosticsSession | null;
   readonly value: T | undefined;
-  readonly error: BoundaryError | undefined;
+  readonly error: SeqWireError | undefined;
   readonly meta: ErrorMeta | undefined;
   readonly health: HealthInterpretation | undefined;
 }
@@ -346,7 +346,7 @@ export async function runWithDiagnostics<T>(
     scenarioId,
     metadata = {},
     thresholds,
-    onBoundaryError,
+    onSeqWireError,
     onUnknownError,
   } = options;
 
@@ -367,7 +367,7 @@ export async function runWithDiagnostics<T>(
   try {
     value = await run();
   } catch (caught: unknown) {
-    handleCaughtError(caught, errorState, onBoundaryError, onUnknownError);
+    handleCaughtError(caught, errorState, onSeqWireError, onUnknownError);
   } finally {
     completedSession = endDiagnosticsSession();
   }
@@ -402,7 +402,7 @@ export function runWithDiagnosticsSync<T>(
     scenarioId,
     metadata = {},
     thresholds,
-    onBoundaryError,
+    onSeqWireError,
     onUnknownError,
   } = options;
 
@@ -423,7 +423,7 @@ export function runWithDiagnosticsSync<T>(
   try {
     value = run();
   } catch (caught: unknown) {
-    handleCaughtError(caught, errorState, onBoundaryError, onUnknownError);
+    handleCaughtError(caught, errorState, onSeqWireError, onUnknownError);
   } finally {
     completedSession = endDiagnosticsSession();
   }

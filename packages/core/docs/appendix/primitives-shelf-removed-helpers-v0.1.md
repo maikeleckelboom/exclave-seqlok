@@ -1,15 +1,15 @@
 # Primitives Shelf: Removed Helpers in v0.1.0 (with Code Reference)
 
 > Status: Accepted
-> Scope: `src/primitives/*` in `@exclave/boundary`
+> Scope: `src/primitives/*` in `@exclave/seqwire`
 > Intent: Record the intent and **exact implementations** of primitives that were removed from the runtime, so they can
 > be resurrected or reused without spelunking history.
 
 ## 1. Context
 
-`@exclave/boundary` deliberately exposes **only** the high-level flow:
+`@exclave/seqwire` deliberately exposes **only** the high-level flow:
 
-- `defineSpec` → `planLayout` → `allocateShared` → `buildHandoff` / `acceptHandoff` → `bindController` /
+- `defineSpec` → `planLayout` → `allocatePacked` → `buildHandoff` / `acceptHandoff` → `bindController` /
   `bindProcessor`
 
 The `primitives` layer (planes, atomics, seqlock internals) is treated as **internal implementation**, not a public API.
@@ -99,7 +99,7 @@ export function isAligned(byteOffset: number, plane: PlaneKey): boolean {
 **Notes**
 
 - Uses bit-masking (`n & (align - 1)`) which assumes `align` is a power of two; that holds for all current plane sizes.
-- If you use this outside Seqlok, ensure your `BYTES_PER_ELEM` obeys that invariant.
+- If you use this outside SeqWire, ensure your `BYTES_PER_ELEM` obeys that invariant.
 
 ---
 
@@ -341,7 +341,7 @@ export function isWriterActive(p: SeqPair): boolean {
 **Notes**
 
 - This intentionally leaks the "odd = writer, even = reader" convention of the lock word.
-- In Seqlok's design, binding consumers should **never** branch on this directly; they use higher-level snapshot APIs
+- In SeqWire's design, binding consumers should **never** branch on this directly; they use higher-level snapshot APIs
   instead.
 
 ---
@@ -352,7 +352,7 @@ These helpers are **not** part of the v0.1.0 public API, but they're preserved h
 
 - Small,
 - Self-contained,
-- Already integrated / designed for Seqlok's model.
+- Already integrated / designed for SeqWire's model.
 
 If you bring any of them back into the runtime or into a new package:
 

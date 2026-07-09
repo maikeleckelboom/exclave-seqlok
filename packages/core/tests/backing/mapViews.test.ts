@@ -1,22 +1,22 @@
 import { describe, expect, it } from "vitest";
 
-import { allocateShared } from "../../src/backing/allocate-shared";
+import { allocatePacked } from "../../src/backing/allocate-packed";
 import { mapViews } from "../../src/backing/map-views";
-import { type BoundaryError } from "../../src/errors/error";
+import { type SeqWireError } from "../../src/errors/error";
 import { planLayout } from "../../src/plan/layout";
 import { defineSpec } from "../../src/spec/define";
 
 /**
- * Type guard to identify Seqlok specific errors.
+ * Type guard to identify SeqWire specific errors.
  * Validates the presence of `name`, `message`, and `code` properties.
  */
-export function isBoundaryError(x: unknown): x is BoundaryError {
+export function isSeqWireError(x: unknown): x is SeqWireError {
   if (typeof x !== "object" || x === null) {
     return false;
   }
   const obj = x as Record<string, unknown>;
   return (
-    obj.name === "BoundaryError" &&
+    obj.name === "SeqWireError" &&
     typeof obj.message === "string" &&
     "code" in obj
   );
@@ -36,7 +36,7 @@ describe("Map Views: Runtime Behavior & Validation", () => {
     }));
 
     const plan = planLayout(spec);
-    const backing = allocateShared(plan);
+    const backing = allocatePacked(plan);
     const views = mapViews(plan, backing);
 
     // Verify that views are instantiated as the correct TypedArray subclasses
@@ -63,7 +63,7 @@ describe("Map Views: Runtime Behavior & Validation", () => {
 
     // Create a buffer that is intentionally too small (short by 8 bytes)
     const sab = new SharedArrayBuffer(Math.max(0, plan.bytesTotal - 8));
-    const backing = { kind: "shared" as const, sab };
+    const backing = { kind: "packed" as const, sab };
 
     let thrown: unknown;
     try {
@@ -72,13 +72,13 @@ describe("Map Views: Runtime Behavior & Validation", () => {
       thrown = e;
     }
 
-    expect(isBoundaryError(thrown)).toBe(true);
+    expect(isSeqWireError(thrown)).toBe(true);
 
-    if (isBoundaryError(thrown)) {
+    if (isSeqWireError(thrown)) {
       expect(thrown.code).toBe("backing.allocUndersized");
       expect(thrown.message).toMatch(/smaller than required|undersized/i);
     } else {
-      throw new Error("Expected mapViews to throw a BoundaryError");
+      throw new Error("Expected mapViews to throw a SeqWireError");
     }
   });
 });

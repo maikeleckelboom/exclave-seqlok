@@ -1,30 +1,32 @@
 /**
  * @fileoverview
- * Handoff construction and validation (v1 – zero duplication).
+ * Handoff construction and validation (v1, zero duplicated layout metadata).
  *
  * Moves a `Plan<S>` and its backing across concurrency boundaries:
  *
- * - `buildHandoff(plan, backing)` – owner-side construction of a `Handoff<S>`.
- * - `buildHandoff(context)` – owner-side construction from `SharedContext<S>`.
- * - `acceptHandoff(handoff)` – boundary validation → `AcceptedHandoff<S>`.
- * - `verifyHandoff(localPlan, remotePlan)` – optional consistency check.
+ * - `buildHandoff(plan, backing)` - owner-side construction of a
+ *   `Handoff<S>`.
+ * - `acceptHandoff(handoff)` - boundary validation into `AcceptedHandoff<S>`.
+ * - `verifyHandoff(localPlan, remotePlan)` - optional consistency check.
  *
  * Design:
  * - `Plan<S>` is the single source of truth for layout/spec metadata.
  * - The handoff envelope carries only `{ version, packing, backing, plan }`.
  * - No duplicated header fields, no derived lengths stored twice.
- * - Consumers bind from `AcceptedHandoff<S>`, never raw `(Plan<S>, Backing)`.
+ * - Processor and observer bindings accept `Handoff<S>` directly for the
+ *   typed happy path, or `AcceptedHandoff<S>` after an unknown transport value
+ *   has been validated by `acceptHandoff`.
  */
 
+import { brandAcceptedHandoffRuntime } from "./accepted-brand";
 import { createError } from "../errors/error";
 import { isObject } from "../internal/is-object";
 import { ALL_PLANES, type PlaneKey } from "../primitives/planes";
 
 import type { Handoff, AcceptedHandoff } from "./types";
 import type { Backing } from "../backing/types";
-import type { SharedContext } from "../context/types";
 import type { Plan, PlaneByteLengths } from "../plan/types";
-import type { SpecInput } from "../spec/types";
+import type { ParamDef, SpecInput } from "../spec/types";
 
 /**
  * Protocol version supported by this module.
@@ -32,7 +34,8 @@ import type { SpecInput } from "../spec/types";
  * @remarks
  * - Used by `buildHandoff` as the outbound version tag.
  * - Checked by `acceptHandoff` at the boundary.
- * - Increment when introducing breaking changes to the handoff shape/semantics.
+ * - Version 1 describes the current unreleased handoff shape:
+ *   `{ version, packing, plan, sab | planes }`.
  */
 const SUPPORTED_HANDOFF_VERSION = 1 as const;
 
@@ -42,113 +45,224 @@ const SUPPORTED_HANDOFF_VERSION = 1 as const;
  * @remarks
  * Guards against environments where `SharedArrayBuffer` is not defined.
  */
-function isSharedArrayBuffer(x: unknown): x is SharedArrayBuffer {
+function isSharedArrayBuffer(value: unknown): value is SharedArrayBuffer {
   return (
-    typeof SharedArrayBuffer !== "undefined" && x instanceof SharedArrayBuffer
+    typeof SharedArrayBuffer !== "undefined" &&
+    value instanceof SharedArrayBuffer
   );
 }
 
-/**
- * Structural guard for `PlaneByteLengths`.
- *
- * @internal
- */
-function isPlaneByteLengths(value: unknown): value is PlaneByteLengths {
+function brandHandoff<S extends SpecInput>(
+  handoff:
+    | {
+        readonly version: 1;
+        readonly packing: "packed";
+        readonly sab: SharedArrayBuffer;
+        readonly plan: Plan<S>;
+      }
+    | {
+        readonly version: 1;
+        readonly packing: "partitioned";
+        readonly planes: Readonly<Record<string, SharedArrayBuffer>>;
+        readonly plan: Plan<S>;
+      },
+): Handoff<S> {
+  return handoff as Handoff<S>;
+}
+
+function brandAcceptedHandoff<S extends SpecInput>(
+  accepted:
+    | {
+        readonly packing: "packed";
+        readonly sab: SharedArrayBuffer;
+        readonly plan: Plan<S>;
+      }
+    | {
+        readonly packing: "partitioned";
+        readonly planes: Readonly<Record<string, SharedArrayBuffer>>;
+        readonly plan: Plan<S>;
+      },
+): AcceptedHandoff<S> {
+  return brandAcceptedHandoffRuntime(accepted) as AcceptedHandoff<S>;
+}
+
+function invalidPlan(detail: string): never {
+  throw createError(
+    "handoff.invalidArtifact",
+    "Missing or invalid plan in handoff",
+    {
+      where: "handoff.acceptHandoff",
+      detail,
+    },
+  );
+}
+
+function isNonNegativeFiniteInteger(value: unknown): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    Number.isInteger(value) &&
+    value >= 0
+  );
+}
+
+function assertPlaneByteLengths(
+  value: unknown,
+): asserts value is PlaneByteLengths {
   if (!isObject(value)) {
-    return false;
+    invalidPlan("plan.planes");
   }
 
-  for (const v of Object.values(value)) {
-    if (typeof v !== "number" || !Number.isFinite(v) || v < 0) {
-      return false;
+  for (const plane of ALL_PLANES) {
+    if (!isNonNegativeFiniteInteger(value[plane])) {
+      invalidPlan(`plan.planes.${plane}`);
     }
   }
-
-  return true;
 }
 
-/**
- * Structural guard for `Plan<S>` used at the boundary.
- *
- * @internal
- */
-function isPlanLike<S extends SpecInput>(plan: unknown): plan is Plan<S> {
+function assertPlanObjects(plan: Record<string, unknown>): {
+  readonly params: Record<string, unknown>;
+  readonly meters: Record<string, unknown>;
+  readonly locks: Record<string, unknown>;
+} {
+  const params = plan.params;
+  if (!isObject(params)) {
+    invalidPlan("plan.params");
+  }
+
+  const meters = plan.meters;
+  if (!isObject(meters)) {
+    invalidPlan("plan.meters");
+  }
+
+  const locks = plan.locks;
+  if (!isObject(locks)) {
+    invalidPlan("plan.locks");
+  }
+
+  return { params, meters, locks };
+}
+
+function assertLockPair(value: unknown, key: "PU" | "MU"): void {
+  if (!isObject(value)) {
+    invalidPlan(`plan.locks.${key}`);
+  }
+
+  if (!isNonNegativeFiniteInteger(value.lock)) {
+    invalidPlan(`plan.locks.${key}.lock`);
+  }
+
+  if (!isNonNegativeFiniteInteger(value.seq)) {
+    invalidPlan(`plan.locks.${key}.seq`);
+  }
+}
+
+function isStringArray(value: unknown): value is readonly string[] {
+  return (
+    Array.isArray(value) && value.every((entry) => typeof entry === "string")
+  );
+}
+
+function assertParamDefs(
+  value: unknown,
+  params: Record<string, unknown>,
+): asserts value is Readonly<Record<string, ParamDef>> {
+  if (!isObject(value)) {
+    invalidPlan("plan.paramDefs");
+  }
+
+  for (const key of Object.keys(params)) {
+    const def = value[key];
+    if (!isObject(def) || typeof def.kind !== "string") {
+      invalidPlan(`plan.paramDefs.${key}`);
+    }
+
+    if (
+      (def.kind === "enum" || def.kind === "enum.array") &&
+      !isStringArray(def.values)
+    ) {
+      invalidPlan(`plan.paramDefs.${key}.values`);
+    }
+
+    if ("length" in def && !isNonNegativeFiniteInteger(def.length)) {
+      invalidPlan(`plan.paramDefs.${key}.length`);
+    }
+  }
+}
+
+function assertPlanLike<S extends SpecInput>(
+  plan: unknown,
+): asserts plan is Plan<S> {
   if (!isObject(plan)) {
-    return false;
+    invalidPlan("plan");
   }
 
-  const maybeHash = (plan as { hash?: unknown }).hash;
-  const maybeBytesTotal = (plan as { bytesTotal?: unknown }).bytesTotal;
-  const maybePlanes = (plan as { planes?: unknown }).planes;
-
-  if (typeof maybeHash !== "string" || typeof maybeBytesTotal !== "number") {
-    return false;
+  if (typeof plan.id !== "string") {
+    invalidPlan("plan.id");
   }
 
-  if (!isPlaneByteLengths(maybePlanes)) {
-    return false;
+  if (typeof plan.hash !== "string") {
+    invalidPlan("plan.hash");
   }
 
-  return true;
+  if (!isNonNegativeFiniteInteger(plan.bytesTotal)) {
+    invalidPlan("plan.bytesTotal");
+  }
+
+  if (!isNonNegativeFiniteInteger(plan.lockStrideBytes)) {
+    invalidPlan("plan.lockStrideBytes");
+  }
+
+  assertPlaneByteLengths(plan.planes);
+
+  const { params, locks } = assertPlanObjects(plan);
+  assertParamDefs(plan.paramDefs, params);
+  assertLockPair(locks.PU, "PU");
+  assertLockPair(locks.MU, "MU");
+}
+
+function backingKindDetail(value: unknown): string {
+  if (isObject(value) && typeof value.kind === "string") {
+    return `kind=${value.kind}`;
+  }
+  return "kind=unknown";
 }
 
 /**
- * Construct a {@link Handoff} from a context, plan, and backing.
+ * Owner-side construction from an explicit `(plan, backing)` pair.
  *
- * @typeParam S - Spec type (inferred from `plan` or `context.plan`).
+ * @typeParam S - Spec type inferred from `plan`.
  *
- * @throws {@link import('../errors').BoundaryError}
+ * @throws {@link import('../errors').SeqWireError}
  * - `handoff.invalidArtifact` if the backing is incompatible with the plan,
  *   or an unsupported backing kind is provided.
  *
  * @remarks
- * - v1 supports:
- *   - `backing.kind: 'shared'` → `packing: 'shared'` with a single `sab`.
- *   - `backing.kind: 'shared-partitioned'` → `packing: 'shared-partitioned'`
- *     with per-plane SABs keyed by `PlaneKey`.
- *   - `backing.kind: 'wasm-shared'` is **not** serializable via handoff yet
- *     and will throw a descriptive error.
- */
-
-/**
- * Owner-side overload: build a handoff from a `SharedContext<S>`.
- */
-export function buildHandoff<S extends SpecInput>(
-  context: SharedContext<S>,
-): Handoff<S>;
-
-/**
- * Owner-side overload: build a handoff from an explicit `(plan, backing)` pair.
+ * - `backing.kind: "packed"` emits `packing: "packed"`.
+ * - `backing.kind: "partitioned"` emits `packing: "partitioned"`.
+ * - `backing.kind: "wasm"` is not serializable via handoff yet and throws.
  */
 export function buildHandoff<S extends SpecInput>(
   plan: Plan<S>,
   backing: Backing,
 ): Handoff<S>;
-
-/**
- * Runtime implementation for both `buildHandoff` overloads.
- */
 export function buildHandoff<S extends SpecInput>(
-  arg1: Plan<S> | SharedContext<S>,
-  arg2?: Backing,
+  plan: Plan<S>,
+  backing: unknown,
 ): Handoff<S> {
-  let plan: Plan<S>;
-  let backing: Backing;
-
-  if (isSharedContext<S>(arg1)) {
-    plan = arg1.plan;
-    backing = arg1.backing;
-  } else {
-    plan = arg1;
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    backing = arg2!;
+  if (!isObject(backing)) {
+    throw createError("handoff.invalidArtifact", "Unsupported backing kind", {
+      where: "handoff.buildHandoff",
+      detail: backingKindDetail(backing),
+    });
   }
 
-  if (backing.kind === "shared") {
-    if (!isSharedArrayBuffer(backing.sab)) {
+  if (backing.kind === "packed") {
+    const sab = backing.sab;
+    if (!isSharedArrayBuffer(sab)) {
       throw createError(
         "handoff.invalidArtifact",
-        'Handoff requires a SharedArrayBuffer backing for kind="shared"',
+        'Handoff requires a SharedArrayBuffer backing for kind="packed"',
         {
           where: "handoff.buildHandoff",
           detail: "backing.sab",
@@ -157,7 +271,7 @@ export function buildHandoff<S extends SpecInput>(
     }
 
     const requiredBytes = plan.bytesTotal >>> 0;
-    const actualBytes = backing.sab.byteLength >>> 0;
+    const actualBytes = sab.byteLength >>> 0;
 
     if (actualBytes < requiredBytes) {
       throw createError(
@@ -171,19 +285,30 @@ export function buildHandoff<S extends SpecInput>(
       );
     }
 
-    // Brand on the way out.
-    return {
+    return brandHandoff({
       version: SUPPORTED_HANDOFF_VERSION,
-      packing: "shared",
-      sab: backing.sab,
+      packing: "packed",
+      sab,
       plan,
-    } as unknown as Handoff<S>;
+    });
   }
 
-  if (backing.kind === "shared-partitioned") {
-    // View plan.planes through the same key-space as the backing.
+  if (backing.kind === "partitioned") {
     const planeLengths = plan.planes as Record<PlaneKey, number>;
     const planes = backing.planes;
+
+    if (!isObject(planes)) {
+      throw createError(
+        "handoff.invalidArtifact",
+        "Partitioned backing planes must be an object",
+        {
+          where: "handoff.buildHandoff",
+          detail: "backing.planes",
+        },
+      );
+    }
+
+    const planeSabMap: Record<string, SharedArrayBuffer> = {};
 
     for (const plane of ALL_PLANES) {
       const sab = planes[plane];
@@ -214,46 +339,39 @@ export function buildHandoff<S extends SpecInput>(
           },
         );
       }
+
+      planeSabMap[plane] = sab;
     }
 
-    return {
+    return brandHandoff({
       version: SUPPORTED_HANDOFF_VERSION,
-      packing: "shared-partitioned",
-      planes,
+      packing: "partitioned",
+      planes: planeSabMap,
       plan,
-    } as unknown as Handoff<S>;
+    });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (backing.kind === "wasm-shared") {
+  if (backing.kind === "wasm") {
     throw createError(
       "handoff.invalidArtifact",
-      "wasm-shared backing is not yet supported by the handoff protocol",
+      "wasm backing is not yet supported by the handoff protocol",
       {
         where: "handoff.buildHandoff",
-        detail: "kind=wasm-shared",
+        detail: "kind=wasm",
       },
     );
   }
 
-  const kind = (backing as { kind?: unknown }).kind;
-
-  throw createError(
-    "handoff.invalidArtifact",
-    "Unsupported backing kind for handoff",
-    {
-      where: "handoff.buildHandoff",
-      detail: `kind=${String(kind)}`,
-    },
-  );
+  throw createError("handoff.invalidArtifact", "Unsupported backing kind", {
+    where: "handoff.buildHandoff",
+    detail: backingKindDetail(backing),
+  });
 }
 
 /**
  * Acceptance-boundary overload: validates and unpacks a typed handoff envelope.
  *
- * @typeParam S - Spec type (inferred from `handoff.plan: Plan<S>`).
- *
- * Use this overload when the `Handoff<S>` type is preserved across the boundary.
+ * @typeParam S - Spec type inferred from `handoff.plan: Plan<S>`.
  */
 export function acceptHandoff<S extends SpecInput>(
   handoff: Handoff<S>,
@@ -262,7 +380,8 @@ export function acceptHandoff<S extends SpecInput>(
 /**
  * Acceptance-boundary overload: validates and unpacks an untyped envelope.
  *
- * Use this overload when the inbound value is `unknown` (e.g. from `postMessage`).
+ * Use this overload when the inbound value is `unknown`, such as from
+ * `postMessage`.
  */
 export function acceptHandoff(handoff: unknown): AcceptedHandoff;
 
@@ -271,8 +390,8 @@ export function acceptHandoff(handoff: unknown): AcceptedHandoff;
  *
  * @internal
  */
-export function acceptHandoff<S extends SpecInput>( // eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
-  handoff: Handoff<S> | unknown,
+export function acceptHandoff<S extends SpecInput>(
+  handoff: unknown,
 ): AcceptedHandoff<S> {
   if (!isObject(handoff)) {
     throw createError(
@@ -286,14 +405,13 @@ export function acceptHandoff<S extends SpecInput>( // eslint-disable-next-line 
   }
 
   const hx = handoff as {
-    version?: unknown;
-    packing?: unknown;
-    sab?: unknown;
-    planes?: unknown;
-    plan?: unknown;
+    readonly version?: unknown;
+    readonly packing?: unknown;
+    readonly sab?: unknown;
+    readonly planes?: unknown;
+    readonly plan?: unknown;
   };
 
-  // Validate protocol version.
   if (hx.version !== SUPPORTED_HANDOFF_VERSION) {
     throw createError("handoff.versionMismatch", "Unexpected handoff version", {
       where: "handoff.acceptHandoff",
@@ -302,21 +420,10 @@ export function acceptHandoff<S extends SpecInput>( // eslint-disable-next-line 
     });
   }
 
-  // Validate plan structure (metadata source).
-  if (!isPlanLike<S>(hx.plan)) {
-    throw createError(
-      "handoff.invalidArtifact",
-      "Missing or invalid plan in handoff",
-      {
-        where: "handoff.acceptHandoff",
-        detail: "plan",
-      },
-    );
-  }
-
+  assertPlanLike<S>(hx.plan);
   const plan = hx.plan;
 
-  if (hx.packing === "shared") {
+  if (hx.packing === "packed") {
     if (!isSharedArrayBuffer(hx.sab)) {
       throw createError(
         "handoff.invalidArtifact",
@@ -343,14 +450,14 @@ export function acceptHandoff<S extends SpecInput>( // eslint-disable-next-line 
       );
     }
 
-    return {
-      packing: "shared",
+    return brandAcceptedHandoff({
+      packing: "packed",
       sab: hx.sab,
       plan,
-    } as AcceptedHandoff<S>;
+    });
   }
 
-  if (hx.packing === "shared-partitioned") {
+  if (hx.packing === "partitioned") {
     if (!isObject(hx.planes)) {
       throw createError(
         "handoff.invalidArtifact",
@@ -397,11 +504,11 @@ export function acceptHandoff<S extends SpecInput>( // eslint-disable-next-line 
       planeSabMap[plane] = value;
     }
 
-    return {
-      packing: "shared-partitioned",
+    return brandAcceptedHandoff({
+      packing: "partitioned",
       planes: planeSabMap,
       plan,
-    } as AcceptedHandoff<S>;
+    });
   }
 
   throw createError("handoff.invalidArtifact", "Unsupported handoff packing", {
@@ -413,7 +520,7 @@ export function acceptHandoff<S extends SpecInput>( // eslint-disable-next-line 
 /**
  * Compare two plans for compatibility.
  *
- * @throws {@link import('../errors').BoundaryError}
+ * @throws {@link import('../errors').SeqWireError}
  * - `handoff.specHashMismatch` if `hash` values differ.
  * - `handoff.backingMismatch` if `bytesTotal` differ.
  */
@@ -469,12 +576,4 @@ function computeHashDiff(expected: string, received: string): string {
   }
 
   return `first-diff@${String(firstDiff)}`;
-}
-
-function isSharedContext<S extends SpecInput>(
-  value: Plan<S> | SharedContext<S>,
-): value is SharedContext<S> {
-  return (
-    isObject(value) && "spec" in value && "plan" in value && "backing" in value
-  );
 }

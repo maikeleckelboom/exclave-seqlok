@@ -18,12 +18,15 @@ out/
 # ── coverage and reports
 coverage/
 packages/**/.coverage/
+test-results/
 *.lcov
 .nyc_output/
 
 # ── Vite and other caches
 .vite/
 .cache/
+apps/signalsmith-stretch/.cache/
+apps/signalsmith-stretch/generated/
 apps/**/src/.vitepress/cache/
 packages/**/src/.vitepress/cache/
 .eslintcache
@@ -51,5 +54,5 @@ Thumbs.db
 *.diff
 *_code.md
 *_code.txt
-seqlok-*.md
+seqwire-*.md
 packages/**/bench-results.json

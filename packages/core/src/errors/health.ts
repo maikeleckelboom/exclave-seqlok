@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Health interpretation for Seqlok errors.
+ * Health interpretation for SeqWire errors.
  *
  * @remarks
  * This module turns low-level error metadata into a small, UI-friendly
