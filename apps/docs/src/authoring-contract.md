@@ -44,7 +44,7 @@ flowchart TB
 Use canonical dot keys for controller writes, snapshot key lists, diagnostics, generated artifacts, and spec maps such as `spec.params["time.ratio"]`. Use nested property access in processor read examples when the read view supports it, for example `params.time.ratio` inside `within(...)`.
 
 ```ts twoslash
-import { defineSpec, type ParamValues } from "@exclave/seqlok";
+import { defineSpec, type ParamValues } from "@exclave/seqwire";
 
 const spec = defineSpec((api) => ({
   id: "authoring/filter",

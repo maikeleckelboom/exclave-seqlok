@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Memory layout planning for Seqlok shared state.
+ * Memory layout planning for SeqWire shared state.
  *
  * @remarks
  * - Transforms a high-level spec into a concrete memory layout plan.

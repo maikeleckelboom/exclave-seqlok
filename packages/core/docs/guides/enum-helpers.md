@@ -1,6 +1,6 @@
-# Enum Helpers & UI Wiring (`@exclave/seqlok`)
+# Enum Helpers & UI Wiring (`@exclave/seqwire`)
 
-This guide shows practical patterns for using the enum helpers in Seqlok
+This guide shows practical patterns for using the enum helpers in SeqWire
 to drive real UI controls, fixtures, and tools.
 
 All helpers are spec-driven: they read the enum vocabulary from your
@@ -20,7 +20,7 @@ import {
   enumLabelFromIndex,
   type EnumLabel,
   type EnumKeyOf,
-} from "@exclave/seqlok";
+} from "@exclave/seqwire";
 ```
 
 Core shape:
@@ -49,8 +49,8 @@ Requirements:
 ## 1. Classic `<select>` bound to an enum param
 
 ```ts
-import type { ControllerBinding } from "@exclave/seqlok";
-import { enumValues } from "@exclave/seqlok";
+import type { ControllerBinding } from "@exclave/seqwire";
+import { enumValues } from "@exclave/seqwire";
 import { spec } from "./spec";
 
 type DemoSpec = typeof spec;
@@ -89,7 +89,7 @@ Use case: simple mode switcher with no hard-coded vocabulary.
 ## 2. Localized labels / pretty names with `enumPaletteFor`
 
 ```ts
-import { enumPaletteFor, type ControllerBinding } from "@exclave/seqlok";
+import { enumPaletteFor, type ControllerBinding } from "@exclave/seqwire";
 import { spec } from "./spec";
 
 type DemoSpec = typeof spec;
@@ -140,7 +140,7 @@ Use case: segmented controls / buttons with localized labels.
 ## 3. Decode `Int32Array` indices → labels (`enum.array`)
 
 ```ts
-import { enumArrayToLabels } from "@exclave/seqlok";
+import { enumArrayToLabels } from "@exclave/seqwire";
 import { spec } from "./spec";
 
 type DemoSpec = typeof spec;
@@ -163,7 +163,7 @@ Out-of-range index → `spec.enumInvalid` with `{ key, values, invalidIndex }`.
 ## 4. Encode labels → `Int32Array` indices
 
 ```ts
-import { enumLabelsToArray } from "@exclave/seqlok";
+import { enumLabelsToArray } from "@exclave/seqwire";
 import { spec } from "./spec";
 
 type DemoSpec = typeof spec;
@@ -193,7 +193,7 @@ Typo in a label → `spec.enumInvalid` with `{ key, values, received }`.
 ## 5. Enum labels to colors/icons (HUD / legend)
 
 ```ts
-import { enumPaletteFor } from "@exclave/seqlok";
+import { enumPaletteFor } from "@exclave/seqwire";
 import { spec } from "./spec";
 
 type DemoSpec = typeof spec;
@@ -245,7 +245,7 @@ import {
   enumIndexFromLabel,
   enumLabelFromIndex,
   enumValues,
-} from "@exclave/seqlok";
+} from "@exclave/seqwire";
 import { spec } from "./spec";
 
 type DemoSpec = typeof spec;
@@ -277,7 +277,7 @@ import {
   enumPaletteFor,
   type ControllerBinding,
   type SpecInput,
-} from "@exclave/seqlok";
+} from "@exclave/seqwire";
 
 export type EnumParamKey<S extends SpecInput> = Extract<
   keyof S["params"],

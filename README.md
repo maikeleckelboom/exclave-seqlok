@@ -1,12 +1,12 @@
-# Seqlok
+# SeqWire
 
-Seqlok is a typed shared-memory contract for coherent runtime state. It uses a seqlock-backed shared-memory protocol internally, while exposing higher-level spec, layout, handoff, controller, processor, and observer bindings.
+SeqWire is a typed shared-memory contract for coherent runtime state. It uses a seqlock-backed shared-memory protocol internally, while exposing higher-level spec, layout, handoff, controller, processor, and observer bindings.
 
-This repository contains the `@exclave/seqlok` package, docs, tests, benchmarks, support tooling, and release smoke checks. Integration code should import `@exclave/seqlok`.
+This repository contains the `@exclave/seqwire` package, docs, tests, benchmarks, support tooling, and release smoke checks. Integration code should import `@exclave/seqwire`.
 
 ## What This Is
 
-Seqlok lets you define a runtime state contract once, plan its shared-memory layout, hand it across a worker, worklet, or WASM-oriented boundary, and read or write coherent state through role-specific bindings.
+SeqWire lets you define a runtime state contract once, plan its shared-memory layout, hand it across a worker, worklet, or WASM-oriented boundary, and read or write coherent state through role-specific bindings.
 
 It makes a runtime boundary explicit:
 
@@ -22,10 +22,10 @@ The current vocabulary is controller, processor, observer, params, and meters. T
 ## Install
 
 ```sh
-pnpm add @exclave/seqlok
+pnpm add @exclave/seqwire
 ```
 
-`@exclave/seqlok` is ESM-only, typed, and published as one package. Internal base, schema, and primitive layers are kept inside the package rather than exposed as workspace runtime dependencies.
+`@exclave/seqwire` is ESM-only, typed, and published as one package. Internal base, schema, and primitive layers are kept inside the package rather than exposed as workspace runtime dependencies.
 
 ## Quickstart
 
@@ -37,7 +37,7 @@ import {
   buildHandoff,
   defineSpec,
   planLayout,
-} from "@exclave/seqlok";
+} from "@exclave/seqwire";
 
 const spec = defineSpec(({ param, meter }) => ({
   params: {
@@ -122,16 +122,16 @@ path. Hard hot paths should benchmark it against direct `writer.set()` calls.
 
 ## Package Surface
 
-- `packages/core` publishes `@exclave/seqlok`.
+- `packages/core` publishes `@exclave/seqwire`.
 - The package is MIT licensed, ESM, typed, and marked `sideEffects: false`.
 - The packed output includes built `dist` files, `README.md`, `LICENSE`, and `package.json`.
-- The release smoke test packs the package, installs the tarball into a fresh consumer, imports `@exclave/seqlok`, and verifies there are no `workspace:*` runtime dependencies.
+- The release smoke test packs the package, installs the tarball into a fresh consumer, imports `@exclave/seqwire`, and verifies there are no `workspace:*` runtime dependencies.
 
 ## Documentation
 
 - [Docs site source](apps/docs/src/index.md)
 - [Package README](packages/core/README.md)
-- [Historical design docs](packages/core/docs/INDEX.md)
+- [Architecture docs](packages/core/docs/INDEX.md)
 
 Run the docs site locally:
 

@@ -18,6 +18,7 @@
     "mermaid": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:",
+    "vue": "catalog:",
     "vitepress": "catalog:"
   }
 }

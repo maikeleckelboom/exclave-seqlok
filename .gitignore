@@ -54,5 +54,5 @@ Thumbs.db
 *.diff
 *_code.md
 *_code.txt
-seqlok-*.md
+seqwire-*.md
 packages/**/bench-results.json

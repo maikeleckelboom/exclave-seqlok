@@ -18,7 +18,7 @@ import {
 import { planLayout } from "../../src/plan/layout";
 import { defineSpec } from "../../src/spec/define";
 
-import type { SeqlokError } from "../../src/errors/error";
+import type { SeqWireError } from "../../src/errors/error";
 
 describe("allocate-packed.env-guard", () => {
   let originalSharedArrayBuffer: typeof SharedArrayBuffer | undefined;
@@ -57,11 +57,11 @@ describe("allocate-packed.env-guard", () => {
     try {
       assertSabSupportFromSummary("allocate-packed.env-guard.test", summary);
     } catch (error) {
-      const seqlokError = error as SeqlokError<"env.unsupported">;
-      expect(seqlokError.code).toBe("env.unsupported");
-      expect(seqlokError.message).toContain("SharedArrayBuffer");
-      expect(seqlokError.details).toBeDefined();
-      expect(seqlokError.details).toHaveProperty(
+      const seqwireError = error as SeqWireError<"env.unsupported">;
+      expect(seqwireError.code).toBe("env.unsupported");
+      expect(seqwireError.message).toContain("SharedArrayBuffer");
+      expect(seqwireError.details).toBeDefined();
+      expect(seqwireError.details).toHaveProperty(
         "where",
         "allocate-packed.env-guard.test",
       );
@@ -89,16 +89,16 @@ describe("allocate-packed.env-guard", () => {
     try {
       allocatePacked(plan);
     } catch (error) {
-      const seqlokError = error as SeqlokError<"env.unsupported">;
-      expect(seqlokError.code).toBe("env.unsupported");
-      expect(seqlokError.message).toContain("SharedArrayBuffer");
-      expect(seqlokError.details).toBeDefined();
-      expect(seqlokError.details).toHaveProperty(
+      const seqwireError = error as SeqWireError<"env.unsupported">;
+      expect(seqwireError.code).toBe("env.unsupported");
+      expect(seqwireError.message).toContain("SharedArrayBuffer");
+      expect(seqwireError.details).toBeDefined();
+      expect(seqwireError.details).toHaveProperty(
         "feature",
         "SharedArrayBuffer",
       );
-      if ("reason" in seqlokError.details) {
-        expect(seqlokError.details.reason).not.toHaveLength(0);
+      if ("reason" in seqwireError.details) {
+        expect(seqwireError.details.reason).not.toHaveLength(0);
       }
     }
   });
@@ -142,17 +142,17 @@ describe("allocate-packed.env-guard", () => {
     try {
       allocatePacked(plan);
     } catch (error) {
-      const seqlokError = error as SeqlokError<"env.unsupported">;
-      expect(seqlokError.code).toBe("env.unsupported");
-      expect(seqlokError.details).toBeDefined();
-      expect(seqlokError.details).toHaveProperty(
+      const seqwireError = error as SeqWireError<"env.unsupported">;
+      expect(seqwireError.code).toBe("env.unsupported");
+      expect(seqwireError.details).toBeDefined();
+      expect(seqwireError.details).toHaveProperty(
         "feature",
         "SharedArrayBuffer",
       );
-      if ("reason" in seqlokError.details) {
-        expect(seqlokError.details.reason).not.toHaveLength(0);
+      if ("reason" in seqwireError.details) {
+        expect(seqwireError.details.reason).not.toHaveLength(0);
       }
-      expect(seqlokError.message).toBeDefined();
+      expect(seqwireError.message).toBeDefined();
     }
   });
 });

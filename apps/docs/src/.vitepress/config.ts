@@ -19,7 +19,7 @@ function escapeHtml(value: string): string {
 }
 
 export default defineConfig({
-  title: "Seqlok",
+  title: "SeqWire",
   description: "Typed shared-memory contracts for coherent runtime state.",
   cleanUrls: true,
   lastUpdated: true,
@@ -46,8 +46,8 @@ export default defineConfig({
             moduleResolution: ts.ModuleResolutionKind.Bundler,
             noUncheckedIndexedAccess: true,
             paths: {
-              "@exclave/seqlok": ["packages/core/src/index.ts"],
-              "@exclave/seqlok/diagnostics": [
+              "@exclave/seqwire": ["packages/core/src/index.ts"],
+              "@exclave/seqwire/diagnostics": [
                 "packages/core/src/diagnostics.ts",
               ],
             },
@@ -109,7 +109,7 @@ export default defineConfig({
       {
         text: "Concepts",
         items: [
-          { text: "Seqlok Flow", link: "/core-flow" },
+          { text: "SeqWire Flow", link: "/core-flow" },
           { text: "Authored AST vs Runtime", link: "/authoring-contract" },
           { text: "Handoff and Acceptance", link: "/handoff-acceptance" },
           { text: "Controller, Processor, Observer", link: "/roles" },
@@ -132,7 +132,6 @@ export default defineConfig({
         items: [
           { text: "Memory and Layout Model", link: "/memory-layout" },
           { text: "Package Boundaries", link: "/package-boundaries" },
-          { text: "Migration from Seqlok", link: "/migration" },
         ],
       },
       {
@@ -140,8 +139,8 @@ export default defineConfig({
         items: [
           { text: "Blog Index", link: "/blog/" },
           {
-            text: "Why Seqlok exists",
-            link: "/blog/why-seqlok-exists",
+            text: "Why SeqWire exists",
+            link: "/blog/why-seqwire-exists",
           },
           {
             text: "Specs, layout, and handoff",

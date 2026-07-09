@@ -6,13 +6,13 @@ Accepted
 
 ## Context
 
-`@exclave/seqlok` historically had a `src/primitives` layer (planes, atomics, seqlock) with a larger export surface than the runtime actually needed:
+`@exclave/seqwire` contains a `src/primitives` layer (planes, atomics, seqlock) with a larger internal surface than the runtime exports:
 
 - Some helpers were unused (`isPow2`, `isAligned`, `getSeq`, `isWriterActive`).
 - Some were design stubs for future features (`acquire`, `AcquireOptions`).
 - A couple of functions (`createSeqPair`, `tryRead`) existed primarily to support primitives tests.
 
-At the same time, the public value proposition of `@exclave/seqlok` is the **high-level binding pipeline**:
+At the same time, the public value proposition of `@exclave/seqwire` is the **high-level binding pipeline**:
 
 - `defineSpec` → `planLayout` → `allocatePacked` / `allocateWasm`
 - `buildHandoff` / `acceptHandoff`
@@ -35,7 +35,7 @@ Exposing low-level primitives as "public API" would increase maintenance cost an
   - `acquire`, `AcquireOptions`
   - `getSeq`, `isWriterActive`
 - Their final working implementations are preserved in an appendix:
-  `docs/appendix/primitives-shelf-removed-helpers-v1.md`.
+  `docs/appendix/primitives-shelf-removed-helpers-v0.1.md`.
 
 3. **Test-only helpers remain but are marked internal**
 
@@ -53,5 +53,5 @@ Exposing low-level primitives as "public API" would increase maintenance cost an
 ## Notes
 
 - A code reference for removed helpers, including exact TypeScript implementations, is kept in:
-  `docs/appendix/primitives-shelf-removed-helpers-v1.md`.
+  `docs/appendix/primitives-shelf-removed-helpers-v0.1.md`.
 - If there is real demand for low-level primitives, that extraction needs a fresh design under the current typed shared-memory contract direction. This ADR does not reserve or promise a package name.

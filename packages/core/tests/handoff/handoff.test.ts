@@ -5,7 +5,7 @@ import { allocatePartitioned } from "../../src/backing/allocate-partitioned";
 import { bindController } from "../../src/binding/controller";
 import { bindObserver } from "../../src/binding/observer";
 import { bindProcessor } from "../../src/binding/processor";
-import { isSeqlokError } from "../../src/errors/error";
+import { isSeqWireError } from "../../src/errors/error";
 import {
   buildHandoff,
   acceptHandoff,
@@ -16,7 +16,7 @@ import { defineSpec } from "../../src/spec/define";
 
 import type { PartitionedBacking, WasmBacking } from "../../src/backing/types";
 
-function expectSeqlokError(
+function expectSeqWireError(
   action: () => void,
   code: string,
   detail?: string,
@@ -28,8 +28,8 @@ function expectSeqlokError(
     thrown = error;
   }
 
-  expect(isSeqlokError(thrown)).toBe(true);
-  if (isSeqlokError(thrown)) {
+  expect(isSeqWireError(thrown)).toBe(true);
+  if (isSeqWireError(thrown)) {
     expect(thrown.code).toBe(code);
     if (detail !== undefined) {
       expect(thrown.details.detail).toBe(detail);
@@ -89,7 +89,7 @@ describe("Handoff Mechanisms (packed backing)", () => {
       verifyHandoff(plan2, accepted.plan);
       expect.unreachable("verifyHandoff should throw on hash mismatch");
     } catch (error: unknown) {
-      if (!isSeqlokError(error)) {
+      if (!isSeqWireError(error)) {
         throw error;
       }
       expect(error.code).toBe("handoff.specHashMismatch");
@@ -127,8 +127,8 @@ describe("Handoff Mechanisms (packed backing)", () => {
         thrown = error;
       }
 
-      expect(isSeqlokError(thrown)).toBe(true);
-      if (isSeqlokError(thrown)) {
+      expect(isSeqWireError(thrown)).toBe(true);
+      if (isSeqWireError(thrown)) {
         expect(thrown.code).toBe("handoff.invalidArtifact");
         expect(thrown.details.detail).toBe(`packing=${packing}`);
       }
@@ -154,7 +154,7 @@ describe("Handoff Mechanisms (packed backing)", () => {
     expect(accepted.plan.planes.MU32).toBe(plan.planes.MU32);
     expect(accepted.plan.planes.MU).toBe(plan.planes.MU);
 
-    // Ensure no legacy or duplicated fields exist on the envelope or result
+    // Ensure no duplicated fields exist on the envelope or result
     expect("hash" in env).toBe(false);
     expect("bytesTotal" in env).toBe(false);
     expect("planes" in env).toBe(false);
@@ -201,10 +201,10 @@ describe("Handoff Mechanisms (packed backing)", () => {
       sab: backing.sab,
     };
 
-    expectSeqlokError(() => {
+    expectSeqWireError(() => {
       Reflect.apply(bindProcessor, undefined, [acceptedShape]);
     }, "binding.invalidArgs");
-    expectSeqlokError(() => {
+    expectSeqWireError(() => {
       Reflect.apply(bindObserver, undefined, [acceptedShape]);
     }, "binding.invalidArgs");
   });
@@ -247,7 +247,7 @@ describe("Handoff Mechanisms (packed backing)", () => {
       MU: plan.planes.MU,
     };
 
-    expectSeqlokError(
+    expectSeqWireError(
       () => {
         acceptHandoff({
           ...handoff,
@@ -261,7 +261,7 @@ describe("Handoff Mechanisms (packed backing)", () => {
       "plan.planes.PF32",
     );
 
-    expectSeqlokError(
+    expectSeqWireError(
       () => {
         acceptHandoff({
           ...handoff,
@@ -275,7 +275,7 @@ describe("Handoff Mechanisms (packed backing)", () => {
       "plan.locks",
     );
 
-    expectSeqlokError(
+    expectSeqWireError(
       () => {
         acceptHandoff({
           ...handoff,
@@ -289,7 +289,7 @@ describe("Handoff Mechanisms (packed backing)", () => {
       "plan.params",
     );
 
-    expectSeqlokError(
+    expectSeqWireError(
       () => {
         acceptHandoff({
           ...handoff,
@@ -303,7 +303,7 @@ describe("Handoff Mechanisms (packed backing)", () => {
       "plan.meters",
     );
 
-    expectSeqlokError(
+    expectSeqWireError(
       () => {
         acceptHandoff({
           ...handoff,
@@ -374,7 +374,7 @@ describe("Handoff Mechanisms (partitioned backing)", () => {
         "buildHandoff should throw on undersized plane backing",
       );
     } catch (error: unknown) {
-      if (!isSeqlokError(error)) {
+      if (!isSeqWireError(error)) {
         throw error;
       }
       expect(error.code).toBe("handoff.invalidArtifact");
@@ -406,7 +406,7 @@ describe("Handoff Mechanisms (wasm backing)", () => {
       buildHandoff(plan, wasmBacking);
       expect.unreachable("buildHandoff should throw for wasm backing");
     } catch (error: unknown) {
-      if (!isSeqlokError(error)) {
+      if (!isSeqWireError(error)) {
         throw error;
       }
       expect(error.code).toBe("handoff.invalidArtifact");
@@ -420,7 +420,7 @@ describe("Handoff Mechanisms (wasm backing)", () => {
       kind: "mystery",
     };
 
-    expectSeqlokError(
+    expectSeqWireError(
       () => {
         Reflect.apply(buildHandoff, undefined, [plan, malformedBacking]);
       },

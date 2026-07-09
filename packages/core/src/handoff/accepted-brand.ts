@@ -1,5 +1,5 @@
 const ACCEPTED_HANDOFF_RUNTIME_BRAND: unique symbol = Symbol(
-  "exclave.boundary.acceptedHandoff",
+  "exclave.seqwire.acceptedHandoff",
 );
 
 interface AcceptedHandoffRuntimeBrand {

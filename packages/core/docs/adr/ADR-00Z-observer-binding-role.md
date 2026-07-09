@@ -1,4 +1,4 @@
-# ADR-00Z: Observer Binding Role in `@exclave/seqlok`
+# ADR-00Z: Observer Binding Role in `@exclave/seqwire`
 
 **Status**: Proposed
 **Date**: 2025-11-18
@@ -6,16 +6,16 @@
 
 **Related**:
 
-- ADR-001 – Seqlok Core Golden Flow
+- ADR-001 – SeqWire Core Golden Flow
 - ADR-00Y – MWMR System Architecture via Domains + Observers + Rings
-- ADR-00X - Historical System-Level Composition Proposal
+- ADR-00X - Superseded System-Level Composition Proposal
 - ADR-00C – Meter Writes & Snapshot `into` (Controller side)
 
 ---
 
 ## 1. Context
 
-Seqlok core models each domain as **SWMR**:
+SeqWire core models each domain as **SWMR**:
 
 - one param writer (`ControllerBinding`)
 - one meter writer (`ProcessorBinding`)
@@ -46,7 +46,7 @@ We want a first-class **observer** role with:
 
 ## 2. Decision
 
-We add `bindObserver` to `@exclave/seqlok` as the standard read-only binding.
+We add `bindObserver` to `@exclave/seqwire` as the standard read-only binding.
 
 ### 2.1 API surface (conceptual)
 
@@ -130,7 +130,7 @@ This gives a clean split:
 
 ## 4. Role within SWMR / MWMR
 
-For any Seqlok domain `D` (see ADR-00Y):
+For any SeqWire domain `D` (see ADR-00Y):
 
 - **Exactly one param writer**: `ControllerBinding<S>`
 - **Exactly one meter writer**: `ProcessorBinding<S>`

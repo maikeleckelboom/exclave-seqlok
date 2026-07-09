@@ -1,13 +1,13 @@
 # Guides
 
-Deep-dive documents for `@exclave/seqlok`.
+Deep-dive documents for `@exclave/seqwire`.
 
 These are focused walkthroughs and patterns that build on the main README and API reference. They assume you already
 know the basic golden flow:
 
 > `defineSpec → planLayout → allocatePacked/allocateWasm → buildHandoff → acceptHandoff → bindController / bindProcessor`
 
-Some guide filenames and older headings retain the Seqlok prototype name as historical context. Current imports and package references should use `@exclave/seqlok`.
+Guide filenames, headings, imports, and package references should use SeqWire and `@exclave/seqwire`.
 
 ---
 
@@ -15,7 +15,7 @@ Some guide filenames and older headings retain the Seqlok prototype name as hist
 
 ### Architecture & Topology
 
-- [From Pipe to Hub: Understanding Seqlok Architecture](./understanding-seqlok-mwmr-from-pipe-to-hub.md)
+- [From Pipe to Hub: Understanding SeqWire Architecture](./understanding-seqwire-mwmr-from-pipe-to-hub.md)
   Evolution from a simple SWSR pipe to a system-level MWMR topology using rings, a hub controller, and observers.
 
 - [Architecture: From Pipe to Hub](./architecture-from-pipe-to-hub-onboarding.md)
@@ -24,9 +24,9 @@ Some guide filenames and older headings retain the Seqlok prototype name as hist
 
 ### Mindset & Hot Path
 
-- [Onboarding: Seqlok Mindset and Hot Path](./onboarding-seqlok-mindset-and-hot-path.md)
+- [Onboarding: SeqWire Mindset and Hot Path](./onboarding-seqwire-mindset-and-hot-path.md)
   How to think in loops instead of events, live with the **zero-GC** rule, and reason about cold-path vs hot-path
-  code when building on Seqlok.
+  code when building on SeqWire.
 
 ### Utilities & UI Wiring
 

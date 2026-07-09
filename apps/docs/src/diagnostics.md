@@ -1,6 +1,6 @@
 # Diagnostics
 
-Diagnostics live at `@exclave/seqlok/diagnostics`. They are for integration work, support checks, counters, and view inspection. They are not meant to become part of a processor hot path.
+Diagnostics live at `@exclave/seqwire/diagnostics`. They are for integration work, support checks, counters, and view inspection. They are not meant to become part of a processor hot path.
 
 ## Environment Probe
 
@@ -8,7 +8,7 @@ Diagnostics live at `@exclave/seqlok/diagnostics`. They are for integration work
 import {
   assertSabSupportFromSummary,
   probeEnv,
-} from "@exclave/seqlok/diagnostics";
+} from "@exclave/seqwire/diagnostics";
 
 const summary = probeEnv();
 assertSabSupportFromSummary("docs.integration", summary);
@@ -19,7 +19,7 @@ Use this before constructing shared backing in browser integrations. A browser p
 ## Counters
 
 ```ts
-import { resetCounters, snapshotCounters } from "@exclave/seqlok/diagnostics";
+import { resetCounters, snapshotCounters } from "@exclave/seqwire/diagnostics";
 
 resetCounters();
 const counters = snapshotCounters();

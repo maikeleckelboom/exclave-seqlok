@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, it } from "vitest";
 
-import * as boundary from "../../src";
+import * as seqwire from "../../src";
 
 import type { BackingKind } from "../../src/backing/types";
 import type { AcceptedHandoff, HandoffPacking } from "../../src/handoff/types";
@@ -8,7 +8,7 @@ import type { AcceptedHandoff, HandoffPacking } from "../../src/handoff/types";
 describe("unreleased API cleanup type contracts", () => {
   const compileOnly = process.env.NODE_ENV === "__types_only__";
 
-  const spec = boundary.defineSpec(({ param, meter }) => ({
+  const spec = seqwire.defineSpec(({ param, meter }) => ({
     id: "api-cleanup",
     params: {
       gain: param.f32({ min: 0, max: 1 }),
@@ -18,43 +18,41 @@ describe("unreleased API cleanup type contracts", () => {
     },
   }));
 
-  const plan = boundary.planLayout(spec);
-  const backing = boundary.allocatePacked(plan);
-  const handoff = boundary.buildHandoff(plan, backing);
+  const plan = seqwire.planLayout(spec);
+  const backing = seqwire.allocatePacked(plan);
+  const handoff = seqwire.buildHandoff(plan, backing);
 
   function makeHandoffSource() {
-    const sourceBacking = boundary.allocatePacked(plan);
-    const sourceHandoff = boundary.buildHandoff(plan, sourceBacking);
+    const sourceBacking = seqwire.allocatePacked(plan);
+    const sourceHandoff = seqwire.buildHandoff(plan, sourceBacking);
     return {
       sourceBacking,
       sourceHandoff,
-      sourceAccepted: boundary.acceptHandoff(sourceHandoff),
+      sourceAccepted: seqwire.acceptHandoff(sourceHandoff),
     };
   }
 
   it("bindProcessor accepts handoff, accepted handoff, and explicit plan/backing", () => {
     const handoffSource = makeHandoffSource();
-    const handoffProcessor = boundary.bindProcessor(
-      handoffSource.sourceHandoff,
-    );
+    const handoffProcessor = seqwire.bindProcessor(handoffSource.sourceHandoff);
     expectTypeOf(handoffProcessor).toEqualTypeOf<
-      boundary.ProcessorBinding<typeof spec>
+      seqwire.ProcessorBinding<typeof spec>
     >();
     handoffProcessor.dispose();
 
     const acceptedSource = makeHandoffSource();
-    const acceptedProcessor = boundary.bindProcessor(
+    const acceptedProcessor = seqwire.bindProcessor(
       acceptedSource.sourceAccepted,
     );
     expectTypeOf(acceptedProcessor).toEqualTypeOf<
-      boundary.ProcessorBinding<typeof spec>
+      seqwire.ProcessorBinding<typeof spec>
     >();
     acceptedProcessor.dispose();
 
-    const explicitBacking = boundary.allocatePacked(plan);
-    const explicitProcessor = boundary.bindProcessor(plan, explicitBacking);
+    const explicitBacking = seqwire.allocatePacked(plan);
+    const explicitProcessor = seqwire.bindProcessor(plan, explicitBacking);
     expectTypeOf(explicitProcessor).toEqualTypeOf<
-      boundary.ProcessorBinding<typeof spec>
+      seqwire.ProcessorBinding<typeof spec>
     >();
     explicitProcessor.dispose();
   });
@@ -64,21 +62,21 @@ describe("unreleased API cleanup type contracts", () => {
 
     if (compileOnly) {
       // @ts-expect-error processor explicit local binding is plan/backing only.
-      boundary.bindProcessor(spec, plan, backing);
+      seqwire.bindProcessor(spec, plan, backing);
 
       // @ts-expect-error unknown transport values must go through acceptHandoff.
-      boundary.bindProcessor(unknownValue);
+      seqwire.bindProcessor(unknownValue);
     }
   });
 
   it("bindController keeps the explicit spec/plan/backing contract", () => {
-    expectTypeOf(boundary.bindController(spec, plan, backing)).toEqualTypeOf<
-      boundary.ControllerBinding<typeof spec>
+    expectTypeOf(seqwire.bindController(spec, plan, backing)).toEqualTypeOf<
+      seqwire.ControllerBinding<typeof spec>
     >();
 
     if (compileOnly) {
       // @ts-expect-error controllers need the authored spec for param decoding.
-      boundary.bindController(plan, backing);
+      seqwire.bindController(plan, backing);
     }
   });
 
@@ -94,7 +92,7 @@ describe("unreleased API cleanup type contracts", () => {
   });
 
   it("does not export old allocator names", () => {
-    type PublicKey = keyof typeof boundary;
+    type PublicKey = keyof typeof seqwire;
     type Join<A extends string, B extends string> = `${A}${B}`;
     type OldPackedAllocator = Join<"allocate", "Shared">;
     type OldPartitionedAllocator = Join<OldPackedAllocator, "Partitioned">;

@@ -5,7 +5,7 @@
  * @remarks
  * - Used to gate SAB-dependent features before allocating backings.
  * - Exposes pure helpers so tests and tooling can run against faked globals.
- * - All throwing helpers surface typed `env.*` Seqlok errors.
+ * - All throwing helpers surface typed `env.*` SeqWire errors.
  */
 
 import { createError } from "../errors/error";
@@ -109,7 +109,7 @@ export function probeEnv(): EnvSummary {
 /**
  * Assert that SharedArrayBuffer can be safely used from this environment.
  *
- * Throws a typed SeqlokError on failure:
+ * Throws a typed SeqWireError on failure:
  *  - `env.unsupported`      → no SharedArrayBuffer support at all.
  *  - `env.coopCoepRequired` → browser/worker without COOP/COEP headers
  *                             (`crossOriginIsolated === false`).

@@ -1,6 +1,6 @@
 # API Reference
 
-This page covers the public `@exclave/seqlok` surface. Internal folders such as backing planes, seqlock primitives, and validation helpers are implementation details unless exported from the root package or diagnostics subpath.
+This page covers the public `@exclave/seqwire` surface. Internal folders such as backing planes, seqlock primitives, and validation helpers are implementation details unless exported from the root package or diagnostics subpath.
 
 ## Spec
 
@@ -14,7 +14,7 @@ Supported params include `f32`, `i32`, `u32`, `bool`, `enum`, and arrays for `f3
 Supported meters include `f32`, `f64`, `i32`, `u32`, `bool`, `enum`, and arrays for `f32`, `f64`, `u32`, and `bool`.
 
 ```ts twoslash
-import { defineSpec, type CanonicalSpecFromAst } from "@exclave/seqlok";
+import { defineSpec, type CanonicalSpecFromAst } from "@exclave/seqwire";
 
 const authored = {
   id: "api/spec",
@@ -86,7 +86,7 @@ Role-specific public types include `ControllerBinding`, `ProcessorBinding`, `Obs
 Inside `publish(...)`, `writer.set(key, value)` still accepts fully qualified scalar meter keys such as `"runtime.blockSamples"`. `writer.setGroup(group, values)` accepts the same group value shape used by `publishGroup(...)` and keeps the write inside the enclosing coherent meter publish section.
 
 ```ts twoslash
-import { defineSpec, type MeterGroupValues } from "@exclave/seqlok";
+import { defineSpec, type MeterGroupValues } from "@exclave/seqwire";
 
 const spec = defineSpec(({ meter }) => ({
   id: "api/meters",
@@ -105,7 +105,7 @@ const values: RuntimeMeters = {
   state: 1,
 };
 
-declare const processor: import("@exclave/seqlok").ProcessorBinding<
+declare const processor: import("@exclave/seqwire").ProcessorBinding<
   typeof spec
 >;
 
@@ -127,11 +127,11 @@ Grouped publishing is for exact schema groups: `publishGroup("runtime", values)`
 
 ## Diagnostics and Errors
 
-- `SeqlokError` is the structured error class.
-- `isSeqlokError(value)` narrows unknown errors.
+- `SeqWireError` is the structured error class.
+- `isSeqWireError(value)` narrows unknown errors.
 - `getErrorMeta(code)` and `getErrorMessage(code)` expose registry metadata.
 - `interpretHealth(error)` maps known error domains to health guidance.
 
-Diagnostics exports live at `@exclave/seqlok/diagnostics`.
+Diagnostics exports live at `@exclave/seqwire/diagnostics`.
 
 See [Diagnostics](/diagnostics) and [Error Model](/error-model) for integration guidance.
