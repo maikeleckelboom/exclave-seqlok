@@ -1,7 +1,7 @@
 # Exclave Convergence and SeqWire Disposition
 
-**Status:** Authoritative  
-**Decision date:** 2026-07-15  
+**Status:** Authoritative
+**Decision date:** 2026-07-15
 **Scope:** `exclave-seqwire` on `main` and its relationship to Exclave
 
 This document is the ownership boundary and disposition record for SeqWire. It
