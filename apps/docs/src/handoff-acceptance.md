@@ -1,5 +1,9 @@
 # Handoff and Acceptance
 
+> [!WARNING]
+> Historical donor reference only. SeqWire handoff and accepted-handoff identities are not production trust or
+> lifecycle boundaries. See the [Exclave convergence audit](/exclave-convergence).
+
 The handoff is the concrete boundary value. It carries the planned layout and the supported backing descriptor. A message, port, or process bridge may transport it, but the receiving side should treat the value as untrusted until `acceptHandoff(...)` accepts it.
 
 ## Owner Side

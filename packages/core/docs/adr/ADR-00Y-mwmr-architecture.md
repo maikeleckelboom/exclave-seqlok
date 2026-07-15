@@ -1,8 +1,11 @@
 # ADR-00Y: MWMR System Architecture via SeqWire Domains + Observers + Rings
 
-**Status**: Proposed
+**Status**: Archived - superseded by the Exclave convergence disposition
 **Date**: 2025-11-16
 **Owner**: _TBD_
+
+This is historical topology research, not current architecture. See the
+[convergence audit](../../../../apps/docs/src/exclave-convergence.md).
 
 **Related**:
 

@@ -1,116 +1,70 @@
-# SeqWire
+# SeqWire Core Research Artifact
 
-SeqWire is a typed shared-memory contract for coherent runtime state. It uses a seqlock-backed shared-memory protocol internally, while exposing higher-level spec, layout, handoff, controller, processor, and observer bindings.
+This directory contains the former `@exclave/seqwire` package implementation.
+It is frozen as a private, unpublished research donor; it is not a supported
+package or the production Electron to native Rust boundary.
 
-The npm org `@exclave` stays the package scope. `@exclave/seqwire` is the package name and SeqWire is the standalone product identity.
+Exclave owns authored contracts, canonical manifests, field identity,
+compilation, lane planning, ABI/version identity, authority/session semantics,
+publication continuity, resource access, generated TypeScript and Rust
+artifacts, and cross-language conformance.
 
-The package is ESM-only, typed, MIT licensed, and marked `sideEffects: false`.
+Read the authoritative
+[Exclave convergence and SeqWire disposition audit](../../apps/docs/src/exclave-convergence.md)
+before using or changing code in this directory.
 
-## Install
+## Frozen implementation
 
-```sh
-pnpm add @exclave/seqwire
-```
-
-## Flow
+The implementation still contains this historical research flow:
 
 ```text
 defineSpec
   -> planLayout
   -> allocatePacked / allocatePartitioned / allocateWasm
-  -> bindController(spec, plan, backing)
-  -> buildHandoff(plan, backing)
-  -> bindProcessor / bindObserver
+  -> buildHandoff / acceptHandoff
+  -> bindController / bindProcessor / bindObserver
 ```
 
-Use `acceptHandoff(...)` when the inbound handoff value is `unknown`, such as
-data received through `postMessage`.
+This flow is evidence to inspect, test, and selectively translate. It must not
+be adopted as an Exclave runtime dependency or compatibility layer. In
+particular:
 
-## Example
+- `defineSpec` and anonymous hashes are not Exclave contract identity;
+- `planLayout`, planes, slots, Plan hashes, and PU/MU are not the production ABI;
+- params/meters and controller/processor/observer are not the production
+  authority model;
+- handoff acceptance is not native authority, revocation, or session identity;
+- packed, partitioned, and WASM mutable backings are not the renderer resource
+  model; and
+- same-process and worker tests do not prove Electron/native Rust byte or
+  lifecycle conformance.
 
-```ts
-import {
-  allocatePacked,
-  bindController,
-  bindProcessor,
-  buildHandoff,
-  defineSpec,
-  planLayout,
-} from "@exclave/seqwire";
+Useful donor assets include validation generators, alignment properties,
+bounded-read scenarios, validation-before-grouped-publication tests,
+caller-owned snapshot techniques, structured errors, diagnostics, package-smoke
+methods, benchmark methods, and the AudioWorklet workload. The audit records the
+exact owner, dependencies, risk, order, and behavior decision for each asset.
 
-const spec = defineSpec(({ param, meter }) => ({
-  params: {
-    runtime: {
-      enabled: param.bool(),
-      count: param.u32({ min: 0, max: 1000 }),
-    },
-  },
-  meters: {
-    runtime: {
-      state: meter.enum(["idle", "busy"]),
-      delta: meter.i32(),
-    },
-  },
-}));
+## No installation or publication
 
-const plan = planLayout(spec);
-const backing = allocatePacked(plan);
-const handoff = buildHandoff(plan, backing);
+Do not install, publish, or create new consumers of `@exclave/seqwire`. The
+package is mechanically private, has no `publishConfig`, and had no published
+version in a live npm registry lookup (`E404`). Its identity, version, and
+exports remain while `private: true` disables publication, so the frozen
+artifact can be built and its passing packed-output check can be used as donor
+evidence. They do not constitute a release commitment.
 
-const controller = bindController(spec, plan, backing);
-const processor = bindProcessor(handoff);
+## Verification
 
-controller.params.set("runtime.enabled", true);
-controller.params.set("runtime.count", 7);
-
-processor.params.within((params) => {
-  if (params.runtime.enabled) {
-    processor.meters.publish((meters) => {
-      meters.setGroup("runtime", {
-        delta: -1,
-        state: 1,
-      });
-    });
-  }
-});
-```
-
-## Spec Contract
-
-`defineSpec()` accepts an authored AST or a plain canonical object. Authored specs may use nested namespaces. Write APIs use explicit canonical string keys, and processor read views expose nested aliases:
-
-```ts
-params.runtime.enabled;
-params.runtime.count;
-```
-
-Anonymous specs receive deterministic `anon_<hash>` ids derived from canonical contents.
-
-## Grouped Meter Publishing
-
-Use `processor.meters.publishGroup("runtime", values)` when a processor already has a typed object for one exact schema meter group. Inside a larger coherent meter publish section, use `writer.setGroup("runtime", values)` alongside direct `writer.set("runtime.key", value)` calls or staged array writes.
-
-Grouped publishing maps unprefixed keys under one exact schema group; it is not arbitrary object flattening. Build derived values such as enum indices, split frame counters, and latency seconds explicitly before publishing the group. `publishGroup(...)` is convenience-oriented, so benchmark it before using it in a hard hot path.
-
-## Package Surface
-
-This package publishes one runtime package: `@exclave/seqwire`. Internal base, schema, and primitive layers are implementation details unless exported from the root package or `@exclave/seqwire/diagnostics`.
-
-The packed package must not contain `workspace:*` runtime dependencies. Run:
+From the repository root:
 
 ```sh
-pnpm -F @exclave/seqwire run test:pack
+pnpm lint
+pnpm test:types
+pnpm test
+pnpm build
+pnpm test:pack
 ```
 
-## Development
-
-```sh
-pnpm -F @exclave/seqwire run build
-pnpm -F @exclave/seqwire run test
-pnpm -F @exclave/seqwire run test:types
-pnpm -F @exclave/seqwire run bench
-```
-
-## Documentation
-
-The VitePress docs site lives in `apps/docs`. Architecture notes remain under `packages/core/docs`; treat them as supporting rationale when they go beyond the current public package boundary.
+Benchmarks and historical documents describe SeqWire's own implementation. They
+must not be reported as Exclave production evidence.

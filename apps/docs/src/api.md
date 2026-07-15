@@ -1,5 +1,9 @@
 # API Reference
 
+> [!WARNING]
+> Historical donor reference only. SeqWire is frozen and unpublished; it is not the production Electron-to-Rust
+> boundary. Start with the [Exclave convergence audit](/exclave-convergence).
+
 This page covers the public `@exclave/seqwire` surface. Internal folders such as backing planes, seqlock primitives, and validation helpers are implementation details unless exported from the root package or diagnostics subpath.
 
 ## Spec

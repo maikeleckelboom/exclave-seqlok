@@ -1,8 +1,12 @@
 # ADR-010: Ring Primitive in `@exclave/seqwire`
 
-**Status**: Accepted
+**Status**: Archived - superseded by the Exclave convergence disposition
 **Date**: 2025-11-19
 **Owner**: _TBD_
+
+The ring remains protocol-lab evidence only. It is not a production Exclave
+contract or a reason to preserve SeqWire as a runtime. See the
+[convergence audit](../../../../apps/docs/src/exclave-convergence.md).
 
 **Related**:
 

@@ -1,8 +1,12 @@
 # ADR-00X: Superseded System-Level Composition Proposal
 
-**Status**: Superseded note, not current package guidance
+**Status**: Archived - superseded by the Exclave convergence disposition
 **Date**: 2025-11-16
 **Owner**: _TBD_
+
+This is historical research, not current architecture. No SeqWire package
+family is to be revived. See the
+[convergence audit](../../../../apps/docs/src/exclave-convergence.md).
 
 **Related**:
 

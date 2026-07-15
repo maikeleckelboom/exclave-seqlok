@@ -1,5 +1,9 @@
 # Install
 
+> [!CAUTION]
+> Do not install SeqWire for new work. The package is frozen, unpublished, and private while useful evidence is
+> migrated to Exclave. See the [Exclave convergence audit](/exclave-convergence).
+
 Install the public package in the application or library that owns the boundary contract:
 
 ```sh

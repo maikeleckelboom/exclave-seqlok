@@ -1,5 +1,9 @@
 # Diagnostics
 
+> [!WARNING]
+> Historical donor reference only. Diagnostic techniques may be ported under Exclave ownership; this package is
+> not a production dependency. See the [Exclave convergence audit](/exclave-convergence).
+
 Diagnostics live at `@exclave/seqwire/diagnostics`. They are for integration work, support checks, counters, and view inspection. They are not meant to become part of a processor hot path.
 
 ## Environment Probe

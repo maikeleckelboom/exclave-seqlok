@@ -1,8 +1,11 @@
 # ADR-011: MWMR System Model and Guardrails
 
-**Status**: Accepted
+**Status**: Archived - superseded by the Exclave convergence disposition
 **Date**: 2025-11-19
 **Owner**: _TBD_
+
+This is historical composition research, not current production architecture.
+See the [convergence audit](../../../../apps/docs/src/exclave-convergence.md).
 
 **Related**:
 

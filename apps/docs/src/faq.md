@@ -1,5 +1,9 @@
 # FAQ
 
+> [!WARNING]
+> Historical donor reference only. Current ownership and repository status are defined by the
+> [Exclave convergence audit](/exclave-convergence).
+
 ## What Does the Exclave Scope Mean?
 
 `@exclave` is only the npm scope. The package and product name are SeqWire, and current integrations should target `@exclave/seqwire`.

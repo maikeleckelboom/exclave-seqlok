@@ -1,5 +1,9 @@
 # Controller, Processor, and Observer Roles
 
+> [!WARNING]
+> Historical donor reference only. These roles do not define the production authority model. Exclave keeps
+> renderer TypeScript consumers read-only. See the [Exclave convergence audit](/exclave-convergence).
+
 SeqWire exposes separate role bindings because each side has different authority and timing pressure.
 
 ## Controller

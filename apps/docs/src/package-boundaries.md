@@ -1,5 +1,9 @@
 # Package Boundaries
 
+> [!WARNING]
+> Historical donor reference only. SeqWire is no longer a public runtime boundary and no package family should be
+> built around it. See the [Exclave convergence audit](/exclave-convergence).
+
 The public package boundary is:
 
 ```text

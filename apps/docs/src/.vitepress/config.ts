@@ -20,7 +20,7 @@ function escapeHtml(value: string): string {
 
 export default defineConfig({
   title: "SeqWire",
-  description: "Typed shared-memory contracts for coherent runtime state.",
+  description: "Frozen research donor for Exclave convergence.",
   cleanUrls: true,
   lastUpdated: true,
   markdown: {
@@ -86,29 +86,28 @@ export default defineConfig({
   },
   themeConfig: {
     nav: [
-      { text: "Start", link: "/quickstart" },
-      { text: "Concepts", link: "/core-flow" },
-      { text: "API", link: "/api" },
-      { text: "Examples", link: "/examples" },
-      { text: "Internals", link: "/memory-layout" },
-      { text: "Blog", link: "/blog/" },
-      { text: "Release", link: "/release-checklist" },
+      { text: "Status", link: "/exclave-convergence" },
+      { text: "Historical API", link: "/api" },
+      { text: "Historical Docs", link: "/core-flow" },
+      { text: "Verification", link: "/release-checklist" },
     ],
     outline: {
       level: [2, 3],
     },
     sidebar: [
       {
-        text: "Start",
+        text: "Current status",
         items: [
           { text: "Overview", link: "/" },
-          { text: "Install", link: "/install" },
-          { text: "Quickstart", link: "/quickstart" },
+          { text: "Exclave convergence", link: "/exclave-convergence" },
+          { text: "Frozen verification", link: "/release-checklist" },
         ],
       },
       {
-        text: "Concepts",
+        text: "Historical concepts",
         items: [
+          { text: "Former install guide", link: "/install" },
+          { text: "Former quickstart", link: "/quickstart" },
           { text: "SeqWire Flow", link: "/core-flow" },
           { text: "Authored AST vs Runtime", link: "/authoring-contract" },
           { text: "Handoff and Acceptance", link: "/handoff-acceptance" },
@@ -116,7 +115,7 @@ export default defineConfig({
         ],
       },
       {
-        text: "API",
+        text: "Historical API",
         items: [
           { text: "API Reference", link: "/api" },
           { text: "Diagnostics", link: "/diagnostics" },
@@ -124,18 +123,18 @@ export default defineConfig({
         ],
       },
       {
-        text: "Examples",
+        text: "Historical examples",
         items: [{ text: "Examples", link: "/examples" }],
       },
       {
-        text: "Internals",
+        text: "Historical internals",
         items: [
           { text: "Memory and Layout Model", link: "/memory-layout" },
           { text: "Package Boundaries", link: "/package-boundaries" },
         ],
       },
       {
-        text: "Blog",
+        text: "Historical writing",
         items: [
           { text: "Blog Index", link: "/blog/" },
           {
@@ -149,11 +148,8 @@ export default defineConfig({
         ],
       },
       {
-        text: "Release",
-        items: [
-          { text: "FAQ", link: "/faq" },
-          { text: "Release Checklist", link: "/release-checklist" },
-        ],
+        text: "Historical FAQ",
+        items: [{ text: "FAQ", link: "/faq" }],
       },
     ],
     search: {

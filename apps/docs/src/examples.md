@@ -1,5 +1,9 @@
 # Examples
 
+> [!WARNING]
+> Historical donor examples only. Do not start a production integration from these APIs. See the
+> [Exclave convergence audit](/exclave-convergence).
+
 These examples show the public contract in code. The prose names the boundary guarantees; snippets keep transport sketches separate from the core API.
 
 ## Spec Inference and Canonical Keys

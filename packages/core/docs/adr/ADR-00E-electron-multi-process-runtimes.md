@@ -1,8 +1,12 @@
 # ADR-00E: Electron & Multi-Process Runtimes
 
-**Status**: Informational / Future-Oriented
+**Status**: Archived - superseded by the Exclave convergence disposition
 **Date**: 2025-11-16
 **Owner**: _TBD_
+
+This is historical research, not current architecture. Exclave solely owns the
+production Electron renderer-to-native-Rust boundary. See the
+[convergence audit](../../../../apps/docs/src/exclave-convergence.md).
 
 **Related**:
 

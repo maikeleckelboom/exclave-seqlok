@@ -1,7 +1,11 @@
 # SWSR Command Ring
 
-**Status:** Draft – targeted for `@exclave/seqwire` v0.3.0
+**Status:** Archived - superseded by the Exclave convergence disposition
 **Audience:** Engine orchestration, Dekzer driver, infra
+
+This document is protocol-lab evidence only. It is not an active package
+roadmap or production contract. See the
+[convergence audit](../../../../apps/docs/src/exclave-convergence.md).
 
 This document specifies a **Single-Writer Single-Reader (SWSR) command ring** used to
 send discrete commands (events) from a control role (UI / driver / host) to a

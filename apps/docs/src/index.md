@@ -1,37 +1,46 @@
 ---
 layout: home
 hero:
-  name: SeqWire
-  text: Typed shared-memory contracts for coherent runtime state
-  tagline: Spec, layout, handoff, controller, processor, and observer bindings over an internal seqlock-backed shared-memory protocol.
+  name: SeqWire Research Archive
+  text: Frozen donor evidence for Exclave convergence
+  tagline: Exclave is the sole production Electron to native Rust boundary. SeqWire is private, unpublished, and retained only for audited donor work, historical evidence, or a future Exclave-artifact protocol lab.
   actions:
     - theme: brand
-      text: Quickstart
-      link: /quickstart
+      text: Read the disposition audit
+      link: /exclave-convergence
     - theme: alt
-      text: SeqWire Flow
-      link: /core-flow
+      text: Archive or protocol lab
+      link: /exclave-convergence#archive-versus-protocol-lab
 features:
-  - title: Authored contracts
-    details: Write nested params and meters as a TypeScript-authored surface, then compile them to canonical runtime keys.
-  - title: Deterministic layout
-    details: Lower the contract into repeatable shared-memory planes before any controller or runtime role binds.
-  - title: Explicit handoff
-    details: Transfer a concrete handoff artifact across the boundary and validate it before a processor interprets memory.
-  - title: Role-specific bindings
-    details: Keep controller writes, processor hot-path reads/writes, and observer snapshots on separate public surfaces.
-  - title: Diagnostics and errors
-    details: Use environment probes, counters, view descriptions, and structured SeqWireError codes for integration work.
-  - title: Package boundary
-    details: Import from @exclave/seqwire and @exclave/seqwire/diagnostics; internal modules stay private.
+  - title: One production owner
+    details: Exclave owns contracts, manifests, field identity, compilation, layout, ABI, authority lifecycle, resource access, and cross-language conformance.
+  - title: Audited donor assets
+    details: Tests, benchmark methods, snapshot techniques, grouped-publication invariants, diagnostics, and proof workloads have explicit dispositions and migration order.
+  - title: No duplicate runtime
+    details: SeqWire's spec, planner, handoff, role model, dual-counter ABI, and mutable backings must not become an Exclave dependency or compatibility layer.
+  - title: Historical documents preserved
+    details: Architecture chapters, guides, ADRs, and proofs remain available as evidence but no longer define future production direction.
+  - title: Conditional protocol lab
+    details: A private lab is credible only when it consumes Exclave-generated artifacts and returns conformance or fault-injection evidence to Exclave.
+  - title: Archive by default
+    details: After donor extraction and explicit archive gates, the recommended repository end state is read-only archival.
 ---
 
-## What It Is
+## Current status
 
-SeqWire is a typed shared-memory contract for coherent runtime state. It uses a seqlock-backed shared-memory protocol internally, while exposing higher-level spec, layout, handoff, controller, processor, and observer bindings.
+SeqWire is a frozen, private, unpublished research donor and archive candidate.
+It is not an installable production runtime and is not the Electron renderer to
+native Rust audio-engine boundary.
 
-`@exclave/seqwire` lets a host side define a runtime state contract once, plan its shared-memory layout, hand it across a worker, worklet, or WASM-oriented boundary, and read or write coherent state through role-specific bindings.
+Start with the
+[authoritative Exclave convergence and SeqWire disposition audit](/exclave-convergence).
+It records the source, current implementation reality, classification, target
+owner, dependencies, migration risk, order, and required behavior decision for
+every important SeqWire subsystem, test family, benchmark, proof, and ADR.
 
-Audio is the clearest first use case because audio runtimes make timing pressure obvious. The abstraction is broader: workers, WebAssembly-oriented runtimes, telemetry loops, and other systems can use the same spec-layout-handoff contract when they need shared state without hidden layout reconstruction.
+Older pages remain accessible so implementation knowledge and decision history
+are not erased. When an older page describes SeqWire as the future production
+package, Electron topology, native boundary, or release target, treat that claim
+as historical and superseded by the audit.
 
-Start with [Install](/install), follow the [Quickstart](/quickstart), then read the [SeqWire Flow](/core-flow) and [Authored AST vs Runtime](/authoring-contract) pages before integrating across a real worker or worklet boundary.
+Do not begin with the old install or quickstart pages for a new integration.
