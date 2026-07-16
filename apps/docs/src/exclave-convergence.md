@@ -19,22 +19,37 @@ translated tests, benchmark methods, and a future protocol/conformance lab, but
 it must not evolve a second compiler, layout authority, compatibility identity,
 lifecycle, or shared-memory ABI.
 
-The expected production path is:
+The selected first production integration path is:
 
-1. An Exclave authored projection contract is compiled.
-2. The canonical manifest and hot layout are the only ABI authority.
-3. Generated Rust authority code publishes into an authority-owned native
-   shared mapping.
-4. An Electron host adapter brokers a revocable mapping descriptor and hot
-   handle.
-5. A generated TypeScript consumer validates and opens a read-only binding.
-6. Reads are bounded and coherent, retain owned last-good state, and never
-   expose a torn candidate.
-7. Authority restart invalidates the old handle even when its bytes remain
-   physically reachable.
-8. The consumer receives a new authority epoch, remaps, and explicitly rebases
-   continuity.
+1. An Exclave authored projection contract is compiled, and its canonical
+   manifest and generated artifacts remain the only semantic and ABI authority.
+2. A standalone Rust executable owns product state, authority epochs, mutation,
+   and publication.
+3. A private length-prefixed stdio sidecar carries typed control and session
+   messages plus complete warm publication attachments. It is the first
+   replaceable transport profile, not canonical Exclave doctrine.
+4. Electron main starts and supervises the authority, detects its death, and
+   brokers client sessions, control, and publications without becoming product
+   authority.
+5. An isolated preload owns the raw renderer port, validates and decodes with
+   generated artifacts, and exposes only a narrow typed API through
+   `contextBridge`.
+6. A sandboxed, context-isolated renderer sends intent and consumes immutable,
+   complete warm snapshots at a bounded cadence. Warm publication is the default
+   renderer path.
+7. Publication delivery remains bounded under a slow or frozen renderer by
+   retaining at most one in-flight publication and one replaceable pending-latest
+   publication per subscription.
+8. Renderer reload leaves the Rust authority, authority epoch, and engine
+   timeline running. Authority death invalidates the old session; replacement
+   requires a new epoch, explicit resubscription, a new baseline, and continuity
+   rebase.
 9. Rust and TypeScript remain locked through byte-level conformance fixtures.
+
+Direct native mapping into the renderer is deferred until measurement shows that
+warm delivery is insufficient. Hot remains available for native consumers and
+future proven transport profiles, but it is not the foundation or a requirement
+of this Electron integration.
 
 SeqWire is evaluated only in relation to this path.
 
@@ -223,26 +238,34 @@ The following must not move into Exclave:
 8. **Archive.** Freeze the repository read-only after all donor evidence and
    provenance are recorded.
 
-## First Exclave convergence slice
+## Implemented Exclave convergence slice
 
-The first executable Exclave slice is implemented on its feature branch pending
-validation and merge. The generated TypeScript reader first seeds `lastGood`
-from actual generated Rust-written `deck-runtime-v0` region bytes. Deterministic
-zero-budget torn and writer-active attempts must then return only that
-Rust-authored `lastGood`. The writer-active candidate contains an invalid boolean
-byte so the test proves that an unstable candidate is never decoded, rather than
-merely proving that a coincidentally valid candidate was ignored.
+The prior bounded-reader slice is the conformance starting point: it exercises a
+generated TypeScript reader against generated Rust-written `deck-runtime-v0`
+bytes and Rust-authored `lastGood` under deterministic zero-budget torn and
+writer-active attempts. That evidence remains necessary, but it does not prove
+the process, control, warm-publication, or restart profile.
 
-The slice imports no SeqWire runtime type, planner, handoff, or ABI. It is the
-smallest safe convergence step because it strengthens the selected production
-reader, generated-artifact path, and Rust-to-TypeScript evidence while
-preserving Exclave ownership.
+The implemented executable slice is a real standalone Rust authority supervised
+and brokered by Electron main, with an isolated preload delivering
+generated-manifest-backed, validated warm publications to a sandboxed renderer. An actual Electron
+executable launches an actual compiled Rust executable, and automated integration
+tests prove typed control, bounded replaceable-latest delivery, renderer reload
+without authority restart, authority-death invalidation, a non-reused replacement
+epoch, explicit resubscription, and continuity rebase.
 
-The next production milestone extends that slice to correlated torn-candidate
-rejection and independently owned last-good state, then attaches those semantics
-to authority epoch, revocation, remap, and explicit continuity rebase. Passing
-TypeScript tests alone is not completion: the milestone requires generated Rust
-writer and TypeScript reader byte-level conformance.
+The private stdio sidecar is only the first transport profile. The slice imports
+no SeqWire runtime type, schema, planner, handoff, binding, ABI, or dependency.
+TypeScript-only process simulations would not constitute this evidence.
+
+The next product milestone is:
+
+> Integrate a real Dekzer deck/audio authority behind the proven process,
+> control, warm-publication and restart profile, then add one real resource-plane
+> surface such as waveform access.
+
+Native renderer mapping remains measurement-gated. Hot remains available for
+native consumers and future proven transport profiles.
 
 ## Archive gates
 
