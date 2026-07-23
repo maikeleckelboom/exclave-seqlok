@@ -1,18 +1,90 @@
 # SeqWire
 
-SeqWire is an experimental TypeScript project for typed, coherent shared-memory
+SeqWire is experimental TypeScript research into typed, coherent shared-memory
 state across workers, AudioWorklets, and WebAssembly-oriented runtimes.
 
-It explores a narrow systems problem: how independently scheduled JavaScript
-runtimes can exchange structured state through shared memory without making
-layout, ownership, or read consistency implicit. TypeScript-authored contracts
-are lowered into a deterministic memory layout. The owner creates the backing
-memory and an explicit handoff. Role-specific bindings then expose only the
-reads and writes available to each participant.
+It investigates how independently scheduled JavaScript runtimes can exchange
+structured state without hiding the contract, layout, ownership, transfer,
+runtime role, or read-consistency rules. Authored contracts become deterministic
+shared-memory layouts. Explicit handoffs and role-specific bindings keep
+authority visible at each boundary.
 
-SeqWire is research software. It is reproducible and tested, but it is not
-presented as production-ready. The future npm package name is
-`@exclave/seqwire`. The package is currently private and unpublished.
+[Quickstart](apps/docs/src/quickstart.md) ·
+[Core flow](apps/docs/src/core-flow.md) ·
+[Signalsmith proof](docs/proofs/signalsmith-stretch.md) ·
+[Benchmarks](packages/core/bench/README.md) ·
+[Documentation](apps/docs/src/index.md) ·
+[Verification](#verification)
+
+## The programming model
+
+```text
+authored contract
+  -> deterministic layout
+  -> owned backing memory
+  -> validated handoff
+  -> controller / processor / observer bindings
+```
+
+The owner defines the contract, plans the byte layout, and allocates the
+backing. A receiving runtime validates the handoff before it interprets the
+memory. Each binding exposes only the reads and writes assigned to its role.
+
+## Smallest complete flow
+
+This example runs against the local workspace package. It uses the current
+public API to author a contract, allocate shared backing, accept a handoff, bind
+two roles, and exchange one coherent value in each direction.
+
+```ts
+import {
+  acceptHandoff,
+  allocatePacked,
+  bindController,
+  bindProcessor,
+  buildHandoff,
+  defineSpec,
+  planLayout,
+} from "@exclave/seqwire";
+
+const contract = defineSpec(({ param, meter }) => ({
+  id: "readme/control-meter",
+  params: { gain: param.f32({ min: 0, max: 1 }) },
+  meters: { level: meter.f32() },
+}));
+
+const plan = planLayout(contract);
+const backing = allocatePacked(plan);
+const controller = bindController(contract, plan, backing);
+const handoff = buildHandoff(plan, backing);
+const processor = bindProcessor(acceptHandoff(handoff));
+
+controller.params.update({ gain: 0.75 });
+
+processor.params.within((params) => {
+  processor.meters.publish((meters) => meters.level(params.gain));
+});
+
+const { level } = controller.meters.snapshot("level");
+```
+
+The [quickstart](apps/docs/src/quickstart.md) extends this flow with nested
+contracts, array staging, snapshots, and transport-boundary validation.
+
+## Why SeqWire exists
+
+Shared typed arrays provide bytes and atomic primitives, but they do not define
+the system around those bytes:
+
+- Independently reconstructed layouts can disagree about offsets and types.
+- Writer ownership and transfer assumptions can remain implicit.
+- Multi-field reads can combine values from different publications.
+- Open-ended retry loops can turn contention into unbounded timing work.
+- General bindings can expose mutation authority to roles that should only read.
+
+SeqWire keeps those decisions inspectable. Layout has a deterministic identity,
+handoffs are validated, bindings are role-specific, and coherent reads use
+explicit budgets with caller-owned last-good state.
 
 ## What is implemented
 
@@ -24,53 +96,48 @@ presented as production-ready. The future npm package name is
 - Bounded coherent reads with caller-owned last-good snapshots
 - Grouped validation and publication
 - Structured errors and diagnostics
-- Worker, property, runtime, and type tests
-- Benchmarks and package smoke tests
+- Worker, property, runtime, type, benchmark, and package-smoke coverage
 
-SeqWire keeps its shared-memory mechanics visible. A contract is authored before
-layout is planned. Backing memory is created before a handoff crosses a runtime
-boundary. A receiver validates the handoff before binding. Reads that cannot
-observe a coherent candidate within their budget return bounded failure or a
-retained last-good value instead of exposing torn state.
+## Executable evidence
 
-## Signalsmith Stretch proof
+The [Signalsmith Stretch proof](docs/proofs/signalsmith-stretch.md) uses a
+[real browser application](apps/signalsmith-stretch) with a real audio graph, a
+real AudioWorklet, and the upstream Signalsmith Stretch WebAssembly release.
+SeqWire models the control and meter boundary. The main thread applies canonical
+SeqWire control snapshots to Signalsmith, while a downstream AudioWorklet reads
+SeqWire control state and publishes live meters.
 
-`apps/signalsmith-stretch` is an AudioWorklet proof around the upstream
-Signalsmith Stretch WebAssembly release. The application models the control and
-meter surface in SeqWire, applies canonical control snapshots to Signalsmith,
-reads output gain inside a downstream AudioWorklet, and publishes live meter
-state back through SeqWire.
+Signalsmith itself does not directly consume SeqWire memory. This is executable
+evidence for the boundary model, not a shipped audio runtime.
 
-The proof uses a real browser audio graph and a real AudioWorklet. It does not
-claim that Signalsmith itself reads SeqWire memory, and it is not a shipped
-audio runtime. See
-[the proof record](docs/proofs/signalsmith-stretch.md) for the exact boundary.
+The [benchmark suites](packages/core/bench/README.md) measure the shared-memory
+hot paths and end-to-end setup. They are regression evidence, not
+production-readiness claims.
 
-## Maturity
+## Project status and limits
 
-SeqWire is:
+SeqWire is implemented, reproducible experimental research. It is not presented
+as production-ready, a general application framework, or a production
+dependency.
 
-- experimental shared-memory research
-- unpublished on npm
-- tested across type, runtime, worker, property, package, and browser surfaces
-- suitable for studying explicit ownership and coherent state exchange
-- not a general application framework
-- not a production dependency
+The intended package identity is `@exclave/seqwire`. It is currently private and
+unpublished. The `@exclave` scope is the publishing namespace only, not a parent
+project identity.
 
-The repository intentionally retains architecture notes and decision records.
-Some describe exploratory directions rather than current commitments. Their
-status is stated in the documentation indexes.
+The repository retains architecture notes and decision records. Some describe
+exploratory or superseded directions, and their status is identified in the
+documentation indexes.
 
-## Local development
+## Verification
 
-Use the repository-pinned pnpm version and Node.js 24:
+Use Node.js 24 and the repository-pinned pnpm version:
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm verify
 ```
 
-Focused commands include:
+Focused checks include:
 
 ```sh
 pnpm build
@@ -86,25 +153,21 @@ pnpm signalsmith:test:browser
 `pnpm verify:fresh` invokes destructive cleanup through `git clean -xfd`. Do
 not run it in a worktree that contains untracked work.
 
-## Repository structure
+## Repository map
 
-- `packages/core`: the `@exclave/seqwire` implementation, tests, benchmarks, and
-  package documentation
-- `apps/docs`: the VitePress documentation site
-- `apps/signalsmith-stretch`: the AudioWorklet proof application
-- `docs/proofs`: proof records and scope boundaries
-- `scripts`: repository verification and support tooling
+- `packages/core` contains the `@exclave/seqwire` implementation, tests,
+  benchmarks, and package documentation.
+- `apps/docs` contains the VitePress documentation site.
+- `apps/signalsmith-stretch` contains the AudioWorklet proof application.
+- `docs/proofs` records executable evidence and its exact scope boundaries.
+- `scripts` contains repository verification and support tooling.
 
-The `@exclave` scope is the future npm publishing namespace. It is not a parent
-product identity for SeqWire.
+## Research boundary
 
-## Research lineage
+SeqWire and Projection Runtime are separate research projects with no runtime
+dependency in either direction. SeqWire studies coherent state inside shared
+memory. Projection Runtime studies the wider Electron-to-native-Rust boundary.
+Neither project is a shipped Dekzer dependency.
 
-SeqWire and Projection Runtime are separate research projects. SeqWire explores
-coherent state inside shared memory. Projection Runtime investigates the wider
-Electron-to-native-Rust problem around authority, publication, resource access,
-supervision, and recovery. Neither project depends on the other, and neither is
-a shipped Dekzer dependency.
-
-See [Research lineage](apps/docs/src/research-lineage.md) for the boundary and
-the limited historical relationship between the projects.
+See [Research lineage](apps/docs/src/research-lineage.md) for the limited
+historical relationship.
