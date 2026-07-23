@@ -1,12 +1,8 @@
 # ADR-00Z: Observer Binding Role in `@exclave/seqwire`
 
-**Status**: Archived - superseded by the Exclave convergence disposition
+**Status**: Proposed
 **Date**: 2025-11-18
 **Owner**: _TBD_
-
-This API is donor evidence only; Exclave must rebuild the read-only consumer
-against its canonical manifest and lifecycle. See the
-[convergence audit](../../../../apps/docs/src/exclave-convergence.md).
 
 **Related**:
 

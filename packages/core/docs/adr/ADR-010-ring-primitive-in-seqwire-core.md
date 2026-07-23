@@ -1,12 +1,8 @@
 # ADR-010: Ring Primitive in `@exclave/seqwire`
 
-**Status**: Archived - superseded by the Exclave convergence disposition
+**Status**: Accepted
 **Date**: 2025-11-19
 **Owner**: _TBD_
-
-The ring remains protocol-lab evidence only. It is not a production Exclave
-contract or a reason to preserve SeqWire as a runtime. See the
-[convergence audit](../../../../apps/docs/src/exclave-convergence.md).
 
 **Related**:
 
@@ -32,7 +28,8 @@ These primitives are about **state**:
 - snapshot-oriented,
 - read-many, write-one.
 
-Real-time systems like Dekzer also need a way to express **control flow**:
+Timing-sensitive applications can also need a way to express **control flow**.
+Dekzer was one source of motivation, not a current SeqWire dependency:
 
 - enqueue **commands** (play/pause/seek, rate ramps, engine swaps),
 - drain and execute them at predictable points (e.g. per audio block),

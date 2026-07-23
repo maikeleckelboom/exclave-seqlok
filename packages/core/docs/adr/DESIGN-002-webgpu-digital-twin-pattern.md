@@ -165,7 +165,10 @@ Data flow:
 
 ---
 
-## 6. Example: Dekzer waveform twin
+## 6. Motivating example: waveform twin
+
+Dekzer motivated this conceptual example. It is not a current SeqWire
+dependency or integration.
 
 Same pattern, different shape:
 

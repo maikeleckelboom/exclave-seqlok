@@ -1,17 +1,17 @@
 {
-  "name": "exclave-seqwire",
+  "name": "seqwire",
   "type": "module",
   "version": "0.0.0",
   "private": true,
-  "description": "Frozen SeqWire research donor for Exclave convergence.",
+  "description": "Typed shared-memory research for timing-sensitive JavaScript runtimes.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/maikeleckelboom/exclave-seqwire.git"
+    "url": "git+https://github.com/maikeleckelboom/seqwire.git"
   },
-  "homepage": "https://github.com/maikeleckelboom/exclave-seqwire#readme",
+  "homepage": "https://github.com/maikeleckelboom/seqwire#readme",
   "bugs": {
-    "url": "https://github.com/maikeleckelboom/exclave-seqwire/issues"
+    "url": "https://github.com/maikeleckelboom/seqwire/issues"
   },
   "devDependencies": {
     "@commitlint/cli": "catalog:",

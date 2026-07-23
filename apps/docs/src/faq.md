@@ -1,12 +1,10 @@
 # FAQ
 
-> [!WARNING]
-> Historical donor reference only. Current ownership and repository status are defined by the
-> [Exclave convergence audit](/exclave-convergence).
+## What Does the `@exclave` Scope Mean?
 
-## What Does the Exclave Scope Mean?
-
-`@exclave` is only the npm scope. The package and product name are SeqWire, and current integrations should target `@exclave/seqwire`.
+`@exclave` is only the future npm publishing scope. The project and package
+display name is SeqWire. The package identity is `@exclave/seqwire`, but it is
+not currently published.
 
 ## Is This AudioWorklet-Only?
 
@@ -35,3 +33,13 @@ No. Use the root package and diagnostics subpath. Internal modules can change wi
 ## Are Domain Semantics Built In?
 
 No. SeqWire provides typed params, meters, plans, backings, handoff validation, bindings, diagnostics, and structured errors. Domain commands and higher-level orchestration belong outside the package.
+
+## Does SeqWire Power Dekzer?
+
+No. Dekzer helped motivate some of the systems questions, but SeqWire is not
+used by Dekzer and is not planned as a Dekzer dependency.
+
+## Is SeqWire Part of Projection Runtime?
+
+No. The projects are independent and have no runtime dependency in either
+direction. See [Research lineage](/research-lineage).

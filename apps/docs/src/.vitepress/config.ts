@@ -20,7 +20,8 @@ function escapeHtml(value: string): string {
 
 export default defineConfig({
   title: "SeqWire",
-  description: "Frozen research donor for Exclave convergence.",
+  description:
+    "Typed shared-memory research for workers, AudioWorklets, and WebAssembly-oriented runtimes.",
   cleanUrls: true,
   lastUpdated: true,
   markdown: {
@@ -86,9 +87,9 @@ export default defineConfig({
   },
   themeConfig: {
     nav: [
-      { text: "Status", link: "/exclave-convergence" },
-      { text: "Historical API", link: "/api" },
-      { text: "Historical Docs", link: "/core-flow" },
+      { text: "Overview", link: "/" },
+      { text: "API", link: "/api" },
+      { text: "Architecture", link: "/core-flow" },
       { text: "Verification", link: "/release-checklist" },
     ],
     outline: {
@@ -96,18 +97,17 @@ export default defineConfig({
     },
     sidebar: [
       {
-        text: "Current status",
+        text: "Start",
         items: [
           { text: "Overview", link: "/" },
-          { text: "Exclave convergence", link: "/exclave-convergence" },
-          { text: "Frozen verification", link: "/release-checklist" },
+          { text: "Local setup", link: "/install" },
+          { text: "Quickstart", link: "/quickstart" },
+          { text: "Verification", link: "/release-checklist" },
         ],
       },
       {
-        text: "Historical concepts",
+        text: "Core concepts",
         items: [
-          { text: "Former install guide", link: "/install" },
-          { text: "Former quickstart", link: "/quickstart" },
           { text: "SeqWire Flow", link: "/core-flow" },
           { text: "Authored AST vs Runtime", link: "/authoring-contract" },
           { text: "Handoff and Acceptance", link: "/handoff-acceptance" },
@@ -115,7 +115,7 @@ export default defineConfig({
         ],
       },
       {
-        text: "Historical API",
+        text: "API",
         items: [
           { text: "API Reference", link: "/api" },
           { text: "Diagnostics", link: "/diagnostics" },
@@ -123,19 +123,20 @@ export default defineConfig({
         ],
       },
       {
-        text: "Historical examples",
+        text: "Examples",
         items: [{ text: "Examples", link: "/examples" }],
       },
       {
-        text: "Historical internals",
+        text: "Internals",
         items: [
           { text: "Memory and Layout Model", link: "/memory-layout" },
           { text: "Package Boundaries", link: "/package-boundaries" },
         ],
       },
       {
-        text: "Historical writing",
+        text: "Research context",
         items: [
+          { text: "Research lineage", link: "/research-lineage" },
           { text: "Blog Index", link: "/blog/" },
           {
             text: "Why SeqWire exists",
@@ -148,7 +149,7 @@ export default defineConfig({
         ],
       },
       {
-        text: "Historical FAQ",
+        text: "Reference",
         items: [{ text: "FAQ", link: "/faq" }],
       },
     ],

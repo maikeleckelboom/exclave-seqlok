@@ -82,7 +82,8 @@ sequenceDiagram
 
 **"What if we have more than one input?"**
 
-The SWSR model works perfectly for `UI ↔ Audio`. But complex apps (like the Flocking Simulation or Dekzer) look like this:
+The SWSR model works well for `UI ↔ Audio`. More complex applications, such as
+the flocking simulation or a future Dekzer-like system, motivated this shape:
 
 - **Writers:** Mouse, MIDI Keyboard, Network Multiplayer, AI Script.
 - **Readers:** React UI (DOM), WebGPU Visualizer (Canvas), Telemetry Logger.

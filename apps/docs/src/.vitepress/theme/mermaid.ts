@@ -115,7 +115,7 @@ async function renderMermaid(isDark: boolean, currentVersion: number) {
     target.removeAttribute("data-processed");
 
     try {
-      const id = `exclave-mermaid-${String(currentVersion)}-${String(index)}`;
+      const id = `seqwire-mermaid-${String(currentVersion)}-${String(index)}`;
       const { svg } = await withTimeout(
         mermaid.render(id, graphDefinition),
         8000,

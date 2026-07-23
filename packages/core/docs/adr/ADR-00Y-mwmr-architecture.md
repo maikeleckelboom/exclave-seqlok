@@ -1,11 +1,8 @@
 # ADR-00Y: MWMR System Architecture via SeqWire Domains + Observers + Rings
 
-**Status**: Archived - superseded by the Exclave convergence disposition
+**Status**: Proposed
 **Date**: 2025-11-16
 **Owner**: _TBD_
-
-This is historical topology research, not current architecture. See the
-[convergence audit](../../../../apps/docs/src/exclave-convergence.md).
 
 **Related**:
 
@@ -30,7 +27,10 @@ defineSpec
 → bind{Controller,Processor}
 ```
 
-Real-world systems like Dekzer need **system-level MWMR** without compromising the per-domain SWMR guarantees. The goal is:
+A possible timing-sensitive application such as Dekzer motivated the question
+of **system-level MWMR** without compromising the per-domain SWMR guarantees.
+This is research motivation, not a current dependency or integration. The goal
+is:
 
 - MWMR as an **emergent property** of composition,
 - not as "many writers per plane" primitives.
@@ -279,4 +279,5 @@ We achieve system-level MWMR by:
 - orchestrating growth via handoff sequences and `SwapTicket`s,
 - maintaining frame-accurate swap semantics for real-time contexts.
 
-SeqWire's primitives stay simple and strict, while complex real-time apps (Dekzer, agent swarms, etc.) get a solid MWMR architecture on top.
+SeqWire's primitives stay simple and strict while the proposal explores how
+complex real-time applications could build an MWMR architecture on top.

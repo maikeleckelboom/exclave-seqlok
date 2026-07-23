@@ -1,8 +1,8 @@
 # Quickstart
 
-> [!CAUTION]
-> This is a historical proof flow, not a current quickstart. Do not use SeqWire for a new production integration.
-> See the [Exclave convergence audit](/exclave-convergence).
+> [!NOTE]
+> SeqWire is experimental and unpublished. This quickstart runs against the
+> local workspace package.
 
 This is the smallest complete SeqWire flow: one spec defines the boundary contract, layout is planned once, backing is allocated once, and the runtime side binds from a handoff.
 

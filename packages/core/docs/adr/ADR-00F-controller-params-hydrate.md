@@ -1,13 +1,8 @@
 # ADR-00F: ControllerParams.hydrate() for Cold-Path Bulk Updates
 
-**Status**: Archived - superseded by the Exclave convergence disposition
+**Status**: Accepted
 **Date**: 2025-11-18
 **Owner**: _TBD_
-
-This API is donor evidence only. Renderer TypeScript is read-only in the
-production Exclave architecture; control intent does not mutate shared
-projection state through this role. See the
-[convergence audit](../../../../apps/docs/src/exclave-convergence.md).
 
 **Related**:
 

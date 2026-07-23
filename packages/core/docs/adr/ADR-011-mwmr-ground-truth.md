@@ -1,11 +1,8 @@
 # ADR-011: MWMR System Model and Guardrails
 
-**Status**: Archived - superseded by the Exclave convergence disposition
+**Status**: Accepted
 **Date**: 2025-11-19
 **Owner**: _TBD_
-
-This is historical composition research, not current production architecture.
-See the [convergence audit](../../../../apps/docs/src/exclave-convergence.md).
 
 **Related**:
 
@@ -20,7 +17,9 @@ See the [convergence audit](../../../../apps/docs/src/exclave-convergence.md).
 
 ## 1. Context
 
-Real-time systems like Dekzer, agent swarms, and multi-user collaborative applications require **many-writer / many-reader (MWMR)** behavior:
+Timing-sensitive systems such as agent swarms, multi-user applications, or a
+future Dekzer-like application can require **many-writer / many-reader (MWMR)**
+behavior. Dekzer is motivation here, not a current SeqWire integration:
 
 - Many intent sources: UI, MIDI, network, AI agents, automation, IPC bridges
 - Many state consumers: HUDs, WebGPU visualizers, telemetry, analyzers, hardware bridges
@@ -272,7 +271,10 @@ class MPSCIntentBus {
 
 ---
 
-### 5.2 Canonical Dekzer Deck Topology
+### 5.2 Motivating Deck Topology
+
+This conceptual deck topology was motivated by Dekzer. It does not describe a
+current dependency or shipped integration.
 
 ```ts
 // ─────────────────────────────────────────────────────────

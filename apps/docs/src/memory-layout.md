@@ -1,9 +1,5 @@
 # Memory and Layout Model
 
-> [!WARNING]
-> Historical donor reference only. SeqWire's planner, planes, and dual-counter layout are not the production ABI.
-> See the [Exclave convergence audit](/exclave-convergence).
-
 The authored spec is not memory. `planLayout(spec)` is the lowering step that turns canonical fields into byte sizes, plane offsets, and a layout identity.
 
 ## Canonical Fields

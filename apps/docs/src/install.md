@@ -1,23 +1,30 @@
-# Install
+# Local Setup
 
-> [!CAUTION]
-> Do not install SeqWire for new work. The package is frozen, unpublished, and private while useful evidence is
-> migrated to Exclave. See the [Exclave convergence audit](/exclave-convergence).
+SeqWire is not published on npm. A live registry lookup on 2026-07-23 returned
+`E404`, and the workspace package remains private. Clone the repository to run
+the project or study the package.
 
-Install the public package in the application or library that owns the boundary contract:
+## Requirements
+
+- Node.js 24
+- The pnpm version pinned in the root `package.json`
+
+Install the locked workspace:
 
 ```sh
-pnpm add @exclave/seqwire
+pnpm install --frozen-lockfile
 ```
 
-Other package managers can install the same package:
+Build and verify the package:
 
 ```sh
-npm install @exclave/seqwire
-yarn add @exclave/seqwire
+pnpm build
+pnpm test
+pnpm test:pack
 ```
 
-Import from the root package for the runtime flow:
+The local package imports used by tests, documentation, and proof applications
+are:
 
 ```ts
 import {
@@ -29,19 +36,21 @@ import {
   defineSpec,
   planLayout,
 } from "@exclave/seqwire";
-```
 
-Import diagnostics from the diagnostics subpath:
-
-```ts
 import { probeEnv, snapshotCounters } from "@exclave/seqwire/diagnostics";
 ```
 
-## Runtime Requirements
+These examples describe the future package identity and the local workspace
+surface. They are not registry installation instructions.
 
-`@exclave/seqwire` uses `SharedArrayBuffer` for shared backing memory. In browsers, pages must be cross-origin isolated before `SharedArrayBuffer` is available. In Node.js, worker-thread usage depends on the Node version and host runtime.
+## Runtime requirements
 
-Run the diagnostics probe during integration rather than discovering support problems from a hot path:
+SeqWire uses `SharedArrayBuffer` for shared backing memory. Browser pages must be
+cross-origin isolated before `SharedArrayBuffer` is available. Node.js
+worker-thread use depends on the host runtime.
+
+Probe support during setup rather than discovering it from a timing-sensitive
+path:
 
 ```ts
 import { probeEnv } from "@exclave/seqwire/diagnostics";
@@ -53,13 +62,13 @@ if (!summary.hasSharedArrayBuffer) {
 }
 ```
 
-## Package Shape
+## Package shape
 
-The public package is ESM-only and typed. The supported import paths are:
+The built research artifact is ESM-only and typed:
 
 | Import | Use |
 | --- | --- |
-| `@exclave/seqwire` | Spec, planning, backing, handoff, bindings, enum helpers, and structured errors. |
-| `@exclave/seqwire/diagnostics` | Environment probes, counters, and mapped view descriptions. |
+| `@exclave/seqwire` | Contract authoring, planning, backing, handoff, bindings, enum helpers, and structured errors |
+| `@exclave/seqwire/diagnostics` | Environment probes, counters, and mapped view descriptions |
 
 Internal folders under `packages/core/src` are not public API.

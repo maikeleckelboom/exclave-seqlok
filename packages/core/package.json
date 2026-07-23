@@ -3,19 +3,18 @@
   "title": "SeqWire",
   "version": "0.3.0",
   "private": true,
-  "description": "Frozen shared-memory research donor for Exclave convergence; not a production runtime.",
+  "description": "Typed, coherent shared-memory state for timing-sensitive JavaScript runtimes.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/maikeleckelboom/exclave-seqwire.git",
+    "url": "git+https://github.com/maikeleckelboom/seqwire.git",
     "directory": "packages/core"
   },
-  "homepage": "https://github.com/maikeleckelboom/exclave-seqwire#readme",
+  "homepage": "https://github.com/maikeleckelboom/seqwire#readme",
   "bugs": {
-    "url": "https://github.com/maikeleckelboom/exclave-seqwire/issues"
+    "url": "https://github.com/maikeleckelboom/seqwire/issues"
   },
   "keywords": [
-    "exclave",
     "seqwire",
     "typed",
     "sharedarraybuffer",

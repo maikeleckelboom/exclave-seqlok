@@ -1,46 +1,49 @@
 ---
 layout: home
 hero:
-  name: SeqWire Research Archive
-  text: Frozen donor evidence for Exclave convergence
-  tagline: Exclave is the sole production Electron to native Rust boundary. SeqWire is private, unpublished, and retained only for audited donor work, historical evidence, or a future Exclave-artifact protocol lab.
+  name: SeqWire
+  text: Typed, coherent shared-memory state
+  tagline: Experimental TypeScript research for explicit contracts, deterministic layout, handoff, and bounded reads across workers, AudioWorklets, and WebAssembly-oriented runtimes.
   actions:
     - theme: brand
-      text: Read the disposition audit
-      link: /exclave-convergence
+      text: Understand the flow
+      link: /core-flow
     - theme: alt
-      text: Archive or protocol lab
-      link: /exclave-convergence#archive-versus-protocol-lab
+      text: Run it locally
+      link: /install
 features:
-  - title: One production owner
-    details: Exclave owns contracts, manifests, field identity, compilation, layout, ABI, authority lifecycle, resource access, and cross-language conformance.
-  - title: Audited donor assets
-    details: Tests, benchmark methods, snapshot techniques, grouped-publication invariants, diagnostics, and proof workloads have explicit dispositions and migration order.
-  - title: No duplicate runtime
-    details: SeqWire's spec, planner, handoff, role model, dual-counter ABI, and mutable backings must not become an Exclave dependency or compatibility layer.
-  - title: Historical documents preserved
-    details: Architecture chapters, guides, ADRs, and proofs remain available as evidence but no longer define future production direction.
-  - title: Conditional protocol lab
-    details: A private lab is credible only when it consumes Exclave-generated artifacts and returns conformance or fault-injection evidence to Exclave.
-  - title: Archive by default
-    details: After donor extraction and explicit archive gates, the recommended repository end state is read-only archival.
+  - title: Authored contracts
+    details: TypeScript-authored parameter and meter contracts collapse into canonical field paths before runtime layout exists.
+  - title: Deterministic layout
+    details: Explicit planning produces stable byte sizes, offsets, typed planes, and a layout identity that can be inspected and tested.
+  - title: Explicit handoff
+    details: The owner creates backing memory and a transportable handoff. Receivers validate it before role-specific binding.
+  - title: Bounded coherent reads
+    details: Seqlock-based reads use explicit budgets and retained last-good values instead of exposing torn candidates.
+  - title: Grouped publication
+    details: Values are validated before a grouped write is published, keeping correlated state coherent for readers.
+  - title: Executable evidence
+    details: Worker and property tests, benchmarks, package smoke tests, and the Signalsmith AudioWorklet proof exercise the implementation.
 ---
 
-## Current status
+## Project status
 
-SeqWire is a frozen, private, unpublished research donor and archive candidate.
-It is not an installable production runtime and is not the Electron renderer to
-native Rust audio-engine boundary.
+SeqWire is experimental research software. It is implemented, reproducible, and
+tested, but it is not presented as production-ready. The future npm package name
+is `@exclave/seqwire`. The package remains private and is not published on npm.
 
-Start with the
-[authoritative Exclave convergence and SeqWire disposition audit](/exclave-convergence).
-It records the source, current implementation reality, classification, target
-owner, dependencies, migration risk, order, and required behavior decision for
-every important SeqWire subsystem, test family, benchmark, proof, and ADR.
+Start with the [SeqWire flow](/core-flow) to see how authored contracts,
+deterministic planning, backing allocation, handoff, and role-specific bindings
+fit together. The [quickstart](/quickstart) walks through the smallest complete
+local flow.
 
-Older pages remain accessible so implementation knowledge and decision history
-are not erased. When an older page describes SeqWire as the future production
-package, Electron topology, native boundary, or release target, treat that claim
-as historical and superseded by the audit.
+The documentation includes current implementation guidance and historical
+architecture records. Proposed or superseded directions are identified in the
+documentation indexes rather than treated as current commitments.
 
-Do not begin with the old install or quickstart pages for a new integration.
+## Independent research
+
+SeqWire is a standalone project. It does not depend on Projection Runtime, and
+Projection Runtime does not depend on SeqWire. Both grew from related systems
+questions, but neither is a shipped Dekzer dependency. See
+[Research lineage](/research-lineage) for the precise boundary.

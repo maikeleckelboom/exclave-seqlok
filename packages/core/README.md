@@ -1,21 +1,12 @@
-# SeqWire Core Research Artifact
+# SeqWire Core
 
-This directory contains the former `@exclave/seqwire` package implementation.
-It is frozen as a private, unpublished research donor; it is not a supported
-package or the production Electron to native Rust boundary.
+`@exclave/seqwire` contains the implemented SeqWire shared-memory research
+surface. The package is private and unpublished while the project remains
+experimental.
 
-Exclave owns authored contracts, canonical manifests, field identity,
-compilation, lane planning, ABI/version identity, authority/session semantics,
-publication continuity, resource access, generated TypeScript and Rust
-artifacts, and cross-language conformance.
-
-Read the authoritative
-[Exclave convergence and SeqWire disposition audit](../../apps/docs/src/exclave-convergence.md)
-before using or changing code in this directory.
-
-## Frozen implementation
-
-The implementation still contains this historical research flow:
+The package turns a TypeScript-authored contract into a deterministic
+shared-memory layout, creates backing memory, builds an explicit handoff, and
+binds participants through role-specific capabilities:
 
 ```text
 defineSpec
@@ -25,34 +16,33 @@ defineSpec
   -> bindController / bindProcessor / bindObserver
 ```
 
-This flow is evidence to inspect, test, and selectively translate. It must not
-be adopted as an Exclave runtime dependency or compatibility layer. In
-particular:
+## Implemented guarantees
 
-- `defineSpec` and anonymous hashes are not Exclave contract identity;
-- `planLayout`, planes, slots, Plan hashes, and PU/MU are not the production ABI;
-- params/meters and controller/processor/observer are not the production
-  authority model;
-- handoff acceptance is not native authority, revocation, or session identity;
-- packed, partitioned, and WASM mutable backings are not the renderer resource
-  model; and
-- same-process and worker tests do not prove Electron/native Rust byte or
-  lifecycle conformance.
+- Canonical field paths and deterministic layout planning
+- Explicit ownership of parameter and meter writes
+- Validation before grouped publication
+- Bounded seqlock reads
+- Caller-owned snapshots and last-good values
+- Explicit handoff validation before binding
+- Structured error and diagnostic surfaces
+- Type, runtime, property, worker, benchmark, and pack-smoke coverage
 
-Useful donor assets include validation generators, alignment properties,
-bounded-read scenarios, validation-before-grouped-publication tests,
-caller-owned snapshot techniques, structured errors, diagnostics, package-smoke
-methods, benchmark methods, and the AudioWorklet workload. The audit records the
-exact owner, dependencies, risk, order, and behavior decision for each asset.
+These guarantees describe the implemented TypeScript project. They do not claim
+native process authority, operating-system mapping, renderer revocation, or a
+complete application lifecycle.
 
-## No installation or publication
+## Package status
 
-Do not install, publish, or create new consumers of `@exclave/seqwire`. The
-package is mechanically private, has no `publishConfig`, and had no published
-version in a live npm registry lookup (`E404`). Its identity, version, and
-exports remain while `private: true` disables publication, so the frozen
-artifact can be built and its passing packed-output check can be used as donor
-evidence. They do not constitute a release commitment.
+The future public package name is `@exclave/seqwire`. A live npm registry lookup
+on 2026-07-23 returned `E404`, and `private: true` prevents publication from
+this workspace. Use the repository checkout for research and verification.
+
+The supported import paths in the built artifact are:
+
+- `@exclave/seqwire`
+- `@exclave/seqwire/diagnostics`
+
+Internal modules under `src` are not public API.
 
 ## Verification
 
@@ -66,5 +56,6 @@ pnpm build
 pnpm test:pack
 ```
 
-Benchmarks and historical documents describe SeqWire's own implementation. They
-must not be reported as Exclave production evidence.
+Benchmarks and the Signalsmith proof are evidence for SeqWire itself. They are
+not production-readiness claims or evidence of integration with another
+project.

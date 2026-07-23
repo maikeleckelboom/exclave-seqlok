@@ -1,9 +1,5 @@
 # Authored AST vs Runtime Contract
 
-> [!WARNING]
-> Historical donor reference only. SeqWire's authored schema is not the production contract authority. See the
-> [Exclave convergence audit](/exclave-convergence).
-
 Authors can write nested specs because nested objects are easier to read and review:
 
 ```ts

@@ -1,14 +1,10 @@
 # Alternative Dispute Resolution 2025-11-12 — Meter Writes & Snapshot `into` (SeqWire v0.1.0)
 
-**Status:** Archived - superseded by the Exclave convergence disposition
+**Status:** Accepted
 **Date:** 2025-11-12
 **Revised:** 2025-11-22 (align with final `meters.publish` API; remove `writer.set`)
 **Scope:** `@exclave/seqwire` bindings — meter writing API and controller snapshots
 **Decision Owners:** Binding/API maintainers
-
-The snapshot and validation techniques are donor evidence only. The SeqWire
-params/meters roles and publication ABI are not current production architecture.
-See the [convergence audit](../../../../apps/docs/src/exclave-convergence.md).
 
 ---
 

@@ -1,12 +1,8 @@
 # ADR-00E: Electron & Multi-Process Runtimes
 
-**Status**: Archived - superseded by the Exclave convergence disposition
+**Status**: Informational / Future-Oriented
 **Date**: 2025-11-16
 **Owner**: _TBD_
-
-This is historical research, not current architecture. Exclave solely owns the
-production Electron renderer-to-native-Rust boundary. See the
-[convergence audit](../../../../apps/docs/src/exclave-convergence.md).
 
 **Related**:
 
@@ -258,7 +254,8 @@ Electron-specific features (e.g., window management, menus, OS integration) are 
 
 - Provide **examples** in `docs/architecture`:
 
-  - “Dekzer in Electron”:
+  - “A Dekzer-like application in Electron” as a motivating example, not a
+    current integration:
 
     - renderer: decks + visualizers
     - main: library + agents

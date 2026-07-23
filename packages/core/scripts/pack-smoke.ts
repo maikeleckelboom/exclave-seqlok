@@ -57,7 +57,7 @@ function assertNoProofFiles(tarballPath: string, packageRoot: string): void {
 }
 
 const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-const tempRoot = mkdtempSync(join(tmpdir(), "exclave-seqwire-pack-"));
+const tempRoot = mkdtempSync(join(tmpdir(), "seqwire-pack-"));
 
 try {
   const packOutput = runPnpm(

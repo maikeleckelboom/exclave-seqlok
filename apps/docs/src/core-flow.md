@@ -1,9 +1,5 @@
 # SeqWire Flow
 
-> [!WARNING]
-> Historical donor reference only. This flow must not be adopted as the production boundary. See the
-> [Exclave convergence audit](/exclave-convergence).
-
 SeqWire has one explicit flow. The steps are intentionally separate so layout ownership, backing allocation, and runtime capability transfer remain visible.
 
 ## Shared Backing Model

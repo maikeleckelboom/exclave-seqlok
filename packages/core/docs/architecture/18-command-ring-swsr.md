@@ -1,11 +1,7 @@
 # SWSR Command Ring
 
-**Status:** Archived - superseded by the Exclave convergence disposition
-**Audience:** Engine orchestration, Dekzer driver, infra
-
-This document is protocol-lab evidence only. It is not an active package
-roadmap or production contract. See the
-[convergence audit](../../../../apps/docs/src/exclave-convergence.md).
+**Status:** Draft research direction
+**Audience:** Timing-sensitive host and engine research
 
 This document specifies a **Single-Writer Single-Reader (SWSR) command ring** used to
 send discrete commands (events) from a control role (UI / driver / host) to a
@@ -29,7 +25,7 @@ continuous parameters, SeqWire params/meters remain the primary mechanism.
 
 Typical examples:
 
-- UI / main thread in Dekzer.
+- UI or main thread in a desktop audio application.
 - “CompositeDriver” that converts high-level app actions into low-level commands.
 
 Responsibilities:
@@ -70,7 +66,7 @@ Conceptually:
 - Commands are **in-order**: if writer enqueues `A` then `B`, reader observes
   `A` before `B`.
 
-### 2.1 Example command kinds (Dekzer-flavoured, but generic)
+### 2.1 Example command kinds
 
 The spec does not freeze the exact set, but it assumes a small discriminated union
 shape like:
@@ -361,4 +357,4 @@ For v0.3.0, the goal is a small, auditable SWSR primitive with:
 
 - Clear invariants.
 - Documented backpressure.
-- A few well-specified golden flows that Dekzer and other apps can lean on.
+- A few well-specified golden flows for future application experiments.

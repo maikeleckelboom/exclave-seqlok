@@ -2,11 +2,7 @@
 
 ## Status
 
-Archived - superseded by the Exclave convergence disposition
-
-This is historical implementation evidence, not current package direction. The
-public SWSR export also drifted from this decision. See the
-[convergence audit](../../../../apps/docs/src/exclave-convergence.md).
+Accepted
 
 ## Context
 

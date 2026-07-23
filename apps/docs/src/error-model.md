@@ -1,9 +1,5 @@
 # Error Model
 
-> [!WARNING]
-> Historical donor reference only. Error-model techniques may be ported, but SeqWire error identities must not
-> become Exclave contracts. See the [Exclave convergence audit](/exclave-convergence).
-
 SeqWire throws `SeqWireError` for structured library errors. Each error has a code, message, and typed details payload. Use `isSeqWireError(...)` when catching unknown values at an application boundary.
 
 ```ts twoslash
