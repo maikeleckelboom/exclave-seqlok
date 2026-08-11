@@ -1,10 +1,15 @@
-# Alternative Dispute Resolution 2025-11-12 — Meter Writes & Snapshot `into` (SeqWire v0.1.0)
+# ADR-00C: Meter Writes and Snapshot `into` (SeqWire v0.1.0)
 
-**Status:** Accepted
+**Status:** Accepted historical decision; controller coherence discussion superseded
 **Date:** 2025-11-12
 **Revised:** 2025-11-22 (align with final `meters.publish` API; remove `writer.set`)
 **Scope:** `@exclave/seqwire` bindings — meter writing API and controller snapshots
 **Decision Owners:** Binding/API maintainers
+
+> The meter-writer and nested `into` decisions remain visible in the current
+> API. The controller snapshot coherence and degradation sections do not match
+> v0.3.0: controller snapshots are direct copies, while observer snapshots own
+> the seqlock policy.
 
 ---
 

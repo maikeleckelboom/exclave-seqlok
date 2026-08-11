@@ -1,4 +1,8 @@
-## The ABA "Bug" Isn't Actually a Bug in Our Context
+# ABA and Counter Wraparound
+
+> **Status: Historical rationale.** This captures an earlier analysis. Current
+> counter mechanics and expectations are defined by the seqlock source and
+> wraparound tests.
 
 The classic ABA problem in lock-free algorithms is this:
 
@@ -11,7 +15,7 @@ necessarily true in a concurrent system.
 Our design uses 32-bit counters (`u32`) for seqlock state, so people understandably worry about **wraparound**: “If the
 counter wraps, can we get ABA?" Let's quantify that.
 
-### What would it take to trigger ABA via wraparound?
+## What would it take to trigger ABA via wraparound?
 
 We increment our counter monotonically. To get a true ABA by **wrap**, you need:
 
@@ -41,7 +45,7 @@ successfully completed or retried during that entire period.
 In SeqWire's intended domains (WebAudio worklets, RT graphics, short-lived workers), that's completely outside realistic
 session lifetimes.
 
-### Why this is not a practical bug for SeqWire
+## Why this is not a practical bug for SeqWire
 
 - Our read protocol checks **pre/post equality** of both `LOCK` and `SEQ` and requires `LOCK` to be even.
 - A single complete write changes `LOCK` by +2 and `SEQ` by +1. Any write between the two reads will make either `LOCK`
@@ -56,7 +60,7 @@ So:
 - The place where the textbook ABA problem matters is in long-lived, high-throughput lock-free structures where counters
   can wrap while references are still in play – see the classic discussion in the ABA problem article. ([Wikipedia][1])
 
-### Our stance and future-proofing
+## Our stance and future-proofing
 
 - For current SeqWire targets, the ABA wraparound scenario is a **theoretical edge case**, not a practical production
   risk.

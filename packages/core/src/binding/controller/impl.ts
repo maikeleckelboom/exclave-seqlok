@@ -6,7 +6,7 @@
  * - Validates and normalizes public param values against spec definitions.
  * - Maps controller operations onto seqlock-protected backing planes.
  * - Ensures one successful commit (set/update/stage/hydrate) → one PU bump.
- * - Provides snapshot helpers for params and meters, including zero-alloc `into`.
+ * - Provides snapshot helpers that can reuse caller-owned array buffers.
  */
 
 import { createMeterSnapshot, createParamSnapshot } from "./snapshot";

@@ -1,6 +1,10 @@
 # SeqWire: Goals and Non-Goals
 
-**Purpose:** Define what SeqWire _is for_ and what it explicitly refuses to do.
+> **Status: Historical design record.** This captures early goals and examples;
+> it is not the v0.3.0 API or concurrency reference. See the
+> [architecture index](./INDEX.md) and current VitePress documentation.
+
+**Purpose:** Record what SeqWire set out to solve and exclude.
 
 ---
 
@@ -73,10 +77,10 @@ processor.params.within((p) => {
 // ratio might be 1.5 while coeffs are still from ratio = 1.0
 ```
 
-The seqlock logic ensures that if a write lands while the Processor is reading:
-
-- The read is retried until it sees a self-consistent state.
-- The Processor never sees "partially updated" params.
+The current processor binding performs bounded spin and retry work. It calls the
+`within(...)` callback only for a coherent candidate and fails explicitly when
+the configured budget is exhausted, allowing the caller to retain last-good
+state outside the binding.
 
 This is crucial for:
 
@@ -136,7 +140,8 @@ From this spec, SeqWire derives:
 - A **deterministic memory plan** (planes, offsets, element counts)
 - Clear TS types for controller and processor bindings
 - Slots for seqlock counters in control planes
-- A plan that can be reproduced identically in another agent from a compact handoff
+- A plan carried with a supported backing descriptor so a receiving runtime can
+  validate and bind without independently reconstructing the layout
 
 There is:
 

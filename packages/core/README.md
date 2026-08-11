@@ -6,13 +6,19 @@ and unpublished.
 
 The package turns a TypeScript-authored contract into a deterministic
 shared-memory layout, creates owned backing memory, builds and validates an
-explicit handoff, and binds participants through role-specific capabilities:
+explicit handoff, and binds runtimes through role-specific capabilities:
 
 ```text
 defineSpec
   -> planLayout
-  -> allocatePacked / allocatePartitioned / allocateWasm
+  -> allocatePacked / allocatePartitioned
   -> buildHandoff / acceptHandoff
+  -> bindController / bindProcessor / bindObserver
+
+or
+
+planLayout
+  -> allocateWasm
   -> bindController / bindProcessor / bindObserver
 ```
 
@@ -20,11 +26,13 @@ defineSpec
 
 - `defineSpec` authors parameter and meter contracts.
 - `planLayout` derives deterministic plane sizes, offsets, and identity.
-- Backing allocators create memory that matches the plan.
+- Backing allocators create or attach memory that matches the plan.
 - `buildHandoff` and `acceptHandoff` make transfer and validation explicit.
-- Controller, processor, and observer bindings expose different authority.
-- Bounded seqlock reads return coherent candidates or caller-owned last-good
-  state.
+- Controller, processor, and observer bindings expose different write and read
+  capabilities.
+- Processor parameter reads and observer reads use bounded seqlock checks.
+- The public SWSR ring helpers provide a fixed-capacity command queue for one
+  producer and one consumer.
 
 The [quickstart](../../apps/docs/src/quickstart.md) shows the smallest complete
 local flow. See the [core flow](../../apps/docs/src/core-flow.md) for ownership
@@ -36,15 +44,22 @@ status and executable evidence.
 - Canonical field paths and deterministic layout planning
 - Explicit ownership of parameter and meter writes
 - Validation before grouped publication
-- Bounded seqlock reads
-- Caller-owned snapshots and last-good values
+- Bounded processor and observer read paths
 - Explicit handoff validation before binding
 - Structured error and diagnostic surfaces
 - Type, runtime, property, worker, benchmark, and package-smoke coverage
 
-These guarantees describe the implemented TypeScript project. They do not claim
-native process authority, operating-system mapping, renderer revocation, or a
-complete application lifecycle.
+Controller meter snapshots are direct cold-path copies. They are not
+seqlock-verified as a multi-field unit; use an observer binding when that
+coherence guarantee is required. Processor `within(...)` calls fail explicitly
+when their bounded read work is exhausted, which lets the caller retain its own
+last-good state.
+
+Packed and partitioned `SharedArrayBuffer` backings can be carried by handoff
+v1. Shared `WebAssembly.Memory` is supported for local binding, but not by the
+current handoff envelope. Worker/worklet lifecycle, cross-process memory
+mapping, schema migration, persistence, and application recovery remain outside
+this package.
 
 ## Package status
 

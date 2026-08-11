@@ -1,4 +1,8 @@
-# 🧠 Onboarding: The SeqWire Mindset
+# Onboarding: The SeqWire Mindset
+
+> **Status: Historical guidance.** The zero-allocation rules below describe an
+> aspiration for application hot loops, not a guarantee of every v0.3.0 binding
+> call.
 
 **"You are not in the Event Loop anymore."**
 

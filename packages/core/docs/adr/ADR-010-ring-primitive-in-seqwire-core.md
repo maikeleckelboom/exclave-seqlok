@@ -1,6 +1,6 @@
 # ADR-010: Ring Primitive in `@exclave/seqwire`
 
-**Status**: Accepted
+**Status**: Accepted and implemented
 **Date**: 2025-11-19
 **Owner**: _TBD_
 

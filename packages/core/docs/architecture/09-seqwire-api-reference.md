@@ -1,6 +1,10 @@
 # API Reference
 
-Complete API documentation for `@exclave/seqwire`.
+> **Status: Superseded API reference.** This v0.2-era document is retained for
+> design history. Use the current
+> [VitePress API reference](../../../../apps/docs/src/api.md) and package exports.
+
+Historical API documentation for `@exclave/seqwire`.
 
 This file is about **shape and signatures**. For rationale and design notes, see:
 
@@ -15,9 +19,9 @@ This file is about **shape and signatures**. For rationale and design notes, see
 
   - [`defineSpec`](#definespec)
   - [`planLayout`](#planlayout)
-  - [`allocatePacked`](#allocateshared)
-  - [`allocatePartitioned`](#allocatesharedpartitioned)
-  - [`allocateWasm`](#allocatewasmshared)
+  - [`allocatePacked`](#allocatepacked)
+  - [`allocatePartitioned`](#allocatepartitioned)
+  - [`allocateWasm`](#allocatewasm)
   - [`buildHandoff`](#buildhandoff)
   - [`acceptHandoff`](#accepthandoff)
   - [`verifyHandoff`](#verifyhandoff)

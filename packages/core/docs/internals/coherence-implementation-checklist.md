@@ -1,5 +1,8 @@
 # Coherence Semantics: Key Implementation Details
 
+> **Status: Superseded implementation plan.** The result shapes and policies in
+> this file are not current source authority.
+
 This document captures the critical details that must be preserved when implementing or documenting the coherence policy system.
 
 ## 1. Primitive Result Shape (CORRECT)

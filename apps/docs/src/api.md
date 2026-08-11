@@ -34,7 +34,8 @@ type Canonical = CanonicalSpecFromAst<typeof authored>;
 - `planLayout(spec)` returns a deterministic memory plan, including canonical param definitions used by observer snapshots.
 - `allocatePacked(plan)` creates packed backing.
 - `allocatePartitioned(plan)` creates partitioned backing.
-- `allocateWasm(plan, memory)` attaches compatible shared WebAssembly memory.
+- `allocateWasm(plan, memory?)` allocates or attaches compatible shared
+  WebAssembly memory.
 
 ## Binding
 
@@ -72,6 +73,20 @@ Role-specific public types include `ControllerBinding`, `ProcessorBinding`, `Obs
 | --- | --- |
 | `snapshot(...)` | Read meters; pass `{ keys, into }` to reuse array buffers. |
 | `version()` | Return the current meter update sequence. |
+
+In v0.3.0, controller meter snapshots are direct copies rather than
+seqlock-verified multi-field reads. The `ControllerOptions.meters` type remains
+in the public surface but is not consumed by the controller binding. Use an
+observer with `degrade: "throw"` when a bounded coherent snapshot and
+caller-owned last-good handling are required.
+
+### ProcessorParams
+
+`processor.params.within(callback)` attempts a seqlock-verified read with a
+default spin budget of 1024 and retry budget of 8. The callback runs only for a
+coherent candidate. Exhaustion produces a structured error; the caller decides
+whether to keep a last-good value. The read builds a JavaScript view object, and
+array members are ephemeral views into shared backing.
 
 ### ProcessorMeters
 
@@ -119,11 +134,40 @@ processor.meters.publish((writer) => {
 
 Grouped publishing is for exact schema groups: `publishGroup("runtime", values)` maps every unprefixed key in `values` to canonical meter keys under `runtime.*`. It is not arbitrary object flattening. Derived values, such as enum indices or split frame counters, should still be constructed explicitly before publishing. `publishGroup(...)` is convenience-oriented; benchmark it before using it in a hard hot path.
 
+### Observer reads
+
+Observer param and meter snapshots use bounded seqlock checks. Their default
+budgets are 256 spins and 4 retries. The default `returnLatest` degradation
+policy reuses a cached complete snapshot when available; otherwise the current
+implementation performs one direct best-effort read. Partial snapshots do not
+populate the complete-snapshot cache. Set `degrade: "throw"` and retain
+last-good state in the caller when an unverified fallback is unacceptable.
+
+Observer `params.within(...)` does not degrade. It calls the callback only for a
+coherent read and otherwise throws.
+
 ## Handoff
 
 - `buildHandoff(plan, backing)` creates a boundary artifact.
 - `acceptHandoff(handoff)` validates and normalizes a received artifact.
 - `verifyHandoff(localPlan, remotePlan)` compares plan identity and byte length.
+
+Handoff v1 carries the plan plus either one packed `SharedArrayBuffer` or a map
+of partitioned plane buffers. `allocateWasm(...)` produces a backing that can be
+bound directly, but `buildHandoff(...)` rejects it.
+
+## SWSR Ring
+
+The root package also exports the fixed-capacity single-writer/single-reader
+ring surface:
+
+- `allocateSwsrRing(layout)`
+- `bindSwsrRingProducer(backing, encode)`
+- `bindSwsrRingConsumer(backing, decode)`
+- header constants and the corresponding `SwsrRing*` types
+
+The producer returns `false` when the ring is full; it does not block, resize,
+or choose a retry policy for the caller.
 
 ## Diagnostics and Errors
 

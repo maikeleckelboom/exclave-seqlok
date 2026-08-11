@@ -1,4 +1,7 @@
-# 📘 SeqWire Architecture: From Pipe to Hub
+# SeqWire Architecture: From Pipe to Hub
+
+> **Status: Historical MWMR onboarding.** This narrative describes an
+> exploratory system topology, not current package behavior.
 
 _A story for newcomers_
 

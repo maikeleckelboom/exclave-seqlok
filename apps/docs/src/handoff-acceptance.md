@@ -1,6 +1,10 @@
 # Handoff and Acceptance
 
-The handoff is the concrete boundary value. It carries the planned layout and the supported backing descriptor. A message, port, or process bridge may transport it, but the receiving side should treat the value as untrusted until `acceptHandoff(...)` accepts it.
+The handoff is the concrete boundary value. It carries the planned layout and a
+supported `SharedArrayBuffer` descriptor. A worker message or AudioWorklet port
+may transport it within a compatible shared-memory environment, but the
+receiving side should treat the value as untrusted until `acceptHandoff(...)`
+accepts it.
 
 ## Owner Side
 
@@ -24,7 +28,10 @@ const processor = bindProcessor(handoff);
 
 `acceptHandoff(...)` validates the protocol version, plan shape, packing mode, and backing sizes. It returns a runtime-branded accepted capability containing the plan and backing descriptor a processor or observer binding needs.
 
-The accepted capability is not a transport envelope. The handoff remains the value to move across `postMessage` or process boundaries; the accepted value is the local proof that an unknown handoff passed boundary validation.
+The accepted capability is not a transport envelope. The handoff remains the
+value to move through `postMessage` within a compatible shared-memory
+environment; the accepted value is the validated local capability produced
+after an unknown handoff passes boundary checks.
 
 Use it at unknown transport boundaries:
 

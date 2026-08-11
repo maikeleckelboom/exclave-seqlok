@@ -1,6 +1,6 @@
-# ADR-011: MWMR System Model and Guardrails
+# ADR-011: MWMR System Model and Constraints
 
-**Status**: Accepted
+**Status**: Accepted historical system-design record; not current package API guidance
 **Date**: 2025-11-19
 **Owner**: _TBD_
 
@@ -38,7 +38,8 @@ ADR-00Y, ADR-00Z, and ADR-010 establish the architectural pieces for **lock-free
 - observer bindings (read-only fan-out),
 - composition via neutral topology language and drivers.
 
-This ADR **formalizes the invariants** those decisions imply and establishes normative guardrails for code review, tooling, and documentation.
+This ADR records the system-level invariants those decisions were intended to
+preserve in later composition work.
 
 ---
 

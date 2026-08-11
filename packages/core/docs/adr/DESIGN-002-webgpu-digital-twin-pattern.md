@@ -1,5 +1,7 @@
 # DESIGN-002: WebGPU Digital Twin Pattern
 
+**Status**: Exploratory integration pattern; no WebGPU adapter ships in SeqWire
+
 **Context**: High-performance visualization
 **Target**: 10k+ entities, waveforms, analyzers
 **Tech**: `@exclave/seqwire`, WebGPU, WGSL

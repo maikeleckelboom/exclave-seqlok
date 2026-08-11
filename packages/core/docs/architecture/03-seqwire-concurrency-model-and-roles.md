@@ -1,11 +1,16 @@
 # SeqWire: Concurrency Model & Roles
 
+> **Status: Superseded.** This document overstates controller snapshot
+> coherence and preserves older binding descriptions. Use the current
+> [Roles](../../../../apps/docs/src/roles.md) and
+> [Memory and layout](../../../../apps/docs/src/memory-layout.md) pages.
+
 > How SeqWire coordinates Controllers, Processors, and shared memory.
 
 This document describes **who is allowed to touch what**, **how SeqWire uses seqlocks**, and **what is actually
 guaranteed** when you call things like `within`, `publish`, and `snapshot`.
 
-It is the canonical reference for:
+It was written as a reference for:
 
 - param vs meter ownership,
 - SWMR discipline per domain,

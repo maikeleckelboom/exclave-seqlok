@@ -1,6 +1,9 @@
 # ADR-00Z: Observer Binding Role in `@exclave/seqwire`
 
-**Status**: Proposed
+**Status**: Historical proposal; the observer role was implemented later
+
+> Use the current VitePress role and API pages for shipped observer behavior.
+> Retry defaults and snapshot semantics in this proposal are not normative.
 **Date**: 2025-11-18
 **Owner**: _TBD_
 

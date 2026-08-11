@@ -1,5 +1,8 @@
 # From Pipe to Hub: Understanding SeqWire's Architecture
 
+> **Status: Historical MWMR research.** SeqWire v0.3.0 remains an SWMR package
+> per params/meters domain; this topology is not a shipped composition layer.
+
 Welcome. You are looking at **SeqWire**, a high-performance library for sharing state between threads (like the Main Thread and a Physics Worker) without blocking the UI or creating garbage collection pauses.
 
 To understand where we are today (**MWMR**), we must first understand the evolution of the system.

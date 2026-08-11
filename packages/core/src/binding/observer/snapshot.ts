@@ -191,9 +191,9 @@ function metersSnapshotRawObserver(
  * Build the raw observer params snapshot function.
  *
  * @remarks
- * This is a thin, allocation-free view layer. Coherence and retry/degrade
- * policy are handled by the binding layer (`snapshotWithPolicy` +
- * seqlock pair). Arrays are ephemeral views into the backing.
+ * This is a thin view layer. Coherence and retry/degrade policy are handled by
+ * the binding layer (`snapshotWithPolicy` + seqlock pair). Array payloads are
+ * not copied, but snapshot objects and ephemeral subarray views are allocated.
  */
 export function createObserverParamSnapshot<S extends SpecInput>(
   defs: Readonly<Record<string, ParamDef>>,

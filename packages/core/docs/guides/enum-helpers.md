@@ -1,5 +1,8 @@
 # Enum Helpers & UI Wiring (`@exclave/seqwire`)
 
+> **Status: Current reference.** The package exports remain authoritative for
+> exact helper names and types.
+
 This guide shows practical patterns for using the enum helpers in SeqWire
 to drive real UI controls, fixtures, and tools.
 

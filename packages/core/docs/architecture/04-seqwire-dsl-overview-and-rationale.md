@@ -1,5 +1,9 @@
 # SeqWire Spec & DSL: Overview and Rationale
 
+> **Status: Historical rationale.** Use the current
+> [Authoring contract](../../../../apps/docs/src/authoring-contract.md) and
+> [API reference](../../../../apps/docs/src/api.md) for supported v0.3.0 shapes.
+
 > _The spec is the "truth of the device"; everything else is derived._
 
 This document explains:

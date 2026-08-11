@@ -1,5 +1,8 @@
 # Absolute Coherence Semantics: Policy, Not Primitives
 
+> **Status: Superseded policy design.** Current observer fallback behavior and
+> controller snapshots differ from this proposal.
+
 **TL;DR:** If you want **"either 100% coherent or fail loudly"** semantics, you get that through
 **policy configuration**, not by changing the seqlock primitives. The primitives already guarantee
 that every _successful_ read is coherent — your policy decides what happens when coherence cannot

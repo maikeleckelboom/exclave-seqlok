@@ -1,6 +1,6 @@
 # SWSR Command Ring
 
-**Status:** Draft research direction
+**Status:** Current low-level reference; application command examples are illustrative
 **Audience:** Timing-sensitive host and engine research
 
 This document specifies a **Single-Writer Single-Reader (SWSR) command ring** used to
@@ -112,9 +112,9 @@ are `(index & (capacity - 1))`.
 
 Because there is exactly one writer and one reader:
 
-- Writer is the **only** agent that mutates `writeIndex` and the contents of the
+- Writer is the **only** participant that mutates `writeIndex` and the contents of the
   slot it is currently writing.
-- Reader is the **only** agent that mutates `readIndex` and the logical "ownership"
+- Reader is the **only** participant that mutates `readIndex` and the logical "ownership"
   of the slot it is consuming.
 - No locks are required; progress is governed by a small number of atomic ops.
 

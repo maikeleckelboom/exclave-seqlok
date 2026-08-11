@@ -1,5 +1,8 @@
 # SeqWire: Intellectual Heritage & Reading List
 
+> **Status: Historical rationale.** This reading list explains influences on
+> SeqWire; it does not define current package behavior.
+
 _A conceptual map of the ideas behind SeqWire_
 
 SeqWire doesn't invent new physics – it assembles proven systems concepts and adapts them to JavaScript,

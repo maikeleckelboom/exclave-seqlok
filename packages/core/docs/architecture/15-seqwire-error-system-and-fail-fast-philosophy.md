@@ -1,5 +1,9 @@
 # SeqWire: Error System & Fail-Fast Philosophy
 
+> **Status: Historical rationale.** Error names and examples in this file span
+> older versions. Use the current [Error model](../../../../apps/docs/src/error-model.md)
+> and exported registry for v0.3.0.
+
 > _When things are wrong, SeqWire tells you loudly and immediately._
 
 This document explains:

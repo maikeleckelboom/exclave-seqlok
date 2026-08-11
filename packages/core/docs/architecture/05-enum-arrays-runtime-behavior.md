@@ -1,5 +1,8 @@
 # How Enum Arrays Work: Schema vs Runtime Data
 
+> **Status: Historical rationale.** Verify current enum builders, runtime
+> representations, and helper exports against the current API and source.
+
 When you define an enum array like this:
 
 ```ts

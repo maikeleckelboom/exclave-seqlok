@@ -1,5 +1,9 @@
 # API & Naming Rationale
 
+> **Status: Superseded design record.** This file includes rejected and older
+> API shapes. Current names and signatures come from the package exports and
+> VitePress API reference.
+
 **Audience:** future maintainers, contributors, and “why is it called that?” readers.
 **Status:** design rationale, not user-facing API docs.
 

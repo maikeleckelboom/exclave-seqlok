@@ -22,7 +22,7 @@
   - exposes read-only `params.within(...)` and `meters.snapshot(...)` with configurable retry/spin budgets.
 - Introduce a shared coherence layer for bindings (`binding/common/coherent`):
   - centralize `snapshotWithPolicy` and `makeWithin`,
-  - unify seqlock retry/spin/timeout semantics for controller, processor, and observer.
+  - share seqlock retry/spin/timeout mechanics between processor and observer reads.
 - Add cross-thread observer coherence test:
   - Node `Worker` publishes meters while an observer samples params/meters,
   - asserts finite, in-range values with observed peak approaching `1.0`.

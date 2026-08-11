@@ -7,7 +7,7 @@
  * - Returns a packed backing that maps all planes over one buffer.
  * - Throws structured errors when SharedArrayBuffer allocation or support fails.
  *
- * @see {@link ../../docs/architecture/11-backing-and-plane-layout.md} for layout details
+ * @see {@link ../../../../apps/docs/src/memory-layout.md} for layout details
  *
  * @internal
  */

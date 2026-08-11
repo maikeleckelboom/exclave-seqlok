@@ -1,5 +1,8 @@
 # SeqWire Object Model & Non-OOP Core Rationale (Golden Flow Edition)
 
+> **Status: Historical rationale.** The explicit functional pipeline remains
+> useful context, but examples in this record are not current API authority.
+
 > Why the SeqWire **kernel** is function-centric and not object-oriented – and why that's intentional, not an accident.
 
 The SeqWire core is deliberately **not** designed as a set of stateful objects or contexts. Instead, it is built on:

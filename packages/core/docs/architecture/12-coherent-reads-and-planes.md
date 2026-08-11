@@ -1,5 +1,10 @@
 # Coherent Reads & Memory Planes
 
+> **Status: Superseded design record.** This file describes a broader
+> controller snapshot policy than v0.3.0 implements. Use the current
+> [Memory and layout](../../../../apps/docs/src/memory-layout.md) and
+> [API reference](../../../../apps/docs/src/api.md).
+
 > How readers obtain consistent snapshots without blocking writers, and how data is laid out across planes.
 
 This document brings together two closely related topics:

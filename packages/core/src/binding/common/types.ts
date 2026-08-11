@@ -7,7 +7,7 @@
  * - Defines controller-visible and processor-visible value maps.
  * - Models coherent scalar views and ephemeral array views for params.
  * - Encodes binding policies, options and binding interfaces.
- * - Provides snapshot and `into` typings for zero-alloc reads on the controller.
+ * - Provides snapshot and `into` typings for reusing caller-owned array buffers.
  */
 
 import type {
@@ -24,7 +24,7 @@ import type {
  * Monotonic sequence number for param updates (PU domain).
  *
  * @remarks
- * - Incremented on each successful param publish from the processor.
+ * - Incremented on each successful param publish from the controller.
  * - Exposed via `controller.params.version()` and `processor.params.version()`.
  */
 export type PUSeq = number;
@@ -470,46 +470,37 @@ export interface ControllerParamPolicyOptions {
 }
 
 /**
- * Meter-side degradation policy when a coherent snapshot cannot be acquired
+ * Observer snapshot policy when a coherent candidate cannot be acquired
  * within the configured budgets.
  *
  * @remarks
- * - `'returnLatest'` → fall back to the last-known-good snapshot (best-effort).
- * - `'throw'`        → propagate an error to the caller.
- *
- * This maps onto the primitives seqlock `AcquireOptions`:
- * - `'throw'`        → `degrade: 'never'` + throw on timeout.
- * - `'returnLatest'` → `degrade: 'returnLatest'`.
+ * - `'returnLatest'` reuses a cached complete snapshot when available. A first
+ *   or partial snapshot falls back to one direct best-effort read.
+ * - `'throw'` propagates an error to the caller.
  */
 export type MeterDegradePolicy = "returnLatest" | "throw";
 
 /**
- * Meter-side policy options for a controller binding.
+ * Reserved meter-side options on a controller binding.
  *
  * @remarks
- * - Only influences meter reads, never param writes.
- * - Controls seqlock retry behaviour and degradation strategy.
+ * The v0.3.0 controller binding does not consume these options. Controller
+ * meter snapshots are direct copies rather than seqlock-verified reads. Use an
+ * observer binding for configurable snapshot policy.
  */
 export interface ControllerMeterPolicyOptions {
   /**
-   * Degradation strategy when we cannot obtain a coherent snapshot
-   * within `spinBudget` × `retryBudget`.
-   *
-   * @default 'returnLatest'
+   * Reserved; not applied by the v0.3.0 controller binding.
    */
   readonly degrade?: MeterDegradePolicy;
 
   /**
-   * Max spins per low-level seqlock `tryRead` attempt.
-   *
-   * @default 1024 (library default)
+   * Reserved; not applied by the v0.3.0 controller binding.
    */
   readonly spinBudget?: number;
 
   /**
-   * Max retry attempts before applying `degrade`.
-   *
-   * @default 8 (library default)
+   * Reserved; not applied by the v0.3.0 controller binding.
    */
   readonly retryBudget?: number;
 }
@@ -518,9 +509,8 @@ export interface ControllerMeterPolicyOptions {
  * Options for binding a controller.
  *
  * @remarks
- * - Structured by role:
- *   - `params` → write-side policies (range handling).
- *   - `meters` → read-side policies (coherence / retry behaviour).
+ * - `params` configures write-side range handling.
+ * - `meters` is retained in the v0.3.0 type surface but is not consumed.
  */
 export interface ControllerOptions {
   /**
@@ -529,7 +519,7 @@ export interface ControllerOptions {
   readonly params?: ControllerParamPolicyOptions;
 
   /**
-   * Policies for the meters (reader) domain.
+   * Reserved meter options; not applied by the v0.3.0 controller binding.
    */
   readonly meters?: ControllerMeterPolicyOptions;
 }
@@ -538,8 +528,9 @@ export interface ControllerOptions {
  * Options for binding a processor.
  *
  * @remarks
- * - Configures seqlock spin/retry budgets for params and meters.
- * - These are per-binding tuning knobs for the processor side.
+ * - `params` configures seqlock spin/retry budgets for processor reads.
+ * - `meters` remains in the type surface but is not consumed by publication,
+ *   which assumes the processor is the single meter writer.
  */
 export interface ProcessorOptions {
   readonly params?: {
@@ -548,25 +539,25 @@ export interface ProcessorOptions {
      *
      * @default 1024 (library default)
      */
-    readonly spinBudget?: number /**
+    readonly spinBudget?: number;
+
+    /**
      * Max retry attempts before giving up and throwing.
      *
      * @default 8 (library default)
-     */;
+     */
     readonly retryBudget?: number;
   };
 
   readonly meters?: {
     /**
-     * Max spin iterations per `publish()` attempt.
-     *
-     * @default 1024 (library default)
+     * Reserved; not applied by the v0.3.0 processor binding.
      */
-    readonly spinBudget?: number /**
-     * Max retry attempts before giving up and throwing.
-     *
-     * @default 8 (library default)
-     */;
+    readonly spinBudget?: number;
+
+    /**
+     * Reserved; not applied by the v0.3.0 processor binding.
+     */
     readonly retryBudget?: number;
   };
 }
@@ -576,7 +567,7 @@ export interface ProcessorOptions {
  *
  * @remarks
  * - `params` exposes write operations and snapshots.
- * - `meters` exposes coherent read operations and snapshots.
+ * - `meters` exposes direct read operations and snapshots.
  * - `dispose()` releases backing references and internal resources.
  */
 export interface ControllerBinding<S extends SpecInput> {
@@ -624,7 +615,7 @@ type MutableBuffer<T> =
  * Mapping from param keys to user-provided destination buffers.
  *
  * @remarks
- * - Used by controller-side APIs to support zero-alloc snapshots.
+ * - Used by controller-side APIs to reuse caller-owned array buffers.
  * - Only array-typed params are allowed; scalar keys are filtered out.
  */
 export type IntoForParams<
@@ -643,7 +634,7 @@ export type IntoForParams<
  * Mapping from meter keys to user-provided destination buffers.
  *
  * @remarks
- * - Used by controller-side APIs to support zero-alloc snapshots.
+ * - Used by controller-side APIs to reuse caller-owned array buffers.
  * - Only array-typed meters are allowed; scalar keys are filtered out.
  */
 export type IntoForMeters<
@@ -662,14 +653,14 @@ export type IntoForMeters<
  * Options for controller meter snapshots.
  *
  * @remarks
- * - `into` enables zero-alloc snapshots by reusing caller-provided buffers.
+ * - `into` reuses caller-provided buffers for array values.
  */
 export interface SnapshotMetersOptions<
   S extends SpecInput,
   K extends readonly MeterKeys<S>[],
 > {
   /**
-   * Optional destination buffers for array meters (zero-alloc path).
+   * Optional destination buffers for array meters.
    */
   readonly into?: IntoForMeters<S, K>;
 }
@@ -678,14 +669,14 @@ export interface SnapshotMetersOptions<
  * Options for controller param snapshots.
  *
  * @remarks
- * - `into` enables zero-alloc snapshots by reusing caller-provided buffers.
+ * - `into` reuses caller-provided buffers for array values.
  */
 export interface SnapshotParamsOptions<
   S extends SpecInput,
   K extends readonly ParamKeys<S>[],
 > {
   /**
-   * Optional destination buffers for array params (zero-alloc path).
+   * Optional destination buffers for array params.
    */
   readonly into?: IntoForParams<S, K>;
 }
@@ -775,7 +766,7 @@ export interface ControllerParams<S extends SpecInput> {
    *
    * @remarks
    * - Keys are provided as an array.
-   * - `options.into` enables zero-alloc snapshots for arrays.
+   * - `options.into` reuses caller-provided buffers for arrays.
    */
   snapshot<const K extends readonly ParamKeys<S>[]>(
     keys: K,
@@ -787,7 +778,7 @@ export interface ControllerParams<S extends SpecInput> {
    *
    * @remarks
    * - When passed an array, behaves like the array overload.
-   * - When passed `{ keys, into }`, performs a zero-alloc snapshot where possible.
+   * - When passed `{ keys, into }`, reuses the provided array buffers.
    */
   snapshot<const K extends readonly ParamKeys<S>[]>(
     keysOrOptions:
@@ -834,7 +825,7 @@ export interface ControllerMeters<S extends SpecInput> {
    *
    * @remarks
    * - Keys are provided as an array.
-   * - `options.into` enables zero-alloc snapshots for arrays.
+   * - `options.into` reuses caller-provided buffers for arrays.
    */
   snapshot<const K extends readonly MeterKeys<S>[]>(
     keys: K,
@@ -856,7 +847,7 @@ export interface ControllerMeters<S extends SpecInput> {
    *
    * @remarks
    * - When passed an array, behaves like the array overload.
-   * - When passed `{ keys, into }`, performs a zero-alloc snapshot where possible.
+   * - When passed `{ keys, into }`, reuses the provided array buffers.
    */
   snapshot<const K extends readonly MeterKeys<S>[]>(
     keysOrOptions:
@@ -1130,7 +1121,7 @@ export interface ObserverOptions {
  * @remarks
  * - `snapshot()` / `snapshot(keys)` expose controller-like snapshots for
  *   convenience; array values may be backed by ephemeral views.
- * - `within(...)` mirrors `processor.params.within` for hot-path, zero-copy reads.
+ * - `within(...)` mirrors the processor's callback-scoped, seqlock-verified read.
  */
 export interface ObserverParams<S extends SpecInput> {
   /**
@@ -1176,7 +1167,7 @@ export interface ObserverParams<S extends SpecInput> {
   ): SnapshotParamsObject<S, K>;
 
   /**
-   * Read parameters within a seqlock-protected critical section.
+   * Read parameters through a bounded seqlock check.
    */
   within(callback: (view: ProcessorParamsView<S>) => void): void;
 

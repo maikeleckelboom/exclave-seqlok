@@ -10,9 +10,9 @@ is about 2.67 ms to finish the work for one quantum.
 
 That made ordinary `postMessage`-style communication a poor fit for the hottest
 part of the boundary. Every allocated message adds work, and its arrival is not
-aligned with the audio quantum. I wanted to investigate typed shared state
-without locks, hot-path allocation, torn multi-field reads, implicit ownership,
-or two runtimes independently guessing the same memory layout.
+aligned with the audio quantum. I wanted to investigate typed shared state with
+no blocking locks, explicit ownership, deterministic layout, and bounded paths
+for coherent multi-field reads.
 
 SeqWire is the TypeScript research project that grew from that investigation.
 It turns a typed parameter-and-meter contract into a deterministic shared-memory
@@ -127,12 +127,15 @@ into a handoff. Receivers can validate an untrusted transport value before they
 create a local binding, so layout and packing assumptions do not remain hidden
 at the thread boundary.
 
-### Bounded coherent reads
+### Bounded coherent read paths
 
-SeqWire uses seqlock-based publication for coherent multi-field reads. A reader
-accepts a snapshot only when the sequence is stable before and after the copy.
-Retry work is bounded, and callers retain their own last-good value when a fresh
-coherent snapshot is unavailable within that budget.
+SeqWire uses seqlock-based publication around each parameter and meter domain.
+Processor parameter reads and observer reads verify that the sequence is stable
+before and after sampling, with bounded spin and retry work. Processor
+`within(...)` calls fail explicitly when that budget is exhausted, so the caller
+can retain its own last-good state. Controller meter snapshots are direct,
+cold-path copies; use an observer when a seqlock-verified multi-field meter read
+is required.
 
 ### Type-first contracts
 
@@ -179,7 +182,7 @@ dependency in either direction. The
   backing choices, and coherent snapshots.
 - [Handoff and acceptance](apps/docs/src/handoff-acceptance.md) - follow the
   boundary artifact and its validation.
-- [Origin and design history](packages/core/docs/architecture/00-seqwire-origin-and-design-history.md)
+- [Origin and historical design context](packages/core/docs/architecture/00-seqwire-origin-and-design-history.md)
   - read how the AudioWorklet constraint shaped the architecture.
 - [Documentation index](apps/docs/src/index.md) - choose from the wider design
   and evidence material.

@@ -1,6 +1,6 @@
 # ADR-00F: ControllerParams.hydrate() for Cold-Path Bulk Updates
 
-**Status**: Accepted
+**Status**: Accepted and implemented
 **Date**: 2025-11-18
 **Owner**: _TBD_
 

@@ -1,5 +1,8 @@
 # Diagnostics & Seqlock Budgets: Binding-Level Contract
 
+> **Status: Historical implementation guidance.** The controller snapshot
+> integration described here did not ship in v0.3.0.
+
 **Status:** Draft / Implementation Guidance
 
 **Scope:** `@exclave/seqwire` – bindings + diagnostics, _not_ primitives

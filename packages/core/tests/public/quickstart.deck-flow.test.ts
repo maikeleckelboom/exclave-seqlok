@@ -67,7 +67,7 @@ describe("public quickstart: deck controller ↔ processor flow", () => {
       writer.set("framesProcessed", 128);
     });
 
-    // Controller observes meters coherently
+    // Controller reads the latest meter values directly.
     const version = controller.meters.version();
     const { rms, peak, framesProcessed } = controller.meters.snapshot(
       "rms",

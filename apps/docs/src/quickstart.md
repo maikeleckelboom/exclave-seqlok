@@ -34,7 +34,9 @@ flowchart TD
   controller -. "same SharedArrayBuffer backing" .- processor
 ```
 
-The handoff is the portable artifact. It carries the plan and backing descriptor so the receiving side can validate before interpreting shared memory.
+The handoff is the boundary artifact. It carries the plan and a supported
+`SharedArrayBuffer` backing descriptor so a receiving runtime can validate the
+value before interpreting shared memory.
 
 ```ts twoslash
 import {
@@ -107,7 +109,10 @@ Authored namespaces flatten to canonical dotted keys for writes. `update(...)` i
 
 ## What Crosses at Runtime
 
-The handoff is the boundary artifact. It carries the plan and backing descriptor. It can be moved with a worker message, an AudioWorklet port message, or another host transport, but the transport is not the contract.
+The handoff is the boundary artifact. It carries the plan and backing
+descriptor. It can be structured-cloned through a worker message or
+AudioWorklet port when both sides can access the same shared memory. It is not a
+serialized byte payload for an unrelated operating-system process.
 
 ```ts
 worker.postMessage({ type: "boundary-handoff", handoff });

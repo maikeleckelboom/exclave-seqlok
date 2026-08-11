@@ -31,9 +31,10 @@ The implementation maps fields into typed planes for scalar and array storage. T
 - Numeric param and meter fields map to typed shared-memory regions.
 - Boolean and enum values have explicit storage representations.
 - Array fields reserve fixed lengths at plan time.
-- Coherent reads and writes use seqlock-protected domains.
+- Parameter and meter publication uses seqlock-protected domains; processor
+  parameter reads and observer snapshots verify those sequences.
 
-## Coherent Snapshot Mechanism
+## Seqlock-Checked Reads
 
 Coherent snapshots are built around a small sequence check. The writer marks a sequence as changing, writes values, then marks it stable; the reader only uses a copied snapshot when the sequence is stable before and after the copy.
 
@@ -64,7 +65,14 @@ flowchart TD
   w4 -. "next stable snapshot" .-> r1
 ```
 
-This is the mechanism behind coherent param reads and meter snapshots. High-level code should use the role bindings; the low-level sequence details matter mainly when debugging timing or integration problems.
+This is the mechanism behind processor parameter reads and observer snapshots.
+Each attempt is bounded by a spin budget and a retry budget. Processor and
+observer `within(...)` calls fail when they cannot obtain a coherent candidate.
+Observer snapshots additionally apply their configured degradation policy.
+
+Controller meter snapshots are different: they copy values directly and are
+not seqlock-verified as a multi-field unit. Use an observer for coherent
+multi-field sampling.
 
 ## Backing Choices
 
@@ -72,10 +80,13 @@ This is the mechanism behind coherent param reads and meter snapshots. High-leve
 | --- | --- |
 | `allocatePacked(plan)` | One contiguous `SharedArrayBuffer`; the simplest handoff shape. |
 | `allocatePartitioned(plan)` | Separate buffers per plane; useful when host integration wants plane-level separation. |
-| `allocateWasm(plan, memory)` | Attach compatible shared `WebAssembly.Memory`; useful for WASM-oriented runtimes. |
+| `allocateWasm(plan, memory?)` | Allocate or attach compatible shared `WebAssembly.Memory`; useful for WASM-oriented runtimes. |
 
 Only `packed` and `partitioned` backing are currently represented by the handoff protocol.
 
 ## Callback-Scoped Views
 
-Array views in `params.within(...)`, `params.stage(...)`, and meter `stage(...)` callbacks are ephemeral. They point into shared backing or callback-owned scratch space. Do not store them for later use.
+Array views in `params.within(...)`, `params.stage(...)`, and meter `stage(...)`
+callbacks are ephemeral. They point into shared backing; creating the callback
+view or snapshot result can still allocate JavaScript wrapper objects. Do not
+store the shared views for later use.

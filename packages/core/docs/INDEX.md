@@ -1,50 +1,45 @@
 # SeqWire Documentation Index
 
-This tree records SeqWire's implemented architecture, design rationale,
-exploratory proposals, and performance work. It belongs to SeqWire itself. It
-does not define a dependency on another repository.
+The current package contract is defined by the exported source, package
+metadata, and tests. The VitePress pages under
+[`apps/docs/src`](../../../apps/docs/src/index.md) are the maintained
+explanation of that contract.
 
-Use the status of each document to distinguish implemented behavior from
-proposed or superseded directions. Verify implementation claims against current
-source and tests when making architectural decisions.
+The collections below also preserve design work from earlier SeqWire versions.
+Their own indexes identify current references, historical rationale, and
+superseded material. A document marked historical may explain why an idea was
+explored without describing v0.3.0 behavior.
 
-## Collections
+## Current reference
 
-- [Architecture](./architecture/INDEX.md): contracts, roles, concurrency,
-  planes, backings, handoff, coherent reads, and the main runtime flow
-- [ADRs and design records](./adr/INDEX.md): accepted, proposed, informational,
-  and superseded SeqWire decisions
-- [Guides](./guides/INDEX.md): focused API and topology explanations
-- [Internals](./internals/INDEX.md): implementation invariants and diagnostic
-  notes
-- [Appendix](./appendix/INDEX.md): shelved helpers and visual notes
-- [Performance](./performance/INDEX.md): benchmark methodology and historical
-  measurements
+- [Quickstart](../../../apps/docs/src/quickstart.md)
+- [Core flow](../../../apps/docs/src/core-flow.md)
+- [Roles](../../../apps/docs/src/roles.md)
+- [Memory and layout](../../../apps/docs/src/memory-layout.md)
+- [Handoff and acceptance](../../../apps/docs/src/handoff-acceptance.md)
+- [API reference](../../../apps/docs/src/api.md)
+- [Package boundaries](../../../apps/docs/src/package-boundaries.md)
+- [Package README](../README.md)
 
-## Implemented core research
+## Design and research collections
 
-- [Concurrency model and roles](./architecture/03-seqwire-concurrency-model-and-roles.md)
-- [DSL overview](./architecture/04-seqwire-dsl-overview-and-rationale.md)
-- [Primitives and seqlock](./architecture/10-seqwire-primitives-and-seqlock.md)
-- [Backing and plane layout](./architecture/11-seqwire-backing-and-plane-layout.md)
-- [Coherent reads and planes](./architecture/12-coherent-reads-and-planes.md)
+- [Architecture](./architecture/INDEX.md): one current low-level ring reference
+  plus historical and superseded design documents
+- [ADRs and design records](./adr/INDEX.md): accepted decisions, proposals, and
+  records whose implementation status changed later
+- [Guides](./guides/INDEX.md): one current enum guide plus historical onboarding
+  and topology material
+- [Internals](./internals/INDEX.md): superseded implementation-policy drafts
+- [Appendix](./appendix/INDEX.md): explicitly shelved helpers
+- [Performance](./performance/INDEX.md): benchmark methodology and generated
+  historical measurements
 
-These documents explain the implemented TypeScript shared-memory surface.
+## Executable evidence
 
-## Exploratory system directions
+- [Signalsmith Stretch integration record](../../../docs/proofs/signalsmith-stretch.md)
+- [Benchmark guide](../bench/README.md)
+- Public-flow, handoff, type, contention, worker, property, and package-smoke
+  tests under [`packages/core/tests`](../tests)
 
-- [Electron multi-process runtimes](./adr/ADR-00E-electron-multi-process-runtimes.md)
-- [Compose proposal](./adr/ADR-00X-introduce-seqwire-compose-for-system-level-composition.md)
-- [MWMR architecture](./adr/ADR-00Y-mwmr-architecture.md)
-- [Ring primitive](./adr/ADR-010-ring-primitive-in-seqwire-core.md)
-- [MWMR ground truth](./adr/ADR-011-mwmr-ground-truth.md)
-
-These records range from informational to accepted implementation decisions.
-They are not evidence of a shipped Electron or native runtime, and they do not
-establish a Dekzer integration.
-
-## Relationship to other research
-
-SeqWire and Projection Runtime are separate projects. See
-[Research lineage](../../../apps/docs/src/research-lineage.md) for their
-different scopes and the absence of runtime dependencies.
+SeqWire and Projection Runtime are separate projects. Their relationship is
+summarized in [Research lineage](../../../apps/docs/src/research-lineage.md).

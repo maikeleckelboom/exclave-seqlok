@@ -1,74 +1,48 @@
-# SeqWire Signalsmith Stretch Demo
+# Signalsmith Stretch Integration Record
 
-- **Status:** proof demo authority; not package API authority
-- **Date:** 2026-07-08
-- **Product:** Signalsmith Stretch
+- **Status:** Executable browser integration
+- **Recorded:** 2026-07-08
 - **SeqWire package:** `@exclave/seqwire`
 - **Contract id:** `signalsmith-stretch/control-meter-boundary`
+- **Application:** `apps/signalsmith-stretch`
 
-## Current Scope
+## What Runs
 
-`apps/signalsmith-stretch` proves that SeqWire can model the full typed control
-and telemetry contract around a real DSP engine. Signalsmith remains the DSP
-engine. SeqWire owns the control and meter contract. The adapter applies
-canonical SeqWire snapshots to the upstream Signalsmith Web API, and the
-downstream meter Worklet proves realtime SeqWire reads and published telemetry
-across the audio boundary.
+The application runs the vendored upstream Signalsmith Stretch WebAssembly
+release in a browser audio graph. It decodes the bundled official Signalsmith
+demo loop, loads the decoded channel buffers into the upstream node, and exposes
+the complete demo control surface through a SeqWire contract.
 
-The demo intentionally uses one bundled official Signalsmith demo loop. There
-is no file picker path and no waveform renderer. The UI surface is deliberately
-reduced to the full control surface, transport and seek controls, compact
-source/contract metadata, and the SeqWire meter readout.
+The main thread creates one SeqWire plan, packed backing, controller, observer,
+and handoff. UI changes are written through the controller. The main-thread
+adapter reads the canonical control state through the observer and applies it to
+the upstream Signalsmith API.
 
-The full Signalsmith control surface is mapped into SeqWire rather than held as
-plain local state. The app writes the UI control state into SeqWire, reads back
-the canonical SeqWire control snapshot, and applies that snapshot to the upstream
-Signalsmith API from the main thread. The custom AudioWorklet is a downstream
-realtime SeqWire audio-boundary proof node that reads `control.outputGain` and
-publishes live meters back through SeqWire.
-
-This is not a fake DSP demo, not a custom Signalsmith fork, and not a claim that
-the internal upstream Signalsmith DSP Worklet reads SeqWire memory directly. The
-demo intentionally does not contain a custom Signalsmith DSP Worklet, custom
-Signalsmith transport, command ring, streaming source state, custom WAV parser,
-source prefetcher, fake engine, private C++ build, generated WASM module, or
-production runtime monitor.
-
-## Runtime Model
-
-The app uses the vendored upstream release wrapper:
-
-```ts
-import SignalsmithStretch from "../vendor/signalsmith-stretch/web/release/SignalsmithStretch.mjs";
-```
-
-The audio graph is:
+## Runtime Topology
 
 ```text
-SignalsmithStretchNode -> SeqWireMeterWorkletNode -> audioContext.destination
+UI controls
+  -> SeqWire controller writes
+  -> SeqWire observer control snapshot
+  -> main-thread Signalsmith adapter
+  -> SignalsmithStretchNode (upstream WebAssembly release)
+  -> SeqWireMeterWorkletNode
+  -> audioContext.destination
+
+SeqWireMeterWorkletNode
+  -> SeqWire processor meter publication
+  -> SeqWire observer meter snapshot
+  -> UI meter readout
 ```
 
-The active path is:
+The application imports the vendored wrapper through
+`src/signalsmith-module.ts`, creates the upstream node with
+`SignalsmithStretch(audioContext, channelOptions)`, and connects its output to
+the custom downstream meter worklet.
 
-1. Create an `AudioContext`.
-2. Await `SignalsmithStretch(audioContext, channelOptions)`.
-3. Browser-decode the bundled official Signalsmith demo loop.
-4. Reset and load the upstream node with `dropBuffers()` and `addBuffers(...)`.
-5. Write the UI control state into SeqWire.
-6. Read the canonical SeqWire control snapshot.
-7. Apply that canonical SeqWire snapshot to the upstream node with
-   `configure(...)`, `schedule(...)`, `start(...)`, and `stop(...)`.
-8. Read `control.outputGain` from SeqWire inside `SeqWireMeterWorkletNode`.
-9. Publish RMS, sample peak, peak hold, clip flags, frame count, publish count,
-   and dropped publish count back through SeqWire.
+## SeqWire Boundary
 
-No alternate manual file path exists in this proof demo. The deterministic
-source is the bundled official Signalsmith demo loop, decoded by the browser and
-loaded into the upstream node with `dropBuffers()` followed by `addBuffers(...)`.
-
-## SeqWire runtime boundary
-
-The full Signalsmith control surface remains modeled in SeqWire:
+The SeqWire parameter contract contains:
 
 - `config.blockMs`
 - `config.intervalMs`
@@ -83,43 +57,52 @@ The full Signalsmith control surface remains modeled in SeqWire:
 - `control.formantBaseHz`
 - `control.outputGain`
 
-The downstream Worklet publishes this meter surface back through SeqWire:
+The main-thread adapter applies the relevant canonical values through the
+upstream node's `configure(...)`, `schedule(...)`, `start(...)`, and `stop(...)`
+methods. Source replacement uses `dropBuffers()` followed by `addBuffers(...)`.
 
-- `levels.rmsL`
-- `levels.rmsR`
-- `levels.peakL`
-- `levels.peakR`
-- `levels.holdL`
-- `levels.holdR`
-- `levels.clippedL`
-- `levels.clippedR`
+The downstream worklet receives the SeqWire handoff through its `MessagePort`
+and binds a processor. During each audio quantum it reads
+`control.outputGain` through `processor.params.within(...)`, applies that gain
+to the post-stretch samples, and accumulates meter data. At approximately 60 Hz
+it publishes:
+
+- `levels.rmsL` and `levels.rmsR`
+- `levels.peakL` and `levels.peakR`
+- `levels.holdL` and `levels.holdR`
+- `levels.clippedL` and `levels.clippedR`
 - `runtime.frame`
 - `runtime.publishCount`
 - `runtime.droppedPublishCount`
 
-## Commands
+The main thread reads those values through the SeqWire observer for the visible
+meter UI.
+
+## Demonstrated Boundary
+
+This integration demonstrates a typed control and telemetry boundary around a
+real browser DSP node, plus a real AudioWorklet that consumes SeqWire control
+state and publishes SeqWire meters.
+
+Signalsmith itself does not consume SeqWire memory. Its upstream Worklet and
+WebAssembly implementation are unchanged; the main-thread adapter supplies its
+configuration and scheduling calls. SeqWire's `control.outputGain` is applied
+by the downstream meter worklet, after Signalsmith processing.
+
+The source is one bundled official Signalsmith demo loop decoded by the
+browser. The integration does not exercise arbitrary file loading, streaming,
+custom Signalsmith transport, direct WebAssembly-memory sharing with
+Signalsmith, or application lifecycle and recovery behavior.
+
+## Verification
 
 ```sh
-pnpm signalsmith:dev
 pnpm signalsmith:build
 pnpm signalsmith:check
 pnpm signalsmith:test:browser
 ```
 
-There is no simulator mode, real-adapter mode, `signalsmith:prepare`, or local
-WASM build step in this proof demo.
-
-## Guardrails
-
-- Keep `@exclave/seqwire` public API untouched.
-- Keep Signalsmith-specific code private to the demo app.
-- Do not claim custom Signalsmith DSP, custom Signalsmith transport, or
-  zero-copy audio behavior.
-- Do not claim the internal upstream Signalsmith DSP Worklet reads SeqWire memory
-  directly.
-- Do not reintroduce a fake engine or streaming source architecture unless the
-  work is explicitly re-scoped as an integration lab.
-- Keep the bundled source labeled as the official Signalsmith demo loop unless
-  upstream publishes more specific metadata.
-- Keep the demo free of file-picker and waveform-renderer paths unless the proof
-  is explicitly re-scoped.
+The browser test verifies source loading, playback, seeking, control changes,
+live meter publication, audible output, and the downstream output-gain path.
+Third-party revisions and source attribution are recorded in
+[`apps/signalsmith-stretch/THIRD_PARTY_NOTICES.md`](../../apps/signalsmith-stretch/THIRD_PARTY_NOTICES.md).

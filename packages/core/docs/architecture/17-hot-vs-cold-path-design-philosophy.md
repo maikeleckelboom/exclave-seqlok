@@ -1,5 +1,9 @@
 # Hot Path vs Cold Path: Temperature-Based Design Philosophy
 
+> **Status: Historical rationale.** Treat the allocation rules below as design
+> intent, not a v0.3.0 guarantee. Current processor read views allocate wrapper
+> objects while shared array views remain callback-scoped.
+
 **Type**: Design Principle
 **Date**: 2025-11-19`
 **Related**:

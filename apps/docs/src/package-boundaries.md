@@ -23,7 +23,12 @@ Do not import internal files from `packages/core/src`. Internal modules may chan
 - Supported packed and partitioned backing allocation.
 - Handoff construction and acceptance.
 - Controller, processor, and observer bindings.
+- Fixed-capacity SWSR ring allocation, producer, and consumer helpers.
 - Enum helpers, structured errors, and diagnostics helpers.
+
+Packed and partitioned backings are supported by handoff v1. Shared
+`WebAssembly.Memory` can be used with explicit local bindings, but it cannot be
+serialized by the current handoff protocol.
 
 ## What Does Not Belong Inside the Package
 

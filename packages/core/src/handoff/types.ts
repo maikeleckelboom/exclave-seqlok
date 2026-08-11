@@ -171,7 +171,7 @@ interface PartitionedHandoff<S extends SpecInput = SpecInput> {
 }
 
 /**
- * Typed handoff envelope for cross-thread/process communication.
+ * Typed handoff envelope for compatible shared-memory runtime boundaries.
  *
  * @typeParam S - Spec type parameter inferred from `defineSpec`.
  *

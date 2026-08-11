@@ -1,5 +1,9 @@
 # SeqWire E2E Flow – Visual Guide
 
+> **Status: Superseded flow guide.** This record contains mixed-generation API
+> and snapshot claims. Use the current
+> [Core flow](../../../../apps/docs/src/core-flow.md).
+
 > How `spec → plan → backing → handoff → bindings` fit together across UI and real-time threads.
 
 This document is the "single page mental model" for SeqWire's end-to-end flow:

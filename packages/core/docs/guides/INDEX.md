@@ -1,43 +1,17 @@
 # Guides
 
-Deep-dive documents for `@exclave/seqwire`.
+Only the enum helper guide is maintained as a current package guide. The other
+files preserve earlier onboarding and system-topology explanations; they are
+useful history but contain superseded package names, API examples, or
+allocation claims.
 
-These are focused walkthroughs and patterns that build on the main README and API reference. They assume you already
-know the basic golden flow:
+| Guide | Status |
+| --- | --- |
+| [Enum helpers and UI wiring](./enum-helpers.md) | Current reference for exported enum helpers. |
+| [SeqWire flow from spec to bindings](./seqwire-flow-from-spec-to-bindings.md) | Superseded by the VitePress [Quickstart](../../../../apps/docs/src/quickstart.md) and [Core flow](../../../../apps/docs/src/core-flow.md). |
+| [Onboarding: mindset and hot path](./onboarding-seqwire-mindset-and-hot-path.md) | Historical guidance; its zero-allocation rules are design intent, not a v0.3.0 binding guarantee. |
+| [From pipe to hub](./understanding-seqwire-mwmr-from-pipe-to-hub.md) | Historical MWMR composition research. |
+| [Architecture from pipe to hub](./architecture-from-pipe-to-hub-onboarding.md) | Historical MWMR onboarding narrative. |
 
-> `defineSpec → planLayout → allocatePacked/allocateWasm → buildHandoff → acceptHandoff → bindController / bindProcessor`
-
-Guide filenames, headings, imports, and package references should use SeqWire and `@exclave/seqwire`.
-
----
-
-## Available guides
-
-### Architecture & Topology
-
-- [From Pipe to Hub: Understanding SeqWire Architecture](./understanding-seqwire-mwmr-from-pipe-to-hub.md)
-  Evolution from a simple SWSR pipe to a system-level MWMR topology using rings, a hub controller, and observers.
-
-- [Architecture: From Pipe to Hub](./architecture-from-pipe-to-hub-onboarding.md)
-  Narrative onboarding story that explains why the system grew rings, hubs, and observers instead of mutating the core
-  SWMR model.
-
-### Mindset & Hot Path
-
-- [Onboarding: SeqWire Mindset and Hot Path](./onboarding-seqwire-mindset-and-hot-path.md)
-  How to think in loops instead of events, live with the **zero-GC** rule, and reason about cold-path vs hot-path
-  code when building on SeqWire.
-
-### Utilities & UI Wiring
-
-- [Enum helpers & UI wiring](./enum-helpers.md)
-  How to drive UI controls, legends, and fixtures directly from enum params/meters using:
-
-  - `enumValues`
-  - `enumPaletteFor`
-  - `enumArrayToLabels` / `enumLabelsToArray`
-  - `enumIndexFromLabel` / `getEnumLabelForIndex`
-
-More guides can land here over time as we standardize recurring patterns in real demos.
-
----
+For current package behavior, start at the
+[documentation home](../../../../apps/docs/src/index.md).

@@ -1,11 +1,10 @@
 # SeqWire Origin & Design History
 
-> A short backstory: what problems SeqWire set out to solve, and which design bets shaped the architecture you see in the
-> rest of these docs.
-
-This document is **background**, not a spec.
-The normative design docs start at `01-…`.
-Think of this as the director's commentary track.
+> **Status: Historical rationale.** This is background, not current API or
+> implementation authority. Start with the
+> [current documentation](../../../../apps/docs/src/index.md); use the
+> [architecture index](./INDEX.md) to distinguish current references from later
+> superseded records.
 
 ---
 
@@ -24,7 +23,7 @@ We wanted:
 
 - **Shared state** between UI and RT threads,
 - **Zero allocation** in the hot path,
-- **No locks**, but coherent snapshots,
+- **No blocking locks**, but coherent snapshots,
 - **Type safety** end-to-end.
 
 The obvious building blocks were:
@@ -56,7 +55,8 @@ Meanwhile, the main thread (UI) generates events at arbitrary times:
 mouse movements, automation curves, MIDI, transport changes…
 
 The hard problem is to bridge "chaotic UI time" to "deterministic audio quanta"
-without allocations, without locks, and without ever observing torn state
+without per-quantum messages, without blocking locks, and without ever
+observing torn state
 mid-quantum.
 
 SeqWire's design – two SWMR domains, a planned memory plan, seqlock-based

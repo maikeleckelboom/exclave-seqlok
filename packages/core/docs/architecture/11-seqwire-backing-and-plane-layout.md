@@ -1,5 +1,12 @@
 # Backing & Plane Layout
 
+> **Status: Historical implementation reference.** The plane and packing
+> explanation remains useful, but handoff support, WASM growth, controller
+> meter reads, and allocation claims in this record are not current guarantees.
+> Use the VitePress [memory](../../../../apps/docs/src/memory-layout.md) and
+> [handoff](../../../../apps/docs/src/handoff-acceptance.md) pages for v0.3.0
+> behavior.
+
 Deterministic, allocation-free memory mapping for SeqWire.
 
 This doc explains how a validated **Plan** turns into concrete shared memory **Backings** and **TypedArray views**,
@@ -35,14 +42,14 @@ const plan = planLayout(spec);
 // Backing allocation: Plan → memory
 const backing = allocatePacked(plan);
 
-// Agent-local controller binding (owner side)
+// Controller binding on the owner side
 const controller = bindController(spec, plan, backing);
 
-// Envelope for cross-agent handoff
+// Envelope for a compatible receiving runtime
 const handoff = buildHandoff(plan, backing);
-// send `handoff` to another agent...
+// send `handoff` through a worker or AudioWorklet port...
 
-// Agent-local processor binding (consumer side)
+// Processor binding on the receiving runtime
 const accepted = acceptHandoff(handoff);
 const processor = bindProcessor(accepted);
 ```

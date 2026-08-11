@@ -1,5 +1,9 @@
 # API Shape Rationale: `spec → plan → backing → handoff → binding`
 
+> **Status: Historical rationale.** This records earlier API-shape reasoning.
+> Use the VitePress [Core flow](../../../../apps/docs/src/core-flow.md) and
+> [API reference](../../../../apps/docs/src/api.md) for current signatures.
+
 Why SeqWire takes `spec`, `plan`, and `backing` explicitly, and why that is intentional, not accidental boilerplate.
 This chapter also links the naming to responsibilities and folds in lessons learned while building the Typebits plan
 library.

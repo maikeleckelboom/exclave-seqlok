@@ -1,5 +1,9 @@
 # SeqWire Golden Flow: From Spec to Bindings
 
+> **Status: Superseded guide.** This file contains an older package name and
+> pre-v0.3.0 role examples. Use the current VitePress
+> [Quickstart](../../../../apps/docs/src/quickstart.md).
+
 > *How a param/meter schema becomes shared memory + bindings.*
 
 This guide describes the **end-to-end pipeline** that SeqWire follows for all

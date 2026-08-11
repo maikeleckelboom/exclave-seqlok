@@ -2,7 +2,7 @@
 
 SeqWire is experimental and unpublished. The future package name is
 `@exclave/seqwire`, but `private: true` prevents publication from this
-workspace. A live npm registry lookup on 2026-07-23 returned `E404`.
+workspace. A live npm registry lookup on 2026-08-11 returned `E404`.
 
 The existing package smoke test remains valuable because it verifies the shape
 of the built artifact without claiming that the package is released.

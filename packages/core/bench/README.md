@@ -50,7 +50,8 @@ This does three things:
   - **Hot path micro-operations** (µs + M ops/s).
   - **E2E setup** (ms + setups/sec).
 
-- [`docs/performance/bench-results.json`](../docs/performance/bench-results.json) – raw JSON, kept alongside the docs.
+- `docs/performance/bench-results.json` – ignored raw JSON generated alongside
+  the tracked Markdown report.
 - An ASCII summary printed to stdout (the small bar charts you see in the logs).
 
 Re-run `pnpm -F @exclave/seqwire run bench:report` whenever you change benches or touch the hot paths.

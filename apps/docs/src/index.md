@@ -2,29 +2,24 @@
 layout: home
 hero:
   name: SeqWire
-  text: Explicit shared-memory contracts
-  tagline: Typed, coherent state exchange with deterministic layout, validated handoff, role-specific authority, and bounded reads across independently scheduled JavaScript runtimes.
+  text: Typed shared memory for JavaScript runtimes
+  tagline: Define parameters and meters once, plan their memory layout, and bind workers or AudioWorklets to the same backing.
   actions:
     - theme: brand
-      text: Understand the core flow
-      link: /core-flow
-    - theme: alt
       text: Run the quickstart
       link: /quickstart
     - theme: alt
-      text: Inspect the Signalsmith proof
-      link: https://github.com/maikeleckelboom/seqwire/blob/main/docs/proofs/signalsmith-stretch.md
+      text: Understand the core flow
+      link: /core-flow
 features:
-  - title: Contract before bytes
-    details: TypeScript-authored parameter and meter contracts collapse to canonical field paths before runtime layout exists.
+  - title: One authored contract
+    details: Nested TypeScript definitions become canonical parameter and meter paths used by planning and bindings.
   - title: Deterministic layout
-    details: Planning produces stable byte sizes, offsets, typed planes, and a layout identity that can be inspected and tested.
-  - title: Explicit ownership
-    details: The owner allocates backing and builds a handoff. Receivers validate it before binding controller, processor, or observer capabilities.
-  - title: Bounded coherent reads
-    details: Seqlock-based reads use explicit budgets and caller-owned last-good values instead of exposing torn candidates or retrying without bound.
-  - title: Executable evidence
-    details: Worker and property tests, benchmarks, package smoke tests, and a real Signalsmith AudioWorklet proof exercise the implementation.
+    details: Planning produces stable byte sizes, offsets, typed planes, and a layout identity before memory is allocated.
+  - title: Role-specific bindings
+    details: Controllers write parameters, processors publish meters, and observers read without receiving write capabilities.
+  - title: Bounded read paths
+    details: Processor parameter reads and observer snapshots use explicit seqlock budgets; controller meter snapshots remain direct cold-path copies.
 ---
 
 ## Choose an entry point
@@ -34,25 +29,23 @@ features:
   and role-specific bindings.
 - **Run working code:** use the [quickstart](/quickstart) for the smallest
   complete local flow with current exported APIs.
-- **Inspect the boundary:** read the
+- **Inspect an executable integration:** read the
   [Signalsmith proof record](https://github.com/maikeleckelboom/seqwire/blob/main/docs/proofs/signalsmith-stretch.md)
-  beside the
+  alongside the
   [proof application](https://github.com/maikeleckelboom/seqwire/tree/main/apps/signalsmith-stretch).
-- **Examine performance evidence:** start with the
+- **Review performance measurements:** start with the
   [benchmark guide](https://github.com/maikeleckelboom/seqwire/blob/main/packages/core/bench/README.md),
-  which treats results as regression radar rather than a production claim.
+  which explains the harness and the limits of the recorded results.
+- **Read design history:** use the repository's
+  [documentation index](https://github.com/maikeleckelboom/seqwire/blob/main/packages/core/docs/INDEX.md),
+  which separates current references from historical and superseded records.
 
-## What the evidence demonstrates
+## Current documentation and design history
 
-The Signalsmith application runs a real browser audio graph, the upstream
-Signalsmith Stretch WebAssembly release, and a downstream AudioWorklet. SeqWire
-models the control and meter boundary. Signalsmith does not directly consume
-SeqWire memory, and the application is evidence rather than a shipped audio
-runtime.
-
-The wider repository exercises layout identity, handoff validation,
-role-specific bindings, bounded coherent reads, grouped publication, worker
-contention, package shape, and documentation examples.
+Pages in this VitePress site describe the current package surface and runtime
+model. The older architecture, guide, internal-note, and ADR collections are
+kept as design history. Their indexes state which records remain useful current
+references and which describe superseded APIs or exploratory system designs.
 
 ## Project status
 
@@ -61,5 +54,4 @@ SeqWire is standalone experimental research. The intended package identity is
 checkout for study and verification.
 
 SeqWire and Projection Runtime have no runtime dependency in either direction.
-Neither project is a shipped Dekzer dependency. See
-[Research lineage](/research-lineage) for the precise historical boundary.
+See [Research lineage](/research-lineage) for the concise historical boundary.

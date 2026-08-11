@@ -134,9 +134,13 @@ export default defineConfig({
         ],
       },
       {
-        text: "Research context",
+        text: "Project context",
         items: [
           { text: "Research lineage", link: "/research-lineage" },
+          {
+            text: "Design history index",
+            link: "https://github.com/maikeleckelboom/seqwire/blob/main/packages/core/docs/INDEX.md",
+          },
           { text: "Blog Index", link: "/blog/" },
           {
             text: "Why SeqWire exists",

@@ -37,6 +37,7 @@ This keeps `@exclave/seqwire` focused on the shared-memory substrate instead of 
 
 ## Current Guidance
 
-Do not treat this ADR as an active package plan. It records why topology, commands, lineage, invalidation, and host/runtime integration belong above the low-level shared-memory substrate.
-
-Current documentation should use neutral architecture language unless a package actually exists in this repository. Do not introduce replacement package names in this document.
+This ADR is not an active package plan. It records why topology, commands,
+lineage, invalidation, and host/runtime integration belong above the low-level
+shared-memory substrate. Replacement package names require an implemented
+package rather than another proposal in this record.

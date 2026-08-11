@@ -1,10 +1,12 @@
-Here's an updated, cleaned-up version of the **Primitives** doc, aligned with the current kernel (`seqlock.ts`, `atomics.ts`, `planes.ts`) and current naming.
-
----
-
 # Primitives
 
-Lock-free building blocks used by the planner, backing layer, and bindings.
+> **Status: Superseded implementation reference.** The dual-counter model
+> remains useful, but retry outcomes, exception behavior, binding integration,
+> and allocation claims in this record do not fully match v0.3.0. Use current
+> source, tests, and the VitePress
+> [memory documentation](../../../../apps/docs/src/memory-layout.md).
+
+Non-blocking building blocks used by the planner, backing layer, and bindings.
 
 - **Allocation-free** on hot paths
 - Use JS `Atomics.*` with **sequential consistency**
@@ -17,7 +19,9 @@ Primitives live as a **small internal layer** in `@exclave/seqwire`:
 - Atomics helpers
 - Plane constants and alignment helpers
 
-They are **not** exposed from the top-level public barrel.
+The seqlock, atomics, and plane helpers are not exposed from the top-level
+public barrel. The SWSR ring is a deliberate public exception with its own
+allocation, producer, consumer, constants, and types.
 
 ---
 

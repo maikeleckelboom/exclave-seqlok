@@ -13,7 +13,12 @@ Controller responsibilities:
 - Write array params through the explicit `params.stage(...)` window.
 - Hydrate cold-path scalar and array state with `params.hydrate(...)`.
 - Read meter snapshots, using `snapshot({ into })` when array buffers should be reused.
-- Own range policy and meter degradation options.
+- Own parameter range policy.
+
+Controller meter snapshots are direct cold-path copies. They are useful for
+single values and ordinary UI reads, but a multi-field controller snapshot is
+not seqlock-verified as one coherent publication. Bind an observer when that
+guarantee is required.
 
 ## Processor
 
@@ -31,7 +36,12 @@ Processor responsibilities:
 
 ## Realtime Quantum Flow
 
-`within(...)` gives the processor a coherent callback-scoped param view. Array views from that callback are ephemeral: read or copy what you need, but do not retain them after the callback returns.
+`within(...)` gives the processor a coherent callback-scoped param view. Its
+spin and retry work is bounded; if the budget is exhausted, the callback is not
+called and the read fails with a structured error. Array views from that
+callback are ephemeral: read or copy what you need, but do not retain them after
+the callback returns. The binding constructs the view shape for each read, so
+`within(...)` is not a zero-allocation API.
 
 ```mermaid
 flowchart LR
@@ -66,10 +76,15 @@ The observer is a read-only binding for telemetry, inspection, visualizers, and 
 
 Observer responsibilities:
 
-- Read param snapshots.
-- Read meter snapshots.
-- Use `within(...)` for coherent read windows when snapshot allocation is not appropriate.
+- Read seqlock-checked param snapshots.
+- Read seqlock-checked meter snapshots.
+- Use `within(...)` for callback-scoped coherent reads instead of retaining a snapshot.
 - Avoid writes entirely.
+
+Observer snapshot retries are bounded. The default `returnLatest` policy reuses
+the last complete coherent snapshot when one has been cached; a first or partial
+snapshot can fall back to one direct best-effort read. Use `degrade: "throw"`
+and retain caller-owned last-good state when a torn fallback is unacceptable.
 
 ## Choosing a Role
 

@@ -2,7 +2,11 @@
 
 ## Status
 
-Accepted
+Partially superseded
+
+The seqlock, atomics, and plane helpers remain internal. ADR-010 later made the
+SWSR ring a deliberate public root export, so the original all-primitives-
+internal statement no longer describes the complete package surface.
 
 ## Context
 

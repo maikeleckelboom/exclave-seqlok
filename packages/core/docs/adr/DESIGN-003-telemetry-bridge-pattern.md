@@ -1,5 +1,7 @@
 # DESIGN-003: Telemetry Bridge Pattern (Node/UDP)
 
+**Status**: Exploratory integration pattern; no network bridge ships in SeqWire
+
 **Context**: hardware / out-of-process consumers
 **Target**: drones, lights, robots, mixers
 **Tech**: Node.js, UDP/TCP, `@exclave/seqwire`

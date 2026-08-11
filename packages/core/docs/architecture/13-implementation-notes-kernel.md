@@ -1,5 +1,9 @@
 # Implementation Notes (Kernel)
 
+> **Status: Historical implementation notes.** This file mixes durable
+> mechanics with older allocation and coherence claims. Verify all behavior in
+> current source and tests.
+
 Internal details for contributors and advanced users.
 This document explains _how_ the kernel achieves its guarantees without imposing runtime overhead on hot paths.
 

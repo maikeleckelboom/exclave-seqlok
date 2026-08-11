@@ -3,7 +3,7 @@
   "title": "SeqWire",
   "version": "0.3.0",
   "private": true,
-  "description": "Typed, coherent shared-memory state for timing-sensitive JavaScript runtimes.",
+  "description": "Typed shared-memory contracts for timing-sensitive JavaScript runtimes.",
   "license": "MIT",
   "repository": {
     "type": "git",
