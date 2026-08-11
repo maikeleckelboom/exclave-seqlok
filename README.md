@@ -1,40 +1,68 @@
 # SeqWire
 
-SeqWire is experimental TypeScript research into typed, coherent shared-memory
-state across workers, AudioWorklets, and WebAssembly-oriented runtimes.
+> Typed, coherent shared memory for timing-sensitive JavaScript runtimes.
 
-It investigates how independently scheduled JavaScript runtimes can exchange
-structured state without hiding the contract, layout, ownership, transfer,
-runtime role, or read-consistency rules. Authored contracts become deterministic
-shared-memory layouts. Explicit handoffs and role-specific bindings keep
-authority visible at each boundary.
+SeqWire started with a practical problem I was trying to solve around
+AudioWorklets. Interface state lives on the main thread, while audio processing
+runs independently: parameters travel toward the processor, and meters travel
+back. An AudioWorklet normally processes 128 frames at a time. At 48 kHz, that
+is about 2.67 ms to finish the work for one quantum.
 
-[Quickstart](apps/docs/src/quickstart.md) ·
-[Core flow](apps/docs/src/core-flow.md) ·
-[Signalsmith proof](docs/proofs/signalsmith-stretch.md) ·
-[Benchmarks](packages/core/bench/README.md) ·
-[Documentation](apps/docs/src/index.md) ·
-[Verification](#verification)
+That made ordinary `postMessage`-style communication a poor fit for the hottest
+part of the boundary. Every allocated message adds work, and its arrival is not
+aligned with the audio quantum. I wanted to investigate typed shared state
+without locks, hot-path allocation, torn multi-field reads, implicit ownership,
+or two runtimes independently guessing the same memory layout.
 
-## The programming model
+SeqWire is the TypeScript research project that grew from that investigation.
+It turns a typed parameter-and-meter contract into a deterministic shared-memory
+layout, then gives each runtime a role-specific view of the same backing memory.
+
+## Core idea
 
 ```text
-authored contract
-  -> deterministic layout
-  -> owned backing memory
+TypeScript contract
+  -> deterministic memory layout
+  -> owned shared backing
   -> validated handoff
-  -> controller / processor / observer bindings
+  -> role-specific bindings
 ```
 
-The owner defines the contract, plans the byte layout, and allocates the
-backing. A receiving runtime validates the handoff before it interprets the
-memory. Each binding exposes only the reads and writes assigned to its role.
+The contract is the source of truth for field names, value types, ranges, and
+fixed array lengths. `planLayout` lowers it to concrete byte offsets and a stable
+layout identity. One side allocates the `SharedArrayBuffer` backing and sends a
+handoff; the receiving side validates that artifact before interpreting the
+memory. Controller and processor bindings then expose only the operations that
+belong to each role.
 
-## Smallest complete flow
+```text
+controller / main thread  -- params -->  processor / worklet
+controller / main thread  <-- meters --  processor / worklet
+```
 
-This example runs against the local workspace package. It uses the current
-public API to author a contract, allocate shared backing, accept a handoff, bind
-two roles, and exchange one coherent value in each direction.
+These are two single-writer, multiple-reader domains. The controller owns
+parameter writes. The processor owns meter writes. Keeping those directions
+explicit makes the concurrency model small enough to reason about.
+
+## Why not just use typed arrays?
+
+`SharedArrayBuffer`, typed arrays, and `Atomics` provide the raw mechanisms, but
+they do not answer the systems questions around them:
+
+- Which offsets and numeric representations describe each field?
+- Which runtime is allowed to write each part of memory?
+- How does a receiver know that a handoff matches the layout it expects?
+- How can several related values be read without combining two publications?
+- What happens when contention would otherwise cause an unbounded retry loop?
+- How do the TypeScript types stay connected to the bytes at runtime?
+
+SeqWire makes those choices part of the contract and binding flow. It does not
+try to turn shared memory into an event bus or hide the ownership model behind
+global state.
+
+## A small complete flow
+
+The public API keeps setup separate from the timing-sensitive path:
 
 ```ts
 import {
@@ -56,6 +84,7 @@ const contract = defineSpec(({ param, meter }) => ({
 const plan = planLayout(contract);
 const backing = allocatePacked(plan);
 const controller = bindController(contract, plan, backing);
+
 const handoff = buildHandoff(plan, backing);
 const processor = bindProcessor(acceptHandoff(handoff));
 
@@ -68,106 +97,104 @@ processor.params.within((params) => {
 const { level } = controller.meters.snapshot("level");
 ```
 
-The [quickstart](apps/docs/src/quickstart.md) extends this flow with nested
-contracts, array staging, snapshots, and transport-boundary validation.
+In a real boundary, the handoff crosses a worker or AudioWorklet port. If it
+arrives as `unknown`, `acceptHandoff` checks the protocol version, plan shape,
+packing mode, and backing sizes before the processor binds to it.
 
-## Why SeqWire exists
+The [quickstart](apps/docs/src/quickstart.md) covers nested contracts, arrays,
+snapshots, and transport-boundary validation without expanding this README into
+an API reference.
 
-Shared typed arrays provide bytes and atomic primitives, but they do not define
-the system around those bytes:
+## Design choices
 
-- Independently reconstructed layouts can disagree about offsets and types.
-- Writer ownership and transfer assumptions can remain implicit.
-- Multi-field reads can combine values from different publications.
-- Open-ended retry loops can turn contention into unbounded timing work.
-- General bindings can expose mutation authority to roles that should only read.
+### Deterministic layout
 
-SeqWire keeps those decisions inspectable. Layout has a deterministic identity,
-handoffs are validated, bindings are role-specific, and coherent reads use
-explicit budgets with caller-owned last-good state.
+Nested authored fields collapse to canonical paths before planning. Planning
+then produces stable plane sizes, offsets, storage types, and a layout identity.
+Allocation consumes that plan; bindings do not silently reconstruct it.
 
-## What is implemented
+### Explicit writer ownership
 
-- TypeScript-authored parameter and meter contracts
-- Deterministic shared-memory layout and layout identity
-- Packed, partitioned, and shared WebAssembly backing experiments
-- Explicit handoff construction and acceptance
-- Controller, processor, and observer bindings
-- Bounded coherent reads with caller-owned last-good snapshots
-- Grouped validation and publication
-- Structured errors and diagnostics
-- Worker, property, runtime, type, benchmark, and package-smoke coverage
+Parameters and meters are separate domains with separate writers. A controller
+can update parameters and observe meters. A processor can read parameters and
+publish meters. An observer receives read-only access. Those capabilities are
+expressed by different bindings rather than convention alone.
 
-## Executable evidence
+### Validated handoff
 
-The [Signalsmith Stretch proof](docs/proofs/signalsmith-stretch.md) uses a
-[real browser application](apps/signalsmith-stretch) with a real audio graph, a
-real AudioWorklet, and the upstream Signalsmith Stretch WebAssembly release.
-SeqWire models the control and meter boundary. The main thread applies canonical
-SeqWire control snapshots to Signalsmith, while a downstream AudioWorklet reads
-SeqWire control state and publishes live meters.
+The owner creates the backing once and packages its plan and backing descriptor
+into a handoff. Receivers can validate an untrusted transport value before they
+create a local binding, so layout and packing assumptions do not remain hidden
+at the thread boundary.
 
-Signalsmith itself does not directly consume SeqWire memory. This is executable
-evidence for the boundary model, not a shipped audio runtime.
+### Bounded coherent reads
 
-The [benchmark suites](packages/core/bench/README.md) measure the shared-memory
-hot paths and end-to-end setup. They are regression evidence, not
-production-readiness claims.
+SeqWire uses seqlock-based publication for coherent multi-field reads. A reader
+accepts a snapshot only when the sequence is stable before and after the copy.
+Retry work is bounded, and callers retain their own last-good value when a fresh
+coherent snapshot is unavailable within that budget.
 
-## Project status and limits
+### Type-first contracts
 
-SeqWire is implemented, reproducible experimental research. It is not presented
-as production-ready, a general application framework, or a production
-dependency.
+The same contract that determines the memory layout also drives inferred
+parameter keys, meter keys, value types, and binding shapes. The type layer and
+the runtime layout therefore start from one authored description.
 
-The intended package identity is `@exclave/seqwire`. It is currently private and
-unpublished. The `@exclave` scope is the publishing namespace only, not a parent
-project identity.
+## Real evidence
 
-The repository retains architecture notes and decision records. Some describe
-exploratory or superseded directions, and their status is identified in the
-documentation indexes.
+The [Signalsmith Stretch proof](docs/proofs/signalsmith-stretch.md) runs a real
+browser audio graph with a real AudioWorklet and the upstream Signalsmith
+Stretch WebAssembly release. SeqWire models the control and meter boundary: the
+main thread applies canonical SeqWire control snapshots to Signalsmith, while a
+downstream AudioWorklet reads `control.outputGain` from SeqWire and publishes
+live meters. Signalsmith itself does not directly consume SeqWire memory.
 
-## Verification
+The repository also includes worker contention tests, property tests for layout
+and specification behavior, compile-time API tests, package smoke tests, and
+[benchmarks](packages/core/bench/README.md) for hot paths and end-to-end setup.
+The benchmark results are useful as regression evidence and for comparing
+design choices, not as universal timing numbers.
 
-Use Node.js 24 and the repository-pinned pnpm version:
+## Project status
+
+SeqWire is experimental systems research with a real, executable TypeScript
+implementation. It is not currently presented as a production-ready,
+general-purpose state library.
+
+The intended package is `@exclave/seqwire`, currently at version `0.3.0`. It
+remains `private: true` and is unpublished, so the repository checkout is the
+current way to run and study it.
+
+SeqWire and [Projection Runtime](https://github.com/maikeleckelboom/projection-runtime)
+are separate research projects with some historical lineage and no runtime
+dependency in either direction. The
+[research lineage](apps/docs/src/research-lineage.md) records that relationship.
+
+## Explore
+
+- [Quickstart](apps/docs/src/quickstart.md) - run the current public API flow.
+- [Core flow](apps/docs/src/core-flow.md) - understand roles, ownership, and the
+  timing-sensitive path.
+- [Memory and layout](apps/docs/src/memory-layout.md) - inspect planning,
+  backing choices, and coherent snapshots.
+- [Handoff and acceptance](apps/docs/src/handoff-acceptance.md) - follow the
+  boundary artifact and its validation.
+- [Origin and design history](packages/core/docs/architecture/00-seqwire-origin-and-design-history.md)
+  - read how the AudioWorklet constraint shaped the architecture.
+- [Documentation index](apps/docs/src/index.md) - choose from the wider design
+  and evidence material.
+
+## Local setup
+
+Use Node.js 24 and the repository-pinned pnpm version (`11.6.0`):
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm verify
 ```
 
-Focused checks include:
+To run the Signalsmith proof application locally:
 
 ```sh
-pnpm build
-pnpm lint
-pnpm test:types
-pnpm test
-pnpm run docs
-pnpm test:pack
-pnpm signalsmith:check
-pnpm signalsmith:test:browser
+pnpm signalsmith:dev
 ```
-
-`pnpm verify:fresh` invokes destructive cleanup through `git clean -xfd`. Do
-not run it in a worktree that contains untracked work.
-
-## Repository map
-
-- `packages/core` contains the `@exclave/seqwire` implementation, tests,
-  benchmarks, and package documentation.
-- `apps/docs` contains the VitePress documentation site.
-- `apps/signalsmith-stretch` contains the AudioWorklet proof application.
-- `docs/proofs` records executable evidence and its exact scope boundaries.
-- `scripts` contains repository verification and support tooling.
-
-## Research boundary
-
-SeqWire and Projection Runtime are separate research projects with no runtime
-dependency in either direction. SeqWire studies coherent state inside shared
-memory. Projection Runtime studies the wider Electron-to-native-Rust boundary.
-Neither project is a shipped Dekzer dependency.
-
-See [Research lineage](apps/docs/src/research-lineage.md) for the limited
-historical relationship.
