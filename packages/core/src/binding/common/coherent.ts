@@ -5,7 +5,7 @@
  * @remarks
  * - Provides `makeWithin` to implement `params.within(...)` on the processor.
  * - Encodes retry/spin budgets and degrade policies for read-side callers.
- * - Used by bindings to obtain coherent views without exposing raw seqlocks.
+ * - Used by bindings to verify reader calls without exposing raw seqlocks.
  *
  * @internal
  */
@@ -37,11 +37,6 @@ export interface SnapshotPolicyOptions extends CoherentReadOptions {
   readonly degrade?: MeterDegradePolicy;
 }
 
-interface SnapshotStatus {
-  readonly spins: number;
-  readonly retries: number;
-}
-
 /**
  * Internal: run a snapshot reader under seqlock with optional degrade policy.
  *
@@ -56,21 +51,23 @@ export function snapshotWithPolicy<T>(
   options: SnapshotPolicyOptions,
   reader: () => T,
   degradedReader: () => T,
+  onVerified?: (value: T) => void,
 ): T {
   const { spinBudget, retryBudget, where, section, degrade } = options;
 
   const result = tryRead(pair, reader, { spinBudget, retryBudget });
 
   if (result.ok) {
+    onVerified?.(result.value);
     return result.value;
   }
 
-  const status: SnapshotStatus = result.status;
+  const status = result.status;
 
-  if (status.spins >= spinBudget) {
+  if (status.kind === "writerActive") {
     incrementCounter("spinBudgetExhausted");
   }
-  if (status.retries >= retryBudget) {
+  if (status.kind === "budgetExhausted") {
     incrementCounter("retryBudgetExhausted");
   }
 
@@ -95,7 +92,9 @@ export function snapshotWithPolicy<T>(
  * @Internal: processor-side coherent read helper.
  *
  * - Wraps a raw reader in the PU seqlock protocol.
- * - No degrade path: coherence is mandatory on the processor.
+ * - No degrade path: seqlock verification is mandatory on the processor.
+ *   Whether returned members are detached values or live views is defined by
+ *   the reader that constructs the candidate.
  * - Throws `binding.coherentRetryExhausted` on failure.
  */
 export function makeWithin<T>(
@@ -111,10 +110,10 @@ export function makeWithin<T>(
     if (!result.ok) {
       const { spins, retries } = result.status;
 
-      if (spins >= spinBudget) {
+      if (result.status.kind === "writerActive") {
         incrementCounter("spinBudgetExhausted");
       }
-      if (retries >= retryBudget) {
+      if (result.status.kind === "budgetExhausted") {
         incrementCounter("retryBudgetExhausted");
       }
 

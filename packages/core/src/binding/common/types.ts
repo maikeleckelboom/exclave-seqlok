@@ -163,7 +163,7 @@ interface MeterProcessorMap {
   "f32.array": Float32Array;
   "u32.array": Uint32Array;
   "f64.array": Float64Array;
-  "bool.array": Uint8Array;
+  "bool.array": Uint32Array;
 }
 
 /**
@@ -207,7 +207,7 @@ interface MeterControllerMap {
   "f32.array": Readonly<Float32Array>;
   "u32.array": Readonly<Uint32Array>;
   "f64.array": Readonly<Float64Array>;
-  "bool.array": Readonly<Uint8Array>;
+  "bool.array": Readonly<Uint32Array>;
 }
 
 /**
@@ -378,12 +378,13 @@ type ScalarFor<
   : never;
 
 /**
- * Processor-side coherent param shape.
+ * Processor-side candidate param shape.
  *
  * @remarks
  * - Scalar params are exposed as coherent scalar values.
- * - Array params are exposed as raw processor-side arrays.
- * - This shape is used for single-shot coherent snapshots.
+ * - Array params are exposed as live raw processor-side arrays.
+ * - This shape is used for one seqlock-verified read candidate; it does not
+ *   detach or freeze array contents.
  */
 export type CoherentParamShape<S extends SpecInput> = Display<
   {
@@ -474,63 +475,31 @@ export interface ControllerParamPolicyOptions {
  * within the configured budgets.
  *
  * @remarks
- * - `'returnLatest'` reuses a cached complete snapshot when available. A first
- *   or partial snapshot falls back to one direct best-effort read.
- * - `'throw'` propagates an error to the caller.
+ * - `'returnLatest'` reuses a cached, seqlock-verified complete snapshot when
+ *   available. Cached array values are detached copies. A first or partial
+ *   snapshot falls back to one direct best-effort read.
+ * - `'throw'` rejects the snapshot with a structured binding error.
  */
 export type MeterDegradePolicy = "returnLatest" | "throw";
-
-/**
- * Reserved meter-side options on a controller binding.
- *
- * @remarks
- * The v0.3.0 controller binding does not consume these options. Controller
- * meter snapshots are direct copies rather than seqlock-verified reads. Use an
- * observer binding for configurable snapshot policy.
- */
-export interface ControllerMeterPolicyOptions {
-  /**
-   * Reserved; not applied by the v0.3.0 controller binding.
-   */
-  readonly degrade?: MeterDegradePolicy;
-
-  /**
-   * Reserved; not applied by the v0.3.0 controller binding.
-   */
-  readonly spinBudget?: number;
-
-  /**
-   * Reserved; not applied by the v0.3.0 controller binding.
-   */
-  readonly retryBudget?: number;
-}
 
 /**
  * Options for binding a controller.
  *
  * @remarks
- * - `params` configures write-side range handling.
- * - `meters` is retained in the v0.3.0 type surface but is not consumed.
+ * `params` configures write-side range handling.
  */
 export interface ControllerOptions {
   /**
    * Policies for the params (writer) domain.
    */
   readonly params?: ControllerParamPolicyOptions;
-
-  /**
-   * Reserved meter options; not applied by the v0.3.0 controller binding.
-   */
-  readonly meters?: ControllerMeterPolicyOptions;
 }
 
 /**
  * Options for binding a processor.
  *
  * @remarks
- * - `params` configures seqlock spin/retry budgets for processor reads.
- * - `meters` remains in the type surface but is not consumed by publication,
- *   which assumes the processor is the single meter writer.
+ * `params` configures seqlock spin/retry budgets for processor reads.
  */
 export interface ProcessorOptions {
   readonly params?: {
@@ -545,18 +514,6 @@ export interface ProcessorOptions {
      * Max retry attempts before giving up and throwing.
      *
      * @default 8 (library default)
-     */
-    readonly retryBudget?: number;
-  };
-
-  readonly meters?: {
-    /**
-     * Reserved; not applied by the v0.3.0 processor binding.
-     */
-    readonly spinBudget?: number;
-
-    /**
-     * Reserved; not applied by the v0.3.0 processor binding.
      */
     readonly retryBudget?: number;
   };
@@ -581,7 +538,8 @@ export interface ControllerBinding<S extends SpecInput> {
  * Processor binding: audio-thread facade for params and meters.
  *
  * @remarks
- * - `params` exposes coherent reads via `within(...)`.
+ * - `params` exposes verified scalar reads and ephemeral array views via
+ *   `within(...)`.
  * - `meters` exposes coherent writes via `publish(...)`.
  * - `dispose()` releases backing references and internal resources.
  */
@@ -899,7 +857,7 @@ type MeterArrayFor<S extends SpecInput, K extends MeterKeys<S>> = NonNullable<
         }
       ? Uint32Array
       : NonNullable<S["meters"]>[K] extends { kind: "bool.array" }
-        ? Uint8Array
+        ? Uint32Array
         : never;
 
 /**
@@ -1119,13 +1077,16 @@ export interface ObserverOptions {
  * Observer-side param binding.
  *
  * @remarks
- * - `snapshot()` / `snapshot(keys)` expose controller-like snapshots for
- *   convenience; array values may be backed by ephemeral views.
- * - `within(...)` mirrors the processor's callback-scoped, seqlock-verified read.
+ * - `snapshot()` / `snapshot(keys)` expose controller-like snapshots with
+ *   detached array copies.
+ * - `within(...)` performs a callback-scoped, seqlock-verified read; unlike the
+ *   processor hot path, observer arrays are detached copies.
  */
 export interface ObserverParams<S extends SpecInput> {
   /**
-   * Full snapshot of all params.
+   * Full snapshot of all params through the configured bounded read policy.
+   * The default policy may return a cached verified snapshot or an unverified
+   * best-effort snapshot when verification fails.
    */
   snapshot(): ParamsSnapshot<S>;
 
@@ -1182,12 +1143,14 @@ export interface ObserverParams<S extends SpecInput> {
  *
  * @remarks
  * - Exposes the same snapshot ergonomics as `ControllerMeters`, but:
- *   - No `into` support (arrays are ephemeral views into backing planes).
+ *   - No `into` support (array snapshots allocate detached copies).
  *   - Strictly read-only; no publish/write surface.
  */
 export interface ObserverMeters<S extends SpecInput> {
   /**
-   * Full snapshot of all meters.
+   * Full snapshot of all meters through the configured bounded read policy.
+   * The default policy may return a cached verified snapshot or an unverified
+   * best-effort snapshot when verification fails.
    */
   snapshot(): MetersSnapshot<S>;
 
@@ -1239,8 +1202,8 @@ export interface ObserverMeters<S extends SpecInput> {
  *
  * @remarks
  * - Intended for visualizations, telemetry, HUDs, and remote inspectors.
- * - `params` exposes coherent reads via `within(...)` and small snapshots.
- * - `meters` exposes coherent snapshots with rich overloads.
+ * - `params.within(...)` exposes a hard seqlock-verified callback read.
+ * - Param and meter snapshots use the configured bounded degradation policy.
  * - No write capability.
  */
 export interface ObserverBinding<S extends SpecInput> {

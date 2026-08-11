@@ -13,6 +13,7 @@ describe("ProcessorMeters.set (Runtime)", () => {
       peak: meter.f32(),
       count: meter.u32(),
       spectrum: meter.f32.array({ length: 8 }),
+      flags: meter.bool.array({ length: 4 }),
     },
   }));
 
@@ -41,5 +42,20 @@ describe("ProcessorMeters.set (Runtime)", () => {
         w.set("nope", 1);
       });
     }).toThrow(/unknown/i);
+  });
+
+  it("uses the public Uint32Array representation for boolean meter arrays", () => {
+    const { ctl, proc } = bindingsFromSpec(spec);
+
+    proc.meters.publish((writer) => {
+      writer.stage("flags", (flags) => {
+        expect(flags).toBeInstanceOf(Uint32Array);
+        flags.set([1, 0, 1, 1]);
+      });
+    });
+
+    const { flags } = ctl.meters.snapshot("flags");
+    expect(flags).toBeInstanceOf(Uint32Array);
+    expect(Array.from(flags)).toEqual([1, 0, 1, 1]);
   });
 });

@@ -19,7 +19,7 @@ features:
   - title: Role-specific bindings
     details: Controllers write parameters, processors publish meters, and observers read without receiving write capabilities.
   - title: Bounded read paths
-    details: Processor parameter reads and observer snapshots use explicit seqlock budgets; controller meter snapshots remain direct cold-path copies.
+    details: Processor parameter reads require bounded verification; observer snapshots attempt it before applying explicit fallback policy. Controller meter snapshots remain direct cold-path copies.
 ---
 
 ## Choose an entry point

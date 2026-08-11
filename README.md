@@ -127,15 +127,19 @@ into a handoff. Receivers can validate an untrusted transport value before they
 create a local binding, so layout and packing assumptions do not remain hidden
 at the thread boundary.
 
-### Bounded coherent read paths
+### Bounded coherence checks
 
 SeqWire uses seqlock-based publication around each parameter and meter domain.
-Processor parameter reads and observer reads verify that the sequence is stable
-before and after sampling, with bounded spin and retry work. Processor
-`within(...)` calls fail explicitly when that budget is exhausted, so the caller
-can retain its own last-good state. Controller meter snapshots are direct,
-cold-path copies; use an observer when a seqlock-verified multi-field meter read
-is required.
+Processor parameter reads and observer read attempts verify that the sequence is
+stable before and after sampling, with bounded spin and retry work. Processor
+`within(...)` calls fail explicitly when that budget is exhausted. Its scalar
+values are verified; array members remain live callback-scoped views rather
+than detached coherent copies. Observer snapshots default to best-effort
+fallback: they return a cached complete verified snapshot when available, or a
+direct unverified read otherwise. Use an observer with `degrade: "throw"` when
+a failed coherence check must not return a best-effort snapshot. Controller
+meter snapshots are direct cold-path copies and are not verified as a
+multi-field publication.
 
 ### Type-first contracts
 

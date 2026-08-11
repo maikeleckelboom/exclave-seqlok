@@ -20,7 +20,7 @@ spec.params["filter.cutoff"];
 spec.params["filter.enabled"];
 ```
 
-The dot-key contract is what controllers use for dynamic writes, snapshots, and deterministic layout. Processor read views also expose nested aliases for ergonomic coherent reads.
+The dot-key contract is what controllers use for dynamic writes, snapshots, and deterministic layout. Processor read views also expose nested aliases for ergonomic access inside `within(...)`; scalar members are seqlock-verified, while array members remain live callback-scoped views.
 
 ## Canonical Keys and Read Views
 
@@ -38,7 +38,7 @@ flowchart TB
   canonical -->|stable external key| controller
   canonical -->|re-expanded for ergonomic reads| processor
   controller -->|writes| backing
-  backing -->|"coherent read inside within(...)"| processor
+  backing -->|"verified scalars + ephemeral arrays"| processor
 ```
 
 Use canonical dot keys for controller writes, snapshot key lists, diagnostics, generated artifacts, and spec maps such as `spec.params["time.ratio"]`. Use nested property access in processor read examples when the read view supports it, for example `params.time.ratio` inside `within(...)`.

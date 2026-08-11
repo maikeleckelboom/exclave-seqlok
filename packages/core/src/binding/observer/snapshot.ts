@@ -4,8 +4,9 @@
  *
  * @remarks
  * Semantics:
- * - Read-only, zero-copy views into the backing planes.
- * - Arrays are returned as ephemeral `subarray(...)` views.
+ * - Read-only snapshots of the backing planes.
+ * - Arrays are copied while the seqlock candidate is being sampled so a
+ *   verified snapshot remains stable after the read.
  * - Scalars are returned as JS numbers/booleans/enum labels.
  * - API surface is intentionally smaller than controller snapshots:
  *   - No `into` support.
@@ -118,7 +119,7 @@ function paramsSnapshotRawObserver(
     const start = slot.index;
 
     if (slot.length > 1) {
-      out[key] = paramArrayView(views, slot);
+      out[key] = paramArrayView(views, slot).slice() as ParamArray;
     } else {
       // Scalar value: number / boolean / enum label.
       out[key] = readParamScalar(slot.plane, views, defs, key, start);
@@ -168,16 +169,15 @@ function metersSnapshotRawObserver(
     const start = slot.index;
 
     if (slot.length > 1) {
-      // Array value: ephemeral view.
       const end = start + slot.length;
 
       if (slot.plane === "MF32") {
-        out[key] = views.MF32.subarray(start, end);
+        out[key] = views.MF32.slice(start, end);
       } else if (slot.plane === "MF64") {
-        out[key] = views.MF64.subarray(start, end);
+        out[key] = views.MF64.slice(start, end);
       } else {
         // MU32 plane for u32 arrays / bool arrays.
-        out[key] = views.MU32.subarray(start, end);
+        out[key] = views.MU32.slice(start, end);
       }
     } else {
       out[key] = readMeterScalar(slot.plane, views, key, start, slot.kind);
@@ -191,9 +191,9 @@ function metersSnapshotRawObserver(
  * Build the raw observer params snapshot function.
  *
  * @remarks
- * This is a thin view layer. Coherence and retry/degrade policy are handled by
- * the binding layer (`snapshotWithPolicy` + seqlock pair). Array payloads are
- * not copied, but snapshot objects and ephemeral subarray views are allocated.
+ * Coherence and retry/degrade policy are handled by the binding layer
+ * (`snapshotWithPolicy` + seqlock pair). Snapshot objects and array copies are
+ * allocated as part of the candidate read.
  */
 export function createObserverParamSnapshot<S extends SpecInput>(
   defs: Readonly<Record<string, ParamDef>>,

@@ -89,10 +89,9 @@ describe("Snapshot With Policy: Coherent Snapshot & Fallback Strategies", () => 
     // Verify fallback value is returned
     expect(result).toBe(degradedValue);
 
-    // Verify diagnostic counters are incremented for visibility
-    expect(countersSpy).toHaveBeenCalledTimes(3);
+    // Verify diagnostics report the actual exhausted budget plus degradation.
+    expect(countersSpy).toHaveBeenCalledTimes(2);
     const counterNames = countersSpy.mock.calls.map((call) => call[0]);
-    expect(counterNames).toContain("spinBudgetExhausted");
     expect(counterNames).toContain("retryBudgetExhausted");
     expect(counterNames).toContain("degradedSnapshots");
 
@@ -108,7 +107,7 @@ describe("Snapshot With Policy: Coherent Snapshot & Fallback Strategies", () => 
       status: {
         spins: 1,
         retries: 0,
-        kind: "budgetExhausted",
+        kind: "writerActive",
       },
     }));
 

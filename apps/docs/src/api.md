@@ -12,6 +12,7 @@ This page covers the public `@exclave/seqwire` surface. Internal folders such as
 Supported params include `f32`, `i32`, `u32`, `bool`, `enum`, and arrays for `f32`, `i32`, `u32`, `u8`, `i8`, `i16`, `u16`, `bool`, and `enum`.
 
 Supported meters include `f32`, `f64`, `i32`, `u32`, `bool`, `enum`, and arrays for `f32`, `f64`, `u32`, and `bool`.
+Boolean meter arrays use `Uint32Array`, matching their `MU32` storage plane.
 
 ```ts twoslash
 import { defineSpec, type CanonicalSpecFromAst } from "@exclave/seqwire";
@@ -48,7 +49,11 @@ type Canonical = CanonicalSpecFromAst<typeof authored>;
 
 Observer `source` can be a handoff or accepted handoff. Observer snapshots decode enum params to labels for explicit spec triples and handoff-derived sources.
 
-Role-specific public types include `ControllerBinding`, `ProcessorBinding`, `ObserverBinding`, `ControllerParams`, `ProcessorParams`, `ObserverParams`, `ControllerMeters`, `ProcessorMeters`, `ObserverMeters`, `ParamValueFor`, `MeterValueFor`, `ScalarParamPatch`, `HydratePatch`, `ParamsSnapshot`, and `MetersSnapshot`.
+Role-specific public types include `ControllerBinding`, `ProcessorBinding`,
+`ObserverBinding`, their params and meters interfaces, `ControllerOptions`,
+`ProcessorOptions`, `ObserverOptions`, value and snapshot mapping types, grouped
+meter types, and caller-owned `IntoForParams` / `IntoForMeters` destinations.
+The generated declaration is the exhaustive type-export inventory.
 
 ### ControllerParams
 
@@ -75,18 +80,22 @@ Role-specific public types include `ControllerBinding`, `ProcessorBinding`, `Obs
 | `version()` | Return the current meter update sequence. |
 
 In v0.3.0, controller meter snapshots are direct copies rather than
-seqlock-verified multi-field reads. The `ControllerOptions.meters` type remains
-in the public surface but is not consumed by the controller binding. Use an
-observer with `degrade: "throw"` when a bounded coherent snapshot and
-caller-owned last-good handling are required.
+seqlock-verified multi-field reads. `ControllerOptions` configures only param
+range policy; it has no meter policy surface. Use an observer with
+`degrade: "throw"` when a failed coherence check must not return a best-effort
+snapshot.
 
 ### ProcessorParams
 
 `processor.params.within(callback)` attempts a seqlock-verified read with a
 default spin budget of 1024 and retry budget of 8. The callback runs only for a
-coherent candidate. Exhaustion produces a structured error; the caller decides
-whether to keep a last-good value. The read builds a JavaScript view object, and
-array members are ephemeral views into shared backing.
+verified candidate. Exhaustion produces a structured error; the caller decides
+whether to keep a last-good value. Scalar members are captured by that verified
+candidate. Array members are live ephemeral views into shared backing, not
+detached coherent copies.
+
+`ProcessorOptions` configures only those param-read budgets. Meter publication
+has no spin, retry, or degradation options.
 
 ### ProcessorMeters
 
@@ -136,15 +145,20 @@ Grouped publishing is for exact schema groups: `publishGroup("runtime", values)`
 
 ### Observer reads
 
-Observer param and meter snapshots use bounded seqlock checks. Their default
-budgets are 256 spins and 4 retries. The default `returnLatest` degradation
-policy reuses a cached complete snapshot when available; otherwise the current
-implementation performs one direct best-effort read. Partial snapshots do not
-populate the complete-snapshot cache. Set `degrade: "throw"` and retain
-last-good state in the caller when an unverified fallback is unacceptable.
+Observer param and meter snapshots first attempt a bounded seqlock-verified
+read. Their default budgets are 256 spins and 4 retries. Array values are copied
+inside each read attempt, so a verified observer snapshot is detached from later
+backing writes.
 
-Observer `params.within(...)` does not degrade. It calls the callback only for a
-coherent read and otherwise throws.
+The default `returnLatest` policy is best-effort on verification failure. A full
+snapshot reuses the last complete verified snapshot when one has been cached;
+otherwise it performs one direct unverified read. Partial snapshots do not use
+or populate the complete-snapshot cache and fall back directly.
+
+Set `degrade: "throw"` and retain caller-owned last-good state when an
+unverified fallback is unacceptable. Observer `params.within(...)` never
+degrades: it invokes the callback only with a verified read and otherwise
+throws. Its arrays are detached copies, unlike processor hot-path arrays.
 
 ## Handoff
 
@@ -167,13 +181,60 @@ ring surface:
 - header constants and the corresponding `SwsrRing*` types
 
 The producer returns `false` when the ring is full; it does not block, resize,
-or choose a retry policy for the caller.
+or choose a retry policy for the caller. `capacity` is usable capacity: a ring
+allocated with `capacity: N` accepts exactly `N` entries. Arbitrary positive
+capacities are supported; allocation reserves one extra physical slot
+internally.
+
+```ts twoslash
+import {
+  allocateSwsrRing,
+  bindSwsrRingConsumer,
+  bindSwsrRingProducer,
+} from "@exclave/seqwire";
+
+const ring = allocateSwsrRing({ capacity: 2, wordsPerSlot: 1 });
+
+const producer = bindSwsrRingProducer(ring, {
+  encode(value: number, destination, offset) {
+    destination[offset] = value;
+  },
+});
+
+const consumer = bindSwsrRingConsumer(ring, {
+  decode(source, offset) {
+    return source[offset] ?? 0;
+  },
+});
+
+producer.enqueue(10);
+producer.enqueue(20);
+
+const received: number[] = [];
+consumer.drain((value) => received.push(value));
+```
+
+On full, `enqueue(...)` leaves queued entries untouched, increments `dropped`,
+and leaves `writeSeq` unchanged. `drain(...)` processes the finite write-index
+snapshot loaded at call start. It commits consumption after each callback, so a
+callback that throws is not replayed; later entries wait for the next drain.
+See the current [SWSR low-level reference](https://github.com/maikeleckelboom/seqwire/blob/main/packages/core/docs/architecture/18-command-ring-swsr.md)
+for the header, ordering, counter, and error contracts.
+
+## Enum Utilities
+
+The root package exports `enumValues`, `enumArrayToLabels`,
+`enumLabelsToArray`, `enumIndexFromLabel`, `enumLabelFromIndex`, and
+`enumPaletteFor`, plus the `EnumLabel` and `EnumKeyOf` types. They operate on
+enum definitions from a current spec; they do not create or publish shared
+state.
 
 ## Diagnostics and Errors
 
 - `SeqWireError` is the structured error class.
 - `isSeqWireError(value)` narrows unknown errors.
 - `getErrorMeta(code)` and `getErrorMessage(code)` expose registry metadata.
+- `isErrorCode(value)` checks whether a string is a registered code.
 - `interpretHealth(error)` maps known error domains to health guidance.
 
 Diagnostics exports live at `@exclave/seqwire/diagnostics`.

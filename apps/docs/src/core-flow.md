@@ -18,7 +18,7 @@ flowchart LR
   controller -->|writes params| backing
   backing -->|reads meter snapshots| controller
 
-  backing -->|coherent param reads| processor
+  backing -->|bounded param reads| processor
   processor -->|publishes meters| backing
 
   backing -.->|read-only snapshots| observer
@@ -44,7 +44,7 @@ Controller code writes params and reads meters. Processor code reads params and 
 ## Ownership
 
 - Host/controller side owns spec authoring, layout planning, backing allocation, and parameter writes.
-- Runtime/processor side owns coherent parameter reads and meter publication.
+- Runtime/processor side owns bounded parameter reads and meter publication.
 - Observer side owns read-only snapshots for tooling, telemetry, or a secondary consumer.
 
 This separation is the product. Avoid hiding plan or backing creation behind ambient global state.

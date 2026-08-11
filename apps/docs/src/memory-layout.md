@@ -32,7 +32,8 @@ The implementation maps fields into typed planes for scalar and array storage. T
 - Boolean and enum values have explicit storage representations.
 - Array fields reserve fixed lengths at plan time.
 - Parameter and meter publication uses seqlock-protected domains; processor
-  parameter reads and observer snapshots verify those sequences.
+  parameter reads verify those sequences, and observer snapshots attempt
+  bounded verification before applying their configured fallback policy.
 
 ## Seqlock-Checked Reads
 
@@ -49,7 +50,7 @@ flowchart TD
 
   subgraph reader["Reader side"]
     r1["read sequence before"]
-    r2["copy values"]
+    r2["capture the selected read candidate"]
     r3["read sequence after"]
     r4{"sequence stable?"}
     r5["use coherent snapshot"]
@@ -67,12 +68,14 @@ flowchart TD
 
 This is the mechanism behind processor parameter reads and observer snapshots.
 Each attempt is bounded by a spin budget and a retry budget. Processor and
-observer `within(...)` calls fail when they cannot obtain a coherent candidate.
-Observer snapshots additionally apply their configured degradation policy.
+observer `params.within(...)` calls fail when they cannot obtain a coherent
+candidate. Observer snapshots additionally apply their configured degradation
+policy: the default may return a cached verified complete snapshot or a direct
+unverified read. Configure `degrade: "throw"` to prohibit that fallback.
 
 Controller meter snapshots are different: they copy values directly and are
-not seqlock-verified as a multi-field unit. Use an observer for coherent
-multi-field sampling.
+not seqlock-verified as a multi-field unit. Use a strict observer policy when
+failed multi-field verification must throw.
 
 ## Backing Choices
 
@@ -86,7 +89,7 @@ Only `packed` and `partitioned` backing are currently represented by the handoff
 
 ## Callback-Scoped Views
 
-Array views in `params.within(...)`, `params.stage(...)`, and meter `stage(...)`
-callbacks are ephemeral. They point into shared backing; creating the callback
-view or snapshot result can still allocate JavaScript wrapper objects. Do not
-store the shared views for later use.
+Array views in processor `params.within(...)`, controller `params.stage(...)`,
+and processor meter `stage(...)` callbacks are ephemeral shared views. Do not
+store them for later use. Observer snapshot and `params.within(...)` arrays are
+detached copies created during the read attempt; those observer paths allocate.

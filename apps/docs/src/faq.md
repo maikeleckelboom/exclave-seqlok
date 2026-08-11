@@ -22,9 +22,12 @@ Dot keys make the runtime contract flat and deterministic while keeping the auth
 
 The controller side accepts enum labels because it is the softer integration side. The processor side sees numeric indices because the runtime view is backed by shared memory. Use enum helpers when translating values for UI or logging.
 
-## Can I Hold Onto Array Views from `within(...)` or `stage(...)`?
+## Can I Hold Onto Array Views from Processor `within(...)` or `stage(...)`?
 
-No. Array views exposed inside callbacks are ephemeral. Copy the data if you need to retain it after the callback returns.
+No. Processor `params.within(...)` arrays and controller/processor `stage(...)`
+arrays are ephemeral shared views. Copy data you need after the callback.
+Observer snapshots and observer `params.within(...)` return detached array
+copies instead.
 
 ## Can I Import Internal Modules?
 

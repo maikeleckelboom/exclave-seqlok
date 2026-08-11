@@ -121,7 +121,7 @@ describe("observer snapshots", () => {
     expect(metersSubset.rms).toBeCloseTo(0.4);
   });
 
-  it("returns ephemeral array views backed by the same underlying planes", () => {
+  it("returns detached array copies that remain stable after backing changes", () => {
     const spec = defineSpec(({ param, meter }) => ({
       params: {
         curve: param.f32.array(4),
@@ -188,12 +188,14 @@ describe("observer snapshots", () => {
     const paramsSecond = paramsSnapshot();
     const metersSecond = metersSnapshot();
 
-    // Both the old captured views and fresh snapshots should see updated data,
-    // proving we are returning ephemeral subarray views with no copies.
-    expect(Array.from(curveView)).toEqual([1, 2, 3, 4]);
+    expect(Array.from(curveView)).toEqual(
+      Array.from(new Float32Array([0.1, 0.2, 0.3, 0.4])),
+    );
     expect(Array.from(paramsSecond.curve)).toEqual([1, 2, 3, 4]);
 
-    expect(Array.from(historyView)).toEqual([9, 8, 7]);
+    expect(Array.from(historyView)).toEqual(
+      Array.from(new Float32Array([0.11, 0.22, 0.33])),
+    );
     expect(Array.from(metersSecond.history)).toEqual([9, 8, 7]);
   });
 });

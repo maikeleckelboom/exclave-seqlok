@@ -4,24 +4,6 @@ import { describe, expect, it } from "vitest";
 
 import { tryRead, type SeqPair } from "../../src/primitives/seqlock";
 
-interface SeqlockErrorLike {
-  readonly code: string;
-}
-
-/**
- * Type guard to identify Seqlock timeout errors.
- * These occur when the retry budget is exhausted due to high contention.
- */
-function isSeqlockTimeout(error: unknown): error is SeqlockErrorLike & {
-  readonly code: "primitives.seqlockTimeout";
-} {
-  if (typeof error !== "object" || error === null) {
-    return false;
-  }
-  const maybe = error as { code?: unknown };
-  return maybe.code === "primitives.seqlockTimeout";
-}
-
 describe("Seqlock Cross-Thread Stress", () => {
   it("reads monotone values under concurrent publishes", async () => {
     const WRITES = 50_000;
@@ -52,11 +34,11 @@ describe("Seqlock Cross-Thread Stress", () => {
             // Write payload
             u32[valueIndex] = n;
 
-            // End Write: Increment LOCK (state becomes even/unlocked)
-            Atomics.add(u32, lockIndex, 1);
-
             // Commit: Increment SEQUENCE to invalidate previous reads
             Atomics.add(u32, seqIndex, 1);
+
+            // End Write: Increment LOCK (state becomes even/unlocked)
+            Atomics.add(u32, lockIndex, 1);
           }
 
           parentPort.postMessage({ type: 'done' });
@@ -90,18 +72,8 @@ describe("Seqlock Cross-Thread Stress", () => {
     let successfulReads = 0;
 
     while (successfulReads < MAX_OK_READS) {
-      let res;
-      try {
-        // Attempt to read the value at index 2
-        res = tryRead(pair, () => u32[VALUE_INDEX]);
-      } catch (error) {
-        // In high contention scenarios, the reader may exhaust its retry budget.
-        // We treat this as a transient failure and continue the stress test.
-        if (isSeqlockTimeout(error)) {
-          continue;
-        }
-        throw error;
-      }
+      // A failed bounded read is a value-level result, not an exception.
+      const res = tryRead(pair, () => u32[VALUE_INDEX]);
 
       if (!res.ok) {
         continue;

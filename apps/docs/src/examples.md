@@ -159,7 +159,10 @@ observer.params.snapshot(["transport.enabled", "transport.mode"]);
 observer.meters.snapshot("transport.state", "transport.drift");
 ```
 
-The observer receives enum param labels in snapshots, including when it binds from a handoff.
+The observer receives enum param labels and detached array copies in snapshots,
+including when it binds from a handoff. Snapshot verification is best-effort by
+default; pass `{ degrade: "throw" }` to `bindObserver(...)` when failure must not
+return an unverified fallback.
 
 ## SeqWireError Narrowing
 

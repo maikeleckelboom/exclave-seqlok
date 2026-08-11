@@ -129,8 +129,8 @@ describe("Observer binding – cross-thread coherence", () => {
           // Seqlock write protocol for meters
           Atomics.add(mu, LOCK, 1);  // acquire (odd)
           mf32[0] = value;           // write peak
-          Atomics.add(mu, LOCK, 1);  // release (even)
           Atomics.add(mu, SEQ, 1);   // commit
+          Atomics.add(mu, LOCK, 1);  // release (even)
 
           i++;
           setImmediate(tick);
@@ -156,6 +156,7 @@ describe("Observer binding – cross-thread coherence", () => {
       meters: {
         retryBudget: 100,
         spinBudget: 1000,
+        degrade: "throw",
       },
     });
 
@@ -198,7 +199,7 @@ describe("Observer binding – cross-thread coherence", () => {
       });
 
       // Meters: every observed value must be finite and within [0, 1].
-      // This may throw if the retryBudget (set above) is exhausted.
+      // Strict policy makes any failed verification visible to the test.
       const meters = observer.meters.snapshot();
       const seenPeak = meters.peak;
 

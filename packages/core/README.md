@@ -30,9 +30,10 @@ planLayout
 - `buildHandoff` and `acceptHandoff` make transfer and validation explicit.
 - Controller, processor, and observer bindings expose different write and read
   capabilities.
-- Processor parameter reads and observer reads use bounded seqlock checks.
-- The public SWSR ring helpers provide a fixed-capacity command queue for one
-  producer and one consumer.
+- Processor parameter reads and observer read attempts use bounded seqlock
+  checks.
+- The public SWSR ring helpers provide a fixed usable-capacity event queue for
+  one producer and one consumer.
 
 The [quickstart](../../apps/docs/src/quickstart.md) shows the smallest complete
 local flow. See the [core flow](../../apps/docs/src/core-flow.md) for ownership
@@ -50,10 +51,17 @@ status and executable evidence.
 - Type, runtime, property, worker, benchmark, and package-smoke coverage
 
 Controller meter snapshots are direct cold-path copies. They are not
-seqlock-verified as a multi-field unit; use an observer binding when that
-coherence guarantee is required. Processor `within(...)` calls fail explicitly
-when their bounded read work is exhausted, which lets the caller retain its own
-last-good state.
+seqlock-verified as a multi-field unit. Observer snapshots attempt bounded
+verification but default to best-effort fallback; configure
+`degrade: "throw"` when verification failure must throw instead. Processor
+`within(...)` calls fail explicitly when their bounded read work is exhausted,
+which lets the caller retain its own last-good state.
+
+For the SWSR ring, `capacity` is the number of usable entries, arbitrary
+positive capacities are supported, and full enqueue attempts reject the newest
+value without modifying queued entries. See the current
+[SWSR reference](./docs/architecture/18-command-ring-swsr.md) for drain and
+error semantics.
 
 Packed and partitioned `SharedArrayBuffer` backings can be carried by handoff
 v1. Shared `WebAssembly.Memory` is supported for local binding, but not by the

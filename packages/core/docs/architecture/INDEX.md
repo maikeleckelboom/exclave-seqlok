@@ -25,7 +25,7 @@ below to interpret individual records.
 | [15 - Error system](./15-seqwire-error-system-and-fail-fast-philosophy.md) | Historical rationale | Earlier error catalog and philosophy; use [Error model](../../../../apps/docs/src/error-model.md) now. |
 | [16 - E2E visual guide](./16-seqwire-e2e-flow-visual-guide.md) | Superseded | Contains mixed-generation flow and snapshot claims. |
 | [17 - Hot and cold paths](./17-hot-vs-cold-path-design-philosophy.md) | Historical rationale | Useful performance intent, not an allocation guarantee. |
-| [18 - SWSR command ring](./18-command-ring-swsr.md) | Current low-level reference | The public fixed-capacity ring primitive; application command examples remain illustrative. |
+| [18 - SWSR ring primitive](./18-command-ring-swsr.md) | Current low-level reference | The public usable-capacity SWSR contract, including full, drain, replay, ordering, and statistics semantics. |
 
 No document in this folder overrides the exported source or tests. Historical
 records are intentionally retained because they explain rejected directions and

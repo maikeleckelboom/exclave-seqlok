@@ -9,6 +9,7 @@ import type {
 type F32RO = Readonly<Float32Array>;
 type I32RO = Readonly<Int32Array>;
 type U8RO = Readonly<Uint8Array>;
+type U32RO = Readonly<Uint32Array>;
 
 describe("Param Shapes via ParamValueFor", () => {
   it("bool → boolean", () => {
@@ -50,9 +51,11 @@ describe("Meter Shapes via MeterValueFor", () => {
       meters: {
         peak: { kind: "f32" };
         spectrum: { kind: "f32.array"; length: 512 };
+        flags: { kind: "bool.array"; length: 4 };
       };
     }
     expectTypeOf<MeterValueFor<S, "peak">>().toEqualTypeOf<number>();
     expectTypeOf<MeterValueFor<S, "spectrum">>().toExtend<F32RO>();
+    expectTypeOf<MeterValueFor<S, "flags">>().toEqualTypeOf<U32RO>();
   });
 });

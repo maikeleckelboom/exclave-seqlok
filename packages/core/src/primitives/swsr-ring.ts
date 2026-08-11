@@ -12,12 +12,12 @@ export const SWSR_HEADER_WORDS = 16;
 /**
  * Header word indices.
  *
- * Layout (all u32 in little-endian order):
+ * Layout (all fields are unsigned 32-bit words):
  *
- * - [0] writeIndex: next slot index the producer will write into (0..capacity-1)
- * - [1] readIndex:  next slot index the consumer will read from   (0..capacity-1)
- * - [2] writeSeq:   monotonically increasing commit counter
- * - [3] dropped:    count of failed enqueue attempts due to a full ring
+ * - [0] writeIndex: next physical slot the producer will write into
+ * - [1] readIndex:  next physical slot the consumer will read from
+ * - [2] writeSeq:   successful-enqueue counter, modulo 2^32
+ * - [3] dropped:    full-ring rejection counter, modulo 2^32
  * - [4..15] reserved/padding
  */
 export const SWSR_HEADER_WRITE_INDEX = 0;
@@ -29,7 +29,10 @@ export const SWSR_HEADER_DROPPED = 3;
  * Layout parameters used when allocating a SWSR ring.
  *
  * @remarks
- * - `capacity` is the number of slots in the ring (must be ≥ 1).
+ * - `capacity` is the usable number of queued entries (must be ≥ 1).
+ * - The implementation allocates one additional physical slot to distinguish
+ *   full from empty without reducing the requested usable capacity.
+ * - Arbitrary capacities are supported; powers of two are not required.
  * - `wordsPerSlot` is the number of 32-bit words in each slot (≥ 1).
  *   The application is responsible for defining the slot payload layout.
  */
@@ -50,6 +53,7 @@ export interface SwsrRingBacking {
   readonly sab: SharedArrayBuffer;
   readonly header: Uint32Array;
   readonly slots: Uint32Array;
+  /** Usable number of queued entries. */
   readonly capacity: number;
   readonly wordsPerSlot: number;
 }
@@ -78,8 +82,7 @@ export interface SwsrRingDecode<T> {
  * Lightweight statistics for a producer.
  *
  * @remarks
- * Currently tracks only the number of dropped enqueue attempts due to
- * a full ring. This can be extended later without breaking ABI.
+ * Tracks the number of enqueue attempts rejected because the ring was full.
  */
 export interface SwsrRingStats {
   readonly dropped: number;
@@ -99,8 +102,10 @@ export interface SwsrRingProducer<T> {
    * - `false` if the ring was full and the value was dropped.
    *
    * @remarks
-   * This method is wait-free for the producer. It never blocks; on a full
-   * ring it increments the `dropped` counter and returns `false`.
+   * The ring protocol does not block, spin, or retry. On a full ring it does
+   * not invoke the encoder or modify queued entries; it increments `dropped`
+   * and returns `false`. The caller-supplied encoder runs synchronously on a
+   * successful enqueue and remains responsible for its own bounded behavior.
    */
   enqueue(value: T): boolean;
 
@@ -108,7 +113,8 @@ export interface SwsrRingProducer<T> {
    * Read a snapshot of producer-side statistics.
    *
    * @remarks
-   * Stats are approximate and intended for diagnostics/telemetry only.
+   * The returned `dropped` value is an exact atomic snapshot of the counter at
+   * the time of the load. It wraps modulo 2^32.
    */
   stats(): SwsrRingStats;
 }
@@ -123,8 +129,14 @@ export interface SwsrRingConsumer<T> {
    * Drain all currently enqueued values and invoke `handle` for each.
    *
    * @remarks
-   * - This method processes a finite snapshot of the ring contents: it
-   *   drains from the current `readIndex` up to the current `writeIndex`.
+   * - This method processes a finite snapshot of the ring contents: it drains
+   *   only entries published before the `writeIndex` load at the start.
+   * - Entries enqueued while `handle` is running wait for the next call.
+   * - Each decoded entry is marked consumed after `handle` returns or throws.
+   *   If `handle` throws, that error propagates and later entries remain
+   *   queued, but the entry already handed to `handle` is not replayed.
+   * - If decoding throws, the entry remains queued because `handle` was not
+   *   invoked.
    * - It does not block and does not spin or wait for new data.
    * - Typical usage is "once per audio block" or "once per render tick".
    */
@@ -139,12 +151,16 @@ export interface SwsrRingConsumer<T> {
  *
  * @returns A backing structure with views over the header and slot region.
  *
- * @throws If `capacity < 1` or `wordsPerSlot < 1`.
+ * @throws If `capacity` is not an integer in `[1, 2^32 - 1]`, if
+ * `wordsPerSlot` is not a positive safe integer, or if their allocation size
+ * exceeds safe integer bounds.
  *
  * @remarks
  * - The underlying buffer is zero-initialized.
  * - The header is 16 words (64 bytes) aligned at the start of the buffer
- *   and is followed by `capacity * wordsPerSlot` payload words.
+ *   and is followed by `(capacity + 1) * wordsPerSlot` payload words. The
+ *   extra physical slot distinguishes full from empty; callers can enqueue
+ *   exactly `capacity` entries.
  * - The caller is responsible for sharing `sab` with the producer and
  *   consumer threads (e.g. via postMessage or AudioWorkletOptions).
  */
@@ -152,20 +168,38 @@ export function allocateSwsrRing(layout: SwsrRingLayout): SwsrRingBacking {
   const { capacity, wordsPerSlot } = layout;
 
   invariant(
-    Number.isInteger(capacity) && capacity > 0,
+    Number.isSafeInteger(capacity) && capacity > 0 && capacity <= 0xffffffff,
     "primitives.swsrRingInvalidLayout",
-    "SwsrRing: capacity must be a positive integer",
+    "SwsrRing: capacity must be an integer between 1 and 2^32 - 1",
     { capacity, wordsPerSlot },
   );
 
   invariant(
-    Number.isInteger(wordsPerSlot) && wordsPerSlot > 0,
+    Number.isSafeInteger(wordsPerSlot) && wordsPerSlot > 0,
     "primitives.swsrRingInvalidLayout",
-    "SwsrRing: wordsPerSlot must be a positive integer",
+    "SwsrRing: wordsPerSlot must be a positive safe integer",
     { capacity, wordsPerSlot },
   );
 
-  const totalWords = SWSR_HEADER_WORDS + capacity * wordsPerSlot;
+  const physicalSlotCount = capacity + 1;
+  const slotWords = physicalSlotCount * wordsPerSlot;
+
+  invariant(
+    Number.isSafeInteger(slotWords),
+    "primitives.swsrRingInvalidLayout",
+    "SwsrRing: layout exceeds safe integer bounds",
+    { capacity, wordsPerSlot },
+  );
+
+  const totalWords = SWSR_HEADER_WORDS + slotWords;
+
+  invariant(
+    Number.isSafeInteger(totalWords) &&
+      Number.isSafeInteger(totalWords * Uint32Array.BYTES_PER_ELEMENT),
+    "primitives.swsrRingInvalidLayout",
+    "SwsrRing: allocation size exceeds safe integer bounds",
+    { capacity, wordsPerSlot },
+  );
 
   const sab = new SharedArrayBuffer(totalWords * Uint32Array.BYTES_PER_ELEMENT);
 
@@ -173,7 +207,7 @@ export function allocateSwsrRing(layout: SwsrRingLayout): SwsrRingBacking {
   const slots = new Uint32Array(
     sab,
     SWSR_HEADER_WORDS * Uint32Array.BYTES_PER_ELEMENT,
-    capacity * wordsPerSlot,
+    slotWords,
   );
 
   header[0] = 0; // writeIndex
@@ -209,13 +243,14 @@ export function bindSwsrRingProducer<T>(
   encode: SwsrRingEncode<T>,
 ): SwsrRingProducer<T> {
   const { header, slots, capacity, wordsPerSlot } = backing;
+  const physicalSlotCount = capacity + 1;
 
   const enqueue = (value: T): boolean => {
     const readIndex = Atomics.load(header, SWSR_HEADER_READ_INDEX);
     const writeIndex = Atomics.load(header, SWSR_HEADER_WRITE_INDEX);
 
     // Compute next index with wrap-around.
-    const next = writeIndex + 1 === capacity ? 0 : writeIndex + 1;
+    const next = writeIndex + 1 === physicalSlotCount ? 0 : writeIndex + 1;
 
     if (next === readIndex) {
       // Ring is full: drop newest value and bump diagnostics counter.
@@ -253,14 +288,16 @@ export function bindSwsrRingProducer<T>(
  * @remarks
  * - This API assumes a single consumer thread. Concurrent readers are
  *   undefined behavior.
- * - `drain` processes a finite snapshot from `readIndex` up to the current
- *   `writeIndex` and then updates `readIndex` in one atomic store.
+ * - `drain` loads its terminal `writeIndex` once, then publishes consumption
+ *   after each callback completes. This prevents replay after a later callback
+ *   throws and prevents the producer from reusing a slot during its callback.
  */
 export function bindSwsrRingConsumer<T>(
   backing: SwsrRingBacking,
   decode: SwsrRingDecode<T>,
 ): SwsrRingConsumer<T> {
   const { header, slots, capacity, wordsPerSlot } = backing;
+  const physicalSlotCount = capacity + 1;
 
   const drain = (handle: (value: T) => void): void => {
     let readIndex = Atomics.load(header, SWSR_HEADER_READ_INDEX);
@@ -269,12 +306,16 @@ export function bindSwsrRingConsumer<T>(
     while (readIndex !== writeIndex) {
       const base = readIndex * wordsPerSlot;
       const value = decode.decode(slots, base);
-      handle(value);
+      const next = readIndex + 1 === physicalSlotCount ? 0 : readIndex + 1;
 
-      readIndex = readIndex + 1 === capacity ? 0 : readIndex + 1;
+      try {
+        handle(value);
+      } finally {
+        Atomics.store(header, SWSR_HEADER_READ_INDEX, next);
+      }
+
+      readIndex = next;
     }
-
-    Atomics.store(header, SWSR_HEADER_READ_INDEX, readIndex);
   };
 
   return { drain };

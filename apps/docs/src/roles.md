@@ -18,7 +18,8 @@ Controller responsibilities:
 Controller meter snapshots are direct cold-path copies. They are useful for
 single values and ordinary UI reads, but a multi-field controller snapshot is
 not seqlock-verified as one coherent publication. Bind an observer when that
-guarantee is required.
+check is needed, and configure `degrade: "throw"` when failure must not fall
+back to a best-effort snapshot.
 
 ## Processor
 
@@ -36,18 +37,19 @@ Processor responsibilities:
 
 ## Realtime Quantum Flow
 
-`within(...)` gives the processor a coherent callback-scoped param view. Its
-spin and retry work is bounded; if the budget is exhausted, the callback is not
-called and the read fails with a structured error. Array views from that
-callback are ephemeral: read or copy what you need, but do not retain them after
-the callback returns. The binding constructs the view shape for each read, so
-`within(...)` is not a zero-allocation API.
+`within(...)` gives the processor seqlock-verified scalar values and
+callback-scoped array views. Its spin and retry work is bounded; if the budget
+is exhausted, the callback is not called and the read fails with a structured
+error. Array views are live and ephemeral rather than detached coherent copies:
+read or copy what you need, but do not retain them after the callback returns.
+The binding constructs the view shape for each read, so `within(...)` is not a
+zero-allocation API.
 
 ```mermaid
 flowchart LR
   tick["Audio quantum start<br/>for example 128 samples"]
   within["processor.params.within(...)"]
-  read["coherent param read"]
+  read["verified scalars + ephemeral arrays"]
   process["process audio"]
   publish["processor.meters.publish(...)"]
   write["write meters"]
@@ -76,15 +78,17 @@ The observer is a read-only binding for telemetry, inspection, visualizers, and 
 
 Observer responsibilities:
 
-- Read seqlock-checked param snapshots.
-- Read seqlock-checked meter snapshots.
-- Use `within(...)` for callback-scoped coherent reads instead of retaining a snapshot.
+- Attempt bounded seqlock-checked param and meter snapshots.
+- Use `params.within(...)` when verification failure must throw without snapshot
+  degradation.
 - Avoid writes entirely.
 
 Observer snapshot retries are bounded. The default `returnLatest` policy reuses
-the last complete coherent snapshot when one has been cached; a first or partial
-snapshot can fall back to one direct best-effort read. Use `degrade: "throw"`
-and retain caller-owned last-good state when a torn fallback is unacceptable.
+the last complete verified snapshot when one has been cached; a first or
+partial snapshot can fall back to one direct unverified read. Observer snapshot
+arrays are detached copies made during the read attempt. Use
+`degrade: "throw"` and retain caller-owned last-good state when an unverified
+fallback is unacceptable.
 
 ## Choosing a Role
 

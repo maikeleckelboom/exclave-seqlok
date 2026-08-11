@@ -1,8 +1,8 @@
 import type {
-  MeterShape,
+  MeterWriter,
   MeterValueFor,
-  ParamShape,
   ParamValueFor,
+  ProcessorParamsView,
 } from "./binding/common/types";
 import type { MeterKeys, ParamKeys, SpecInput } from "./spec/types";
 
@@ -58,11 +58,12 @@ export type MeterValues<S extends SpecInput> = {
 };
 
 /**
- * Processor-side coherent param view.
+ * Processor-side parameter view.
  *
  * This is the type you see inside `params.within()` on the processor:
- * scalars are plain numbers/booleans, arrays are *mutable scratch views*
- * backed by the shared memory.
+ * scalars are seqlock-verified plain numbers/booleans, while arrays are live,
+ * callback-scoped scratch views backed by shared memory rather than detached
+ * coherent copies.
  *
  * @typeParam S - The spec input produced by {@link defineSpec}.
  *
@@ -76,13 +77,14 @@ export type MeterValues<S extends SpecInput> = {
  *   const spectrum = view.spectrum; // Float32Array scratch view
  * });
  */
-export type ProcessorParamView<S extends SpecInput> = ParamShape<S>;
+export type ProcessorParamView<S extends SpecInput> = ProcessorParamsView<S>;
 
 /**
- * Processor-side coherent meter view.
+ * Processor-side meter writer view.
  *
  * This is the type you see inside `meters.publish()` on the processor:
- * scalars are writer functions, arrays are scratch views for bulk writes.
+ * scalars are writer functions, while arrays are written through
+ * `stage(key, callback)`.
  *
  * @typeParam S - The spec input produced by {@link defineSpec}.
  *
@@ -92,11 +94,12 @@ export type ProcessorParamView<S extends SpecInput> = ParamShape<S>;
  *
  * meters.publish((view: ProcessorMeterView<Spec>) => {
  *   view.engineFps(60);
- *   const spectrum = view.spectrum;
- *   // write into `spectrum` here
+ *   view.stage('spectrum', (destination) => {
+ *     destination.set(spectrumSource);
+ *   });
  * });
  */
-export type ProcessorMeterView<S extends SpecInput> = MeterShape<S>;
+export type ProcessorMeterView<S extends SpecInput> = MeterWriter<S>;
 
 /**
  * Shape of a param snapshot constrained to a key list.

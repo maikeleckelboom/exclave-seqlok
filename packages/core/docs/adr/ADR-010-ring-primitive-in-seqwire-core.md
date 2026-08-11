@@ -1,8 +1,16 @@
 # ADR-010: Ring Primitive in `@exclave/seqwire`
 
-**Status**: Accepted and implemented
+**Status**: Accepted; implemented with later public-contract refinements
 **Date**: 2025-11-19
 **Owner**: _TBD_
+
+> **Current implementation note (2026-08-11):** This ADR preserves the
+> conceptual decision and original examples. It is not the current API
+> reference. The shipped API uses `allocateSwsrRing`, `enqueue`, and a fresh
+> `SharedArrayBuffer`; `capacity` is usable capacity with one extra physical
+> slot; arbitrary positive capacities are supported; and full enqueue attempts
+> reject the incoming value without overwriting queued entries. See the current
+> [SWSR ring reference](../architecture/18-command-ring-swsr.md).
 
 **Related**:
 
@@ -274,7 +282,7 @@ This allows:
   different overflow policies), those can be built on top of the primitive without
   changing its ABI.
 
-This ADR is the normative source for:
+This ADR records the accepted rationale for:
 
 - the presence and layout of the ring primitive in `@exclave/seqwire`,
 - its relationship to MWMR system design (ADR-00Y),

@@ -23,10 +23,7 @@
  */
 
 import { addU32, loadU32, spinUntilEven } from "./atomics";
-import { createError } from "../errors/error";
 import { invariant } from "../errors/invariant";
-
-import type { PrimitivesSeqlockTimeoutDetails } from "../errors/codes/primitives";
 
 /**
  * Pair of indices into a `Uint32Array` forming a seqlock.
@@ -197,8 +194,9 @@ export function publish<T>(p: SeqPair, fn: () => T): T {
  * - Reads `SEQ` (`seq0`), then calls `reader()`, then reads `SEQ` again (`seq1`).
  * - Accepts the snapshot if `seq0 === seq1` and LOCK is still even.
  * - Otherwise, retries up to `retryBudget` times.
- * - If budgets are exhausted:
- *   - A structured timeout error (`primitives.seqlockTimeout`) is thrown.
+ * - If budgets are exhausted, returns `ok: false` with the last best-effort
+ *   candidate and a `budgetExhausted` status. Binding policy decides whether
+ *   to return a fallback or throw a binding-level error.
  */
 export function tryRead<T>(
   pair: SeqPair,
@@ -232,14 +230,13 @@ export function tryRead<T>(
   const retryBudget = retryBudgetOption;
 
   let totalSpins = 0;
-  let retriesUsed = 0;
-
   // Attempt 0 + up to `retryBudget` additional retries.
-  while (retriesUsed <= retryBudget) {
+  for (let retriesUsed = 0; retriesUsed <= retryBudget; retriesUsed += 1) {
     const spinResult = spinUntilEven(pair.u32, pair.lockIndex, spinBudget);
 
     if (!spinResult) {
       // Never observed an even LOCK within spin budget.
+      totalSpins += spinBudget;
       const status: ReadStatus = {
         spins: totalSpins,
         retries: retriesUsed,
@@ -265,23 +262,15 @@ export function tryRead<T>(
       return { ok: true, value, status };
     }
 
-    retriesUsed += 1;
+    if (retriesUsed === retryBudget) {
+      const status: ReadStatus = {
+        spins: totalSpins,
+        retries: retriesUsed,
+        kind: "budgetExhausted",
+      };
+      return { ok: false, value, status };
+    }
   }
 
-  // Budgets exhausted (spins or retries). This is considered a timeout in
-  // the sense of the primitives domain; we surface it as a structured error.
-  const details = {
-    where: "primitives.seqlock.tryRead",
-    detail: `spinBudget=${String(spinBudget)}, retryBudget=${String(
-      retryBudget,
-    )}, spins=${String(totalSpins)}, retriesUsed=${String(retriesUsed)}`,
-    spinBudget,
-    actualSpins: totalSpins,
-  } as const satisfies PrimitivesSeqlockTimeoutDetails;
-
-  throw createError(
-    "primitives.seqlockTimeout",
-    "Seqlock acquisition timeout",
-    details,
-  );
+  throw new Error("unreachable seqlock retry state");
 }

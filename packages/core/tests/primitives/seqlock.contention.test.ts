@@ -27,31 +27,35 @@ describe("Seqlock Contention & Fallback Mechanisms", () => {
     });
 
     expect(result.ok).toBe(false);
-    // Implementation may optimize spins, so we assert valid range rather than exact count
-    expect(result.status.spins).toBeGreaterThanOrEqual(0);
+    expect(result.status.spins).toBe(10);
     expect(result.status.retries).toBe(0);
     expect(result.value).toBe(fallbackValue);
   });
 
-  it("throws timeout when retry budget is exhausted under rapid writes", () => {
+  it("returns budget exhaustion when rapid writes consume the retry budget", () => {
     const pair = makeSeqPair();
     let readCount = 0;
 
-    expect(() =>
-      tryRead(
-        pair,
-        () => {
-          readCount++;
-          // Simulate a writer advancing the sequence *during* the read operation
-          if (readCount <= 5) {
-            const currentSeq = pair.u32[1] ?? 0;
-            pair.u32[1] = currentSeq + 1;
-          }
-          return readCount;
-        },
-        { spinBudget: 1, retryBudget: 3 },
-      ),
-    ).toThrow(/timeout/i);
+    const result = tryRead(
+      pair,
+      () => {
+        readCount++;
+        // Simulate a writer advancing the sequence during the read operation.
+        if (readCount <= 5) {
+          const currentSeq = pair.u32[1] ?? 0;
+          pair.u32[1] = currentSeq + 1;
+        }
+        return readCount;
+      },
+      { spinBudget: 1, retryBudget: 3 },
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.status).toMatchObject({
+      retries: 3,
+      kind: "budgetExhausted",
+    });
+    expect(result.value).toBe(4);
   });
 
   it("succeeds on first attempt under no contention", () => {
@@ -104,23 +108,27 @@ describe("Seqlock Contention & Fallback Mechanisms", () => {
     expect(pair.u32[0]).toBe(2);
   });
 
-  it("throws timeout when no coherent read is possible within budget", () => {
+  it("returns the last candidate when no coherent read is possible", () => {
     const pair = makeSeqPair();
     let attempts = 0;
 
-    expect(() =>
-      tryRead(
-        pair,
-        () => {
-          attempts++;
-          // Force sequence mismatch on every attempt
-          const currentSeq = pair.u32[1] ?? 0;
-          pair.u32[1] = currentSeq + 1;
-          return `attempt-${String(attempts)}`;
-        },
-        { spinBudget: 0, retryBudget: 3 },
-      ),
-    ).toThrow(/timeout/i);
+    const result = tryRead(
+      pair,
+      () => {
+        attempts++;
+        // Force sequence mismatch on every attempt.
+        const currentSeq = pair.u32[1] ?? 0;
+        pair.u32[1] = currentSeq + 1;
+        return `attempt-${String(attempts)}`;
+      },
+      { spinBudget: 0, retryBudget: 3 },
+    );
+
+    expect(result).toMatchObject({
+      ok: false,
+      value: "attempt-4",
+      status: { retries: 3, kind: "budgetExhausted" },
+    });
   });
 
   it("resets spin counter between retries (documented behavior)", () => {

@@ -302,17 +302,14 @@ export function observerImpl<const S extends SpecInput>(
         keys = args as readonly ParamKeys<S>[];
       }
 
+      if (keys?.length === 0) {
+        keys = undefined;
+      }
+
       const reader = () => {
-        const snap = (
-          paramsSnapshotRaw as (ks?: readonly ParamKeys<S>[]) => unknown
-        )(keys);
-
-        if (!keys) {
-          // Only full snapshots are cached as last-known-good.
-          lastParamsSnapshot = snap as ParamsSnapshot<S>;
-        }
-
-        return snap;
+        return (paramsSnapshotRaw as (ks?: readonly ParamKeys<S>[]) => unknown)(
+          keys,
+        );
       };
 
       const degradedReader = () => {
@@ -336,6 +333,11 @@ export function observerImpl<const S extends SpecInput>(
         },
         reader,
         degradedReader,
+        (verified) => {
+          if (!keys && paramsDegrade === "returnLatest") {
+            lastParamsSnapshot = verified as ParamsSnapshot<S>;
+          }
+        },
       ) as ReturnType<ObserverParamsSnapshotFn<S>>;
     }) as ObserverParamsSnapshotFn<S>;
 
@@ -398,16 +400,14 @@ export function observerImpl<const S extends SpecInput>(
         keys = args as readonly MeterKeys<S>[];
       }
 
+      if (keys?.length === 0) {
+        keys = undefined;
+      }
+
       const reader = () => {
-        const snap = (
-          metersSnapshotRaw as (ks?: readonly MeterKeys<S>[]) => unknown
-        )(keys);
-
-        if (!keys) {
-          lastMetersSnapshot = snap as MetersSnapshot<S>;
-        }
-
-        return snap;
+        return (metersSnapshotRaw as (ks?: readonly MeterKeys<S>[]) => unknown)(
+          keys,
+        );
       };
 
       const degradedReader = () => {
@@ -430,6 +430,11 @@ export function observerImpl<const S extends SpecInput>(
         },
         reader,
         degradedReader,
+        (verified) => {
+          if (!keys && metersDegrade === "returnLatest") {
+            lastMetersSnapshot = verified as MetersSnapshot<S>;
+          }
+        },
       ) as ReturnType<ObserverMetersSnapshotFn<S>>;
     }) as ObserverMetersSnapshotFn<S>;
 

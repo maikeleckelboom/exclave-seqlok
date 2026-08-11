@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { SeqWireError } from "../../src/errors/error";
 import {
@@ -12,162 +12,240 @@ import {
   SWSR_HEADER_WRITE_SEQ,
 } from "../../src/primitives/swsr-ring";
 
-describe("SWSR Ring Primitives: Runtime Behavior", () => {
-  /**
-   * Mock encoder strategy for testing.
-   * Writes numbers directly into the underlying Uint32Array.
-   */
-  const encodeNumber = {
-    encode(value: number, dst: Uint32Array, offset: number): void {
-      dst[offset] = value;
-    },
-  };
+const encodeNumber = {
+  encode(value: number, destination: Uint32Array, offset: number): void {
+    destination[offset] = value;
+  },
+};
 
-  /**
-   * Mock decoder strategy for testing.
-   * Reads numbers directly from the underlying Uint32Array.
-   */
-  const decodeNumber = {
-    decode(src: Uint32Array, offset: number): number {
-      // Simple decode without the overhead of validation logic.
-      // We assert non-null because the test setup guarantees valid offsets.
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return src[offset]!;
-    },
-  };
+const decodeNumber = {
+  decode(source: Uint32Array, offset: number): number {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return source[offset]!;
+  },
+};
 
-  it("allocates backing memory with correct header size and zero initialization", () => {
-    const capacity = 4;
+function createNumberRing(capacity: number) {
+  const backing = allocateSwsrRing({ capacity, wordsPerSlot: 1 });
+  return {
+    backing,
+    producer: bindSwsrRingProducer(backing, encodeNumber),
+    consumer: bindSwsrRingConsumer(backing, decodeNumber),
+  };
+}
+
+describe("SWSR ring primitives", () => {
+  it("treats capacity as usable entries and reserves one physical slot", () => {
+    const capacity = 1;
     const wordsPerSlot = 2;
-
     const backing = allocateSwsrRing({ capacity, wordsPerSlot });
 
-    expect(backing.capacity).toBe(capacity);
-    expect(backing.wordsPerSlot).toBe(wordsPerSlot);
-    expect(backing.sab).toBeInstanceOf(SharedArrayBuffer);
-
-    expect(backing.header.length).toBe(SWSR_HEADER_WORDS);
-    expect(backing.slots.length).toBe(capacity * wordsPerSlot);
-
-    // Ensure header is zero-initialized
-    for (let i = 0; i < SWSR_HEADER_WORDS; i += 1) {
-      expect(backing.header[i]).toBe(0);
-    }
-
-    // Validate total byte length calculation: Header + (Capacity * SlotSize)
-    const expectedWords = SWSR_HEADER_WORDS + capacity * wordsPerSlot;
-    const expectedBytes = expectedWords * Uint32Array.BYTES_PER_ELEMENT;
-    expect(backing.sab.byteLength).toBe(expectedBytes);
+    expect(backing.capacity).toBe(1);
+    expect(backing.wordsPerSlot).toBe(2);
+    expect(backing.header).toHaveLength(SWSR_HEADER_WORDS);
+    expect(backing.slots).toHaveLength((capacity + 1) * wordsPerSlot);
+    expect(backing.sab.byteLength).toBe(
+      (SWSR_HEADER_WORDS + (capacity + 1) * wordsPerSlot) *
+        Uint32Array.BYTES_PER_ELEMENT,
+    );
+    expect(Array.from(backing.header)).toEqual(
+      Array.from({ length: SWSR_HEADER_WORDS }, () => 0),
+    );
   });
 
-  it("rejects invalid layouts with specific error codes", () => {
-    // Case: Capacity <= 0
-    expect(() => allocateSwsrRing({ capacity: 0, wordsPerSlot: 1 })).toThrow(
-      SeqWireError,
-    );
+  it("supports arbitrary positive capacities rather than requiring powers of two", () => {
+    const { producer, consumer } = createNumberRing(3);
 
+    expect(producer.enqueue(1)).toBe(true);
+    expect(producer.enqueue(2)).toBe(true);
+    expect(producer.enqueue(3)).toBe(true);
+
+    const values: number[] = [];
+    consumer.drain((value) => values.push(value));
+    expect(values).toEqual([1, 2, 3]);
+  });
+
+  it.each([0, -1, 1.5, Number.NaN, 0x1_0000_0000, Number.MAX_SAFE_INTEGER + 1])(
+    "rejects invalid capacity %s",
+    (capacity) => {
+      expect(() => allocateSwsrRing({ capacity, wordsPerSlot: 1 })).toThrow(
+        SeqWireError,
+      );
+    },
+  );
+
+  it.each([0, -1, 1.5, Number.NaN, Number.MAX_SAFE_INTEGER + 1])(
+    "rejects invalid wordsPerSlot %s",
+    (wordsPerSlot) => {
+      expect(() => allocateSwsrRing({ capacity: 1, wordsPerSlot })).toThrow(
+        SeqWireError,
+      );
+    },
+  );
+
+  it("reports invalid layout details through the structured error", () => {
     try {
-      allocateSwsrRing({ capacity: 0, wordsPerSlot: 1 });
+      allocateSwsrRing({ capacity: 0, wordsPerSlot: 2 });
+      throw new Error("expected allocation to fail");
     } catch (error) {
-      const err = error as SeqWireError<"primitives.swsrRingInvalidLayout">;
-      expect(err.code).toBe("primitives.swsrRingInvalidLayout");
-      expect(err.details.capacity).toBe(0);
-      expect(err.details.wordsPerSlot).toBe(1);
+      expect(error).toBeInstanceOf(SeqWireError);
+      const seqwireError =
+        error as SeqWireError<"primitives.swsrRingInvalidLayout">;
+      expect(seqwireError.code).toBe("primitives.swsrRingInvalidLayout");
+      expect(seqwireError.details).toMatchObject({
+        capacity: 0,
+        wordsPerSlot: 2,
+      });
+    }
+  });
+
+  it("drains an empty ring without invoking the handler", () => {
+    const { consumer } = createNumberRing(2);
+    const handler = vi.fn();
+
+    consumer.drain(handler);
+
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("preserves FIFO order", () => {
+    const { backing, producer, consumer } = createNumberRing(4);
+
+    expect(producer.enqueue(10)).toBe(true);
+    expect(producer.enqueue(20)).toBe(true);
+    expect(producer.enqueue(30)).toBe(true);
+
+    const values: number[] = [];
+    consumer.drain((value) => values.push(value));
+
+    expect(values).toEqual([10, 20, 30]);
+    expect(backing.header[SWSR_HEADER_READ_INDEX]).toBe(
+      backing.header[SWSR_HEADER_WRITE_INDEX],
+    );
+  });
+
+  it("preserves FIFO order through repeated wraparound", () => {
+    const { producer, consumer } = createNumberRing(3);
+    const values: number[] = [];
+
+    for (let batch = 0; batch < 12; batch += 1) {
+      for (let offset = 1; offset <= 3; offset += 1) {
+        expect(producer.enqueue(batch * 3 + offset)).toBe(true);
+      }
+      consumer.drain((value) => values.push(value));
     }
 
-    // Case: WordsPerSlot <= 0
-    expect(() => allocateSwsrRing({ capacity: 1, wordsPerSlot: 0 })).toThrow(
-      SeqWireError,
-    );
+    expect(values).toEqual(Array.from({ length: 36 }, (_, index) => index + 1));
   });
 
-  it("enqueues and drains values in FIFO order while updating write sequences", () => {
-    const backing = allocateSwsrRing({ capacity: 8, wordsPerSlot: 1 });
-    const producer = bindSwsrRingProducer(backing, encodeNumber);
-    const consumer = bindSwsrRingConsumer(backing, decodeNumber);
+  it("rejects the incoming value when full without changing queued values", () => {
+    const { backing, producer, consumer } = createNumberRing(3);
 
-    expect(producer.enqueue(1)).toBe(true);
-    expect(producer.enqueue(2)).toBe(true);
-    expect(producer.enqueue(3)).toBe(true);
+    expect(producer.enqueue(10)).toBe(true);
+    expect(producer.enqueue(11)).toBe(true);
+    expect(producer.enqueue(12)).toBe(true);
 
-    // writeSeq tracks successful commits
+    const slotsBeforeFailure = Array.from(backing.slots);
+    expect(producer.enqueue(99)).toBe(false);
+    expect(producer.enqueue(100)).toBe(false);
+
+    expect(Array.from(backing.slots)).toEqual(slotsBeforeFailure);
     expect(backing.header[SWSR_HEADER_WRITE_SEQ]).toBe(3);
+    expect(backing.header[SWSR_HEADER_DROPPED]).toBe(2);
+    expect(producer.stats()).toEqual({ dropped: 2 });
 
-    const received: number[] = [];
-    consumer.drain((value) => {
-      received.push(value);
-    });
+    const values: number[] = [];
+    consumer.drain((value) => values.push(value));
+    expect(values).toEqual([10, 11, 12]);
+  });
 
-    expect(received).toEqual([1, 2, 3]);
+  it("keeps counter behavior exact modulo 2^32", () => {
+    const { backing, producer } = createNumberRing(1);
 
-    // Subsequent drain should be a no-op (idempotent)
-    consumer.drain((value) => {
-      received.push(value);
-    });
-    expect(received).toEqual([1, 2, 3]);
+    Atomics.store(backing.header, SWSR_HEADER_WRITE_SEQ, 0xffffffff);
+    expect(producer.enqueue(1)).toBe(true);
+    expect(backing.header[SWSR_HEADER_WRITE_SEQ]).toBe(0);
 
+    Atomics.store(backing.header, SWSR_HEADER_DROPPED, 0xffffffff);
+    expect(producer.enqueue(2)).toBe(false);
     expect(producer.stats().dropped).toBe(0);
-
-    // Read index should have synchronized with write index
-    expect(backing.header[SWSR_HEADER_READ_INDEX]).toBe(
-      backing.header[SWSR_HEADER_WRITE_INDEX],
-    );
   });
 
-  it("drops the newest value when the ring is full and tracks the dropped count", () => {
-    // Capacity 2 implies at most 1 usable slot (one slot reserved for head/tail separation)
-    const backing = allocateSwsrRing({ capacity: 2, wordsPerSlot: 1 });
-    const producer = bindSwsrRingProducer(backing, encodeNumber);
-    const consumer = bindSwsrRingConsumer(backing, decodeNumber);
-
-    const first = producer.enqueue(10);
-    const second = producer.enqueue(11); // Should fail (drop) due to full ring
-
-    expect(first).toBe(true);
-    expect(second).toBe(false);
-
-    // Only one successful commit
-    expect(backing.header[SWSR_HEADER_WRITE_SEQ]).toBe(1);
-    expect(producer.stats().dropped).toBe(1);
-    expect(backing.header[SWSR_HEADER_DROPPED]).toBe(1);
-
-    const drained: number[] = [];
-    consumer.drain((value) => {
-      drained.push(value);
-    });
-
-    expect(drained).toEqual([10]);
-  });
-
-  it("handles buffer wrap-around correctly when draining across boundary lines", () => {
-    const backing = allocateSwsrRing({ capacity: 4, wordsPerSlot: 1 });
-    const producer = bindSwsrRingProducer(backing, encodeNumber);
-    const consumer = bindSwsrRingConsumer(backing, decodeNumber);
-
-    // Fill near capacity
+  it("drains only the write-index snapshot captured at call start", () => {
+    const { producer, consumer } = createNumberRing(3);
     expect(producer.enqueue(1)).toBe(true);
     expect(producer.enqueue(2)).toBe(true);
-    expect(producer.enqueue(3)).toBe(true);
 
-    const firstBatch: number[] = [];
+    const firstDrain: number[] = [];
     consumer.drain((value) => {
-      firstBatch.push(value);
+      firstDrain.push(value);
+      if (value === 1) {
+        expect(producer.enqueue(3)).toBe(true);
+      }
     });
-    expect(firstBatch).toEqual([1, 2, 3]);
 
-    // Write new values that force indices to wrap (slots 3 -> 0)
-    expect(producer.enqueue(4)).toBe(true);
-    expect(producer.enqueue(5)).toBe(true);
+    expect(firstDrain).toEqual([1, 2]);
 
-    const secondBatch: number[] = [];
+    const secondDrain: number[] = [];
+    consumer.drain((value) => secondDrain.push(value));
+    expect(secondDrain).toEqual([3]);
+  });
+
+  it("does not free the current slot until its handler completes", () => {
+    const { producer, consumer } = createNumberRing(1);
+    expect(producer.enqueue(1)).toBe(true);
+
     consumer.drain((value) => {
-      secondBatch.push(value);
+      expect(value).toBe(1);
+      expect(producer.enqueue(2)).toBe(false);
     });
-    expect(secondBatch).toEqual([4, 5]);
 
-    // Verify synchronization after full cycle
-    expect(backing.header[SWSR_HEADER_READ_INDEX]).toBe(
-      backing.header[SWSR_HEADER_WRITE_INDEX],
-    );
+    expect(producer.enqueue(2)).toBe(true);
+  });
+
+  it("does not replay callbacks completed before or during a handler throw", () => {
+    const { producer, consumer } = createNumberRing(4);
+    for (const value of [1, 2, 3]) {
+      expect(producer.enqueue(value)).toBe(true);
+    }
+
+    const delivered: number[] = [];
+    expect(() => {
+      consumer.drain((value) => {
+        delivered.push(value);
+        if (value === 2) {
+          throw new Error("handler failed");
+        }
+      });
+    }).toThrow("handler failed");
+    expect(delivered).toEqual([1, 2]);
+
+    consumer.drain((value) => delivered.push(value));
+    expect(delivered).toEqual([1, 2, 3]);
+  });
+
+  it("keeps an entry queued when decoding throws before delivery", () => {
+    const backing = allocateSwsrRing({ capacity: 1, wordsPerSlot: 1 });
+    const producer = bindSwsrRingProducer(backing, encodeNumber);
+    let shouldThrow = true;
+    const consumer = bindSwsrRingConsumer(backing, {
+      decode(source, offset): number {
+        if (shouldThrow) {
+          shouldThrow = false;
+          throw new Error("decode failed");
+        }
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return source[offset]!;
+      },
+    });
+
+    expect(producer.enqueue(7)).toBe(true);
+    expect(() => {
+      consumer.drain(() => undefined);
+    }).toThrow("decode failed");
+
+    const delivered: number[] = [];
+    consumer.drain((value) => delivered.push(value));
+    expect(delivered).toEqual([7]);
   });
 });

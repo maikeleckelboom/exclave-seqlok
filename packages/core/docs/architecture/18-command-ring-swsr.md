@@ -1,360 +1,188 @@
-# SWSR Command Ring
+# SWSR Ring Primitive
+
+**Status:** Current low-level reference; application command scenarios are
+illustrative only
 
-**Status:** Current low-level reference; application command examples are illustrative
-**Audience:** Timing-sensitive host and engine research
+**Authority:** Exported source and tests remain authoritative. See
+[`swsr-ring.ts`](../../src/primitives/swsr-ring.ts) and its
+[runtime tests](../../tests/primitives/swsr-ring.runtime.test.ts).
+
+The public ring is a small generic queue over a fresh `SharedArrayBuffer`. It
+supports exactly one producer and one consumer. It is useful for bounded,
+ordered event delivery beside SeqWire's parameter and meter state, but it is
+not part of the spec, plan, backing, or handoff pipeline.
+
+## Public API
 
-This document specifies a **Single-Writer Single-Reader (SWSR) command ring** used to
-send discrete commands (events) from a control role (UI / driver / host) to a
-real-time role (processor / audio engine) over shared memory.
+The root package exports:
+
+- `allocateSwsrRing({ capacity, wordsPerSlot })`
+- `bindSwsrRingProducer(backing, encoder)`
+- `bindSwsrRingConsumer(backing, decoder)`
+- the `SWSR_HEADER_*` constants and corresponding `SwsrRing*` types
 
-It is deliberately narrow:
+```ts
+import {
+  allocateSwsrRing,
+  bindSwsrRingConsumer,
+  bindSwsrRingProducer,
+} from "@exclave/seqwire";
 
-- Exactly **one writer** and **one reader** per ring.
-- Fixed capacity.
-- Bounded, predictable behaviour under pressure.
-- No implicit command dropping.
+const backing = allocateSwsrRing({ capacity: 3, wordsPerSlot: 1 });
 
-This ring is for **discrete events** (commands), not continuous parameters. For
-continuous parameters, SeqWire params/meters remain the primary mechanism.
+const producer = bindSwsrRingProducer(backing, {
+  encode(value: number, destination, offset) {
+    destination[offset] = value;
+  },
+});
+
+const consumer = bindSwsrRingConsumer(backing, {
+  decode(source, offset) {
+    return source[offset] ?? 0;
+  },
+});
 
----
+producer.enqueue(7);
+const received: number[] = [];
+consumer.drain((value) => {
+  received.push(value);
+});
+```
 
-## 1. Roles and Responsibilities
+The encoder and decoder define the application payload. The ring does not
+validate that they read or write exactly `wordsPerSlot` words, and it makes no
+allocation or execution-time guarantee about caller-supplied code.
 
-### 1.1 Writer role
+## Capacity and allocation
 
-Typical examples:
+`capacity` means usable queued entries. A ring allocated with `capacity: N`
+accepts exactly `N` successful enqueues before it is full.
 
-- UI or main thread in a desktop audio application.
-- “CompositeDriver” that converts high-level app actions into low-level commands.
+Internally, allocation reserves `N + 1` physical slots. One physical slot is
+kept unused to distinguish full from empty, so the public capacity is not
+reduced by that implementation detail:
 
-Responsibilities:
+```text
+header words = 16
+physical slots = capacity + 1
+slot words = (capacity + 1) * wordsPerSlot
+```
 
-- Construct well-formed command payloads.
-- Enqueue commands in FIFO order via the ring.
-- Respect backpressure (handle `push` failures explicitly).
-- Avoid unbounded command spam (coalesce where reasonable).
+The minimum valid capacity is `1`. Capacity may be any integer from `1` through
+`2^32 - 1`; it does not need to be a power of two. `wordsPerSlot` must be a
+positive safe integer, and the combined allocation size must stay within safe
+integer bounds. Platform allocation limits can reject a structurally valid but
+impractically large buffer.
 
-### 1.2 Reader role
+`allocateSwsrRing(...)` allocates a dedicated, zero-initialized
+`SharedArrayBuffer`. The current package does not expose a ring allocator for
+an existing SeqWire plane or `WebAssembly.Memory`.
 
-Typical examples:
+## Header and circular indices
 
-- AudioWorklet processor controlling a pair of engines.
-- Offline processor driving render passes.
+The 64-byte header is a 16-element `Uint32Array`:
 
-Responsibilities:
+| Word | Field | Contract |
+| --- | --- | --- |
+| `0` | `writeIndex` | Next physical slot the producer writes. |
+| `1` | `readIndex` | Next physical slot the consumer reads. |
+| `2` | `writeSeq` | Successful-enqueue counter modulo `2^32`. |
+| `3` | `dropped` | Full-ring rejection counter modulo `2^32`. |
+| `4..15` | Reserved | Zero-initialized padding for the current ABI. |
 
-- Poll/dequeue commands in FIFO order.
-- Apply commands atomically and deterministically to local state.
-- Bound worst-case work per audio block (e.g. max commands per block).
-- Expose any relevant state to SeqWire meters/params.
+`writeIndex` and `readIndex` are circular physical indices. They stay within
+the physical slot range and wrap explicitly at `capacity + 1`. They are not
+unbounded sequence counters, and the implementation does not derive queue size
+by subtracting them.
 
----
+The queue is empty when `writeIndex === readIndex`. It is full when advancing
+`writeIndex` by one physical slot would make it equal `readIndex`.
 
-## 2. Command Model
+## Enqueue and overflow
 
-A **command** is a small, fixed-layout record with:
+`producer.enqueue(value)` has two outcomes:
 
-- A **kind** (discriminant).
-- A small **payload** (immediate arguments, IDs, scalar values).
-- Optional **sequence number** or **timestamp** (for debugging/telemetry).
+- When space exists, the encoder writes the payload, the producer publishes the
+  next `writeIndex`, `writeSeq` increments once, and the call returns `true`.
+- When full, the call does not invoke the encoder or modify queued entries. The
+  incoming value is rejected, `dropped` increments once, `writeSeq` is
+  unchanged, and the call returns `false`.
 
-Conceptually:
+The ring protocol does not block, spin, resize, or retry. The caller owns any
+coalescing, deferral, retry, or escalation policy.
 
-- Commands are **at-most-once**: each enqueued command is processed zero or one
-  time, never more than once.
-- Commands are **in-order**: if writer enqueues `A` then `B`, reader observes
-  `A` before `B`.
+## Drain, errors, and replay
 
-### 2.1 Example command kinds
+`consumer.drain(handle)` loads `writeIndex` once at the start. It drains the
+FIFO entries published before that load. Values enqueued while a handler is
+running wait for the next `drain(...)` call, even if physical indices wrap.
 
-The spec does not freeze the exact set, but it assumes a small discriminated union
-shape like:
+Consumption is published after each callback completes:
 
-- `LOAD_TRACK` – attach/replace audio source for a deck.
-- `SPAWN_ENGINE` – create a new engine instance (varispeed/stretch/etc.).
-- `PRIME_ENGINE` – warm up an engine, optionally with preview reads.
-- `ISSUE_SWAP_TICKET` – schedule crossfade from engine A → B at a given frame.
-- `SET_ENGINE_PARAM` – discrete param change (e.g. change stretch mode).
-- `COMPACT_STATE` – optional housekeeping (e.g. retire engines).
+1. Decode the current slot.
+2. Invoke `handle(value)`.
+3. Store the next `readIndex` in a `finally` path.
 
-Constraints for payloads:
+This gives the following error contract:
 
-- Payloads are **POD-style** (plain old data): numbers, small enums, fixed-size
-  string IDs or indices.
-- No nested pointers, no JS object graphs, no allocations on the hot path.
-- All payloads are **fully determined** at enqueue time; reader never performs
-  “late binding” lookups that depend on host mutable JS objects.
+- If decoding throws, the callback was not invoked and the entry remains
+  queued for a later drain.
+- If the handler throws, that entry is still marked consumed, the error
+  propagates, and later snapshot entries remain queued.
+- A callback already invoked by `drain(...)` is not replayed by a later call.
+- Callback side effects are not transactional; the ring only governs queue
+  consumption.
 
----
+The producer cannot reuse the current physical slot until its handler returns
+or throws. Publishing consumption per entry adds one atomic store per delivered
+entry; this is the intentional cost of the error and replay contract.
 
-## 3. Ring Semantics
+## Ordering and concurrency
 
-### 3.1 Basic model
+The supported topology is one producer and one consumer per backing. The
+package documents but does not runtime-enforce that ownership. Concurrent
+producer bindings or concurrent consumer bindings are unsupported.
 
-The ring is modelled as:
+Observable ordering is:
 
-- A fixed-capacity array of slots, `capacity = 2^k` (for cheap masking).
-- Two monotonically increasing indices:
-  - `writeIndex` – next slot the writer will fill.
-  - `readIndex` – next slot the reader will consume.
+- The producer writes all payload words before atomically publishing the new
+  `writeIndex`.
+- A consumer reads a slot only after observing the published `writeIndex`.
+- The consumer publishes the next `readIndex` only after callback completion.
+- The producer tests the latest observed `readIndex` before writing, so it does
+  not overwrite an unread or currently handled slot.
 
-Derived quantities:
+JavaScript `Atomics` operations are sequentially consistent. The public
+guarantees above describe the JavaScript implementation; the package does not
+currently ship or certify a C++ mirror of this ring ABI.
 
-- `size = writeIndex - readIndex` (number of enqueued-but-unread commands).
-- Ring is **empty** if `size === 0`.
-- Ring is **full** if `size === capacity`.
+## Statistics
 
-Both indices are unbounded monotonically increasing counters; physical positions
-are `(index & (capacity - 1))`.
+`producer.stats()` returns `{ dropped }`. It is an exact atomic snapshot of the
+current unsigned 32-bit counter, although concurrent activity can make any
+snapshot stale immediately. Both `dropped` and the header's `writeSeq` wrap
+modulo `2^32`.
 
-### 3.2 Single-Writer, Single-Reader guarantees
+## Illustrative application context
 
-Because there is exactly one writer and one reader:
+Earlier SeqWire research used deck commands, engine spawning, swap tickets,
+load-track flows, and coalesced nudges to motivate a ring. Those remain useful
+examples of application-defined payloads and overflow policy, not current
+package types or methods. SeqWire core exports no deck lifecycle, opcode,
+ticket, engine, acknowledgement, priority, or multi-producer abstraction.
 
-- Writer is the **only** participant that mutates `writeIndex` and the contents of the
-  slot it is currently writing.
-- Reader is the **only** participant that mutates `readIndex` and the logical "ownership"
-  of the slot it is consuming.
-- No locks are required; progress is governed by a small number of atomic ops.
+For current package usage, keep the split simple:
 
-Memory ordering constraints (conceptual):
+- Params and meters carry shared state.
+- An SWSR ring can carry application-defined discrete events.
+- Multiple writers or readers require application topology outside this
+  primitive.
 
-- Writer must **write payload first**, then publish the new `writeIndex`.
-- Reader must **observe `writeIndex`**, then read payload from slots where
-  `readIndex < writeIndex`.
+## Non-goals
 
-Implementation details (Atomics, fences) are left to code, but the spec requires:
-
-- A reader never sees partially-written payloads.
-- A writer never overwrites a slot that still belongs to the reader.
-
----
-
-## 4. Backpressure and Overflow Policy
-
-The command ring **must not silently drop** commands.
-
-When the writer attempts to enqueue into a full ring, `push` **fails explicitly**.
-The call contract is:
-
-- `push(command)` → returns `true` on success, `false` on failure.
-- No internal retries or blocking; the caller controls the degradation strategy.
-
-Recommended writer strategies when `push` fails:
-
-- **Coalesce**: merge successive logical actions into a single later command
-  (e.g. many tiny pitch nudges into one final value).
-- **Defer**: schedule a retry on the next animation frame / tick.
-- **Escalate**: emit a telemetry meter or log indicating command pressure.
-
-Non-goals:
-
-- The ring will not:
-  - Spin-wait until there's room.
-  - Decide on its own which commands to drop.
-  - Resize dynamically (capacity is fixed by design).
-
-Capacity guidance (for docs, not enforced by code):
-
-- Choose capacity such that, for expected peak usage, the reader can drain the
-  ring within **one or a few audio blocks** without starving audio work.
-- Example heuristic: `capacity >= maxCommandsPerBlock * maxBufferedBlocks`.
-
----
-
-## 5. Error Handling and Instrumentation
-
-The ring itself is a low-level primitive and does not throw on normal pressure.
-
-Error surfaces:
-
-- **Usage errors** (e.g. misconfigured capacity, illegal indices) are guarded
-  at construction time, not at runtime.
-- **Operational pressure** is surfaced via `push` returning `false`.
-
-Instrumentation is handled externally via SeqWire meters, e.g.:
-
-- `commandQueue.size` – current queue depth.
-- `commandQueue.droppedWrites` – cumulative count of failed `push` attempts.
-- `commandQueue.maxObservedDepth` – high-water mark for tuning capacity.
-
-These meters give you dashboard visibility without baking policy into the ring.
-
----
-
-## 6. Integration with SeqWire
-
-### 6.1 Relationship to params/meters
-
-The command ring carries **discrete events**. SeqWire params/meters carry **state**.
-
-Recommended split:
-
-- Use **params** for continuous, sample-accurate numbers:
-  - playback rate, semitone offset, wet/dry mix, etc.
-- Use **commands** for "things that happen":
-  - load a new track, spawn a new engine, schedule a swap, jump to cue.
-
-Pattern:
-
-- Writer:
-  - Uses SeqWire **controller** to update current param values.
-  - Uses **command ring** to request structural/state transitions.
-- Reader:
-  - Uses SeqWire **processor** to read params within an audio block (`within`).
-  - Uses **command ring** to process queued events before/after sample loops.
-
-This keeps the ring lean and avoids asking it to be a param transport.
-
-### 6.2 Where the ring lives
-
-The SWSR ring is expected to be backed by:
-
-- A dedicated **SharedArrayBuffer** or a **plane** within a larger SeqWire backing.
-
-But it is **not** part of the canonical spec → plan → backing → handoff DSL.
-
-Instead:
-
-- The ring is a "sidecar" protocol layered beside SeqWire:
-  - It may use SeqWire allocation helpers or companion types.
-  - It does not affect the params/meters layout or hashes.
-  - It is versioned and documented as a separate protocol.
-
----
-
-## 7. Golden Flows
-
-This section defines "golden" end-to-end sequences for the ring.
-
-These scenarios will be reflected in both tests and higher-level docs.
-
-### 7.1 Golden Flow 1 – Load and Play Track
-
-**Goal:** UI requests a new track; processor eventually plays it.
-
-1. Writer (UI) enqueues `LOAD_TRACK` with:
-
-- `deckId`
-- `trackId`
-- `startPosition` (in samples or seconds)
-
-2. Push succeeds (`true`).
-3. Reader (processor) on next audio block:
-
-- Dequeues `LOAD_TRACK` (and any preceding commands).
-- Resolves `trackId` against its local registry (or shared map).
-- Prepares decoder/stream for the deck.
-- Optionally sets a `trackLoaded` meter to signal readiness.
-
-4. Writer sees readiness through:
-
-- Observer reading meters:
-  - `trackLoaded` (boolean or enum).
-  - `decoderWarmth` or other telemetry.
-
-The ring delivers the **event**, SeqWire meters corroborate the **state**.
-
-### 7.2 Golden Flow 2 – Engine Swap via SwapTicket
-
-**Goal:** Seamlessly swap from Engine A → Engine B using the hysteresis protocol.
-
-Assumptions:
-
-- Engine A is active.
-- Engine B has been spawned but not yet made live.
-
-Sequence:
-
-1. Writer enqueues `SPAWN_ENGINE` with:
-
-- `deckId`
-- `engineKind = 'stretch' | 'varispeed' | ...`
-- `engineId` (new unique ID)
-
-2. Reader:
-
-- Dequeues `SPAWN_ENGINE`.
-- Allocates/configures Engine B in **idle/warming** state.
-
-3. Once Engine B is warmed (internal logic):
-
-- Reader may update a meter like `engineWarmth[engineId]`.
-
-4. Writer, observing meters, decides swap is safe:
-
-- Enqueues `ISSUE_SWAP_TICKET` with:
-  - `deckId`
-  - `oldEngineId` (A)
-  - `newEngineId` (B)
-  - `activateAtFrame` (sample-accurate time)
-  - `crossFadeDurationFrames`
-
-5. Reader:
-
-- Dequeues `ISSUE_SWAP_TICKET`.
-- Schedules crossfade in its internal timeline.
-- At `activateAtFrame`, starts crossfade:
-  - A's contribution fades → 0.
-  - B's contribution fades → 1.
-- After crossfade, marks A as **retired** and B as **live**.
-
-Key invariant enforced by the ring:
-
-- There is a precise, ordered record of the life-cycle:
-  - spawn → warm → ticket → swap completion.
-- No "half-seen" swaps: either the ticket is processed or it isn't, but it won't
-  vanish silently.
-
-### 7.3 Golden Flow 3 – High-frequency Nudge / Coalescing
-
-**Goal:** Handle rapid UI tweaks (e.g. jog wheel nudges) without flooding the ring.
-
-Pattern:
-
-1. UI generates many small logical actions (`+1`, `-1` pitch nudge).
-2. Instead of enqueuing every single nudge:
-
-- The writer maintains local, non-shared accumulator state.
-- Periodically enqueues a single `SET_ENGINE_PARAM` with the **current**
-  desired value.
-
-3. If `push` fails:
-
-- Writer drops the failed command but keeps local accumulator.
-- Next tick, attempts another `SET_ENGINE_PARAM` with latest value.
-
-4. Reader:
-
-- Applies latest observed value in-order when dequeued.
-
-The ring thus carries **coalesced state transitions**, not every intermediate twitch.
-
----
-
-## 8. Non-Goals
-
-- **No MWMR**: this ring does not support multiple writers or readers. MWMR is
-  handled at a higher level via composition (multiple SWSR rings, observers, etc.).
-- **No dynamic resizing**: capacity is fixed at creation time.
-- **No implicit dropping**: all drops are explicit and visible via return values
-  and/or meters.
-- **No RPC semantics**: no built-in replies or acknowledgements; responses are
-  modelled via SeqWire meters or separate mechanisms.
-
----
-
-## 9. Future Extensions (Out of Scope for v0.3.0)
-
-These are explicitly deferred:
-
-- Priority classes (e.g. "real-time" vs "best-effort" commands).
-- Multi-queue scheduling (separate rings for transport vs engine management).
-- Formal verification of the ring using TLA+ or similar.
-
-For v0.3.0, the goal is a small, auditable SWSR primitive with:
-
-- Clear invariants.
-- Documented backpressure.
-- A few well-specified golden flows for future application experiments.
+- Multiple producers or consumers
+- Dynamic resizing
+- Blocking enqueue
+- Overwrite-oldest behavior
+- Built-in retries, priorities, replies, or acknowledgements
+- Integration with SeqWire layout hashes or handoff envelopes

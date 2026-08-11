@@ -397,7 +397,8 @@ function assertNotDisposed(disposed: boolean, where: string): void {
  * Build a processor binding from a concrete plan and backing.
  *
  * @remarks
- * - `params.within(...)` exposes a seqlock-protected coherent view of params.
+ * - `params.within(...)` exposes seqlock-verified scalar values and ephemeral
+ *   shared array views.
  * - `meters.publish(...)` exposes a seqlock-protected writer for meters.
  * - `version()` reads PU/MU commit counters via SC atomics.
  * - Lifetime is managed via `noteBinding` / `releaseBinding`.
