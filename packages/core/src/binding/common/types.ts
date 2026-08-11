@@ -479,9 +479,9 @@ export interface ControllerParamPolicyOptions {
  * within the configured budgets.
  *
  * @remarks
- * - `'returnLatest'` reuses a cached, seqlock-verified complete snapshot when
- *   available. Cached array values are detached copies. A first or partial
- *   snapshot falls back to one direct best-effort read.
+ * - `'returnLatest'` retains an internally owned copy of the last complete,
+ *   seqlock-verified snapshot and returns detached copies to callers. A first
+ *   or partial snapshot falls back to one direct best-effort read.
  * - `'throw'` rejects the snapshot with a structured binding error.
  */
 export type SnapshotDegradePolicy = "returnLatest" | "throw";

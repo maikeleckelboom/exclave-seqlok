@@ -196,9 +196,10 @@ inside each read attempt, so a verified observer snapshot is detached from later
 backing writes.
 
 The default `returnLatest` policy is best-effort on verification failure. A full
-snapshot reuses the last complete verified snapshot when one has been cached;
-otherwise it performs one direct unverified read. Partial snapshots do not use
-or populate the complete-snapshot cache and fall back directly.
+snapshot retains an internally owned copy of the last complete verified
+snapshot and returns a detached copy when that cache is used; otherwise it
+performs one direct unverified read. Partial snapshots do not use or populate
+the complete-snapshot cache and fall back directly.
 
 Set `degrade: "throw"` and retain caller-owned last-good state when an
 unverified fallback is unacceptable. Observer `params.within(...)` never

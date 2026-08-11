@@ -9,6 +9,7 @@
  */
 
 import {
+  cloneObserverSnapshot,
   createObserverMeterSnapshot,
   createObserverParamSnapshot,
 } from "./snapshot";
@@ -288,7 +289,7 @@ export function observerImpl<const S extends SpecInput>(
 
       const degradedReader = () => {
         if (!keys && lastParamsSnapshot && paramsDegrade === "returnLatest") {
-          return lastParamsSnapshot;
+          return cloneObserverSnapshot(lastParamsSnapshot);
         }
         // Best-effort fallback: raw snapshot without additional seqlock retries.
         return (paramsSnapshotRaw as (ks?: readonly ParamKeys<S>[]) => unknown)(
@@ -309,7 +310,9 @@ export function observerImpl<const S extends SpecInput>(
         degradedReader,
         (verified) => {
           if (!keys && paramsDegrade === "returnLatest") {
-            lastParamsSnapshot = verified as ParamsSnapshot<S>;
+            lastParamsSnapshot = cloneObserverSnapshot(
+              verified as ParamsSnapshot<S>,
+            );
           }
         },
       ) as ReturnType<ObserverParamsSnapshotFn<S>>;
@@ -360,7 +363,7 @@ export function observerImpl<const S extends SpecInput>(
 
       const degradedReader = () => {
         if (!keys && lastMetersSnapshot && metersDegrade === "returnLatest") {
-          return lastMetersSnapshot;
+          return cloneObserverSnapshot(lastMetersSnapshot);
         }
         return (metersSnapshotRaw as (ks?: readonly MeterKeys<S>[]) => unknown)(
           keys,
@@ -380,7 +383,9 @@ export function observerImpl<const S extends SpecInput>(
         degradedReader,
         (verified) => {
           if (!keys && metersDegrade === "returnLatest") {
-            lastMetersSnapshot = verified as MetersSnapshot<S>;
+            lastMetersSnapshot = cloneObserverSnapshot(
+              verified as MetersSnapshot<S>,
+            );
           }
         },
       ) as ReturnType<ObserverMetersSnapshotFn<S>>;

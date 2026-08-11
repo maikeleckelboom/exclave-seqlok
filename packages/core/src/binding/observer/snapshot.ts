@@ -33,7 +33,7 @@ import type {
   ParamKeys,
   SpecInput,
 } from "../../spec/types";
-import type { ParamArray } from "../common/array-views";
+import type { MeterArrayValue, ParamArray } from "../common/array-views";
 import type {
   MetersSnapshot,
   ParamsSnapshot,
@@ -56,6 +56,44 @@ type SnapshotMeterSlot = Readonly<{
   length: number;
   bytesPerElement: number;
 }>;
+
+type ObserverSnapshotArray = ParamArray | MeterArrayValue;
+type ObserverSnapshotValue = number | boolean | string | ObserverSnapshotArray;
+
+function isObserverSnapshotArray(
+  value: ObserverSnapshotValue,
+): value is ObserverSnapshotArray {
+  return (
+    value instanceof Float32Array ||
+    value instanceof Float64Array ||
+    value instanceof Int32Array ||
+    value instanceof Uint32Array ||
+    value instanceof Uint8Array ||
+    value instanceof Int8Array ||
+    value instanceof Int16Array ||
+    value instanceof Uint16Array
+  );
+}
+
+/**
+ * Clone the deliberately constrained observer snapshot value shape.
+ *
+ * @internal
+ */
+export function cloneObserverSnapshot<T extends Record<string, unknown>>(
+  snapshot: T,
+): T {
+  const clone: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(snapshot)) {
+    const snapshotValue = value as ObserverSnapshotValue;
+    clone[key] = isObserverSnapshotArray(snapshotValue)
+      ? snapshotValue.slice()
+      : snapshotValue;
+  }
+
+  return clone as T;
+}
 
 /**
  * Observer params snapshot function type:
