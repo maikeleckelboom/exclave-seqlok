@@ -78,6 +78,12 @@ impractically large buffer.
 `SharedArrayBuffer`. The current package does not expose a ring allocator for
 an existing SeqWire plane or `WebAssembly.Memory`.
 
+Producer and consumer binding is cold-path setup. Each bind validates that the
+declared capacity and `wordsPerSlot`, 16-word header, slot length, byte offsets,
+and `SharedArrayBuffer` identities agree. Structurally constructed backing that
+does not match those invariants is rejected with
+`primitives.swsrRingInvalidLayout`.
+
 ## Header and circular indices
 
 The 64-byte header is a 16-element `Uint32Array`:
@@ -107,6 +113,10 @@ The queue is empty when `writeIndex === readIndex`. It is full when advancing
 - When full, the call does not invoke the encoder or modify queued entries. The
   incoming value is rejected, `dropped` increments once, `writeSeq` is
   unchanged, and the call returns `false`.
+- If the encoder throws, the error propagates and the producer publishes no
+  entry: `writeIndex`, `writeSeq`, and `dropped` remain unchanged. Payload words
+  written before the throw remain in the unpublished physical slot, which a
+  later valid enqueue can safely overwrite and reuse.
 
 The ring protocol does not block, spin, resize, or retry. The caller owns any
 coalescing, deferral, retry, or escalation policy.
@@ -142,6 +152,14 @@ entry; this is the intentional cost of the error and replay contract.
 The supported topology is one producer and one consumer per backing. The
 package documents but does not runtime-enforce that ownership. Concurrent
 producer bindings or concurrent consumer bindings are unsupported.
+
+User encoder, decoder, and handler code runs synchronously. Reentrant
+`enqueue(...)` on the same producer and reentrant `drain(...)` on the same
+consumer are rejected with `primitives.swsrRingReentrant`; guards are restored
+in `finally` paths. This prevents an inner operation from reusing or replaying
+the outer operation's current slot. The guard is binding-local: a consumer
+handler may enqueue through a separate producer, including the producer for
+that ring, because it is not reentering an active producer call.
 
 Observable ordering is:
 

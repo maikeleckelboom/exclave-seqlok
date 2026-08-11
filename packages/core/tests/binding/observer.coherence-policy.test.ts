@@ -54,7 +54,7 @@ describe("observer coherence policy", () => {
 
       // Partial reads do not use the complete-snapshot cache.
       expect(observer.params.snapshot("value")).toEqual({ value: 2 });
-      expect(observer.params.snapshot([])).toEqual(verified);
+      expect(observer.params.snapshot([])).toEqual({});
 
       const callback = vi.fn();
       expect(() => {
@@ -103,7 +103,7 @@ describe("observer coherence policy", () => {
 
       // Partial reads do not use the complete-snapshot cache.
       expect(observer.meters.snapshot("level")).toEqual({ level: 2 });
-      expect(observer.meters.snapshot([])).toEqual(verified);
+      expect(observer.meters.snapshot([])).toEqual({});
     } finally {
       Atomics.add(mapped.locks.MU, plan.locks.MU.lock, 1);
       observer.dispose();

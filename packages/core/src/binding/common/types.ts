@@ -319,7 +319,9 @@ export type ExactMeterGroupValues<
  *
  * @remarks
  * - For enum scalars, returns the enum label type (not the index).
- * - For arrays, returns readonly typed array views.
+ * - Arrays are exposed as readonly views of their exact typed-array class;
+ *   snapshot APIs either detach them or reuse an explicit caller-owned
+ *   destination according to the role contract.
  */
 export type ParamValueFor<S extends SpecInput, K extends ParamKeys<S>> =
   ParamAt<S, K> extends {
@@ -337,7 +339,9 @@ export type ParamValueFor<S extends SpecInput, K extends ParamKeys<S>> =
  *
  * @remarks
  * - Scalars are primitives.
- * - Arrays are readonly typed array views.
+ * - Arrays are exposed as readonly views of their exact typed-array class;
+ *   snapshot APIs either detach them or reuse an explicit caller-owned
+ *   destination according to the role contract.
  */
 export type MeterValueFor<S extends SpecInput, K extends MeterKeys<S>> =
   MeterAt<S, K> extends {
@@ -480,7 +484,7 @@ export interface ControllerParamPolicyOptions {
  *   snapshot falls back to one direct best-effort read.
  * - `'throw'` rejects the snapshot with a structured binding error.
  */
-export type MeterDegradePolicy = "returnLatest" | "throw";
+export type SnapshotDegradePolicy = "returnLatest" | "throw";
 
 /**
  * Options for binding a controller.
@@ -697,6 +701,9 @@ export interface ControllerParams<S extends SpecInput> {
    * @remarks
    * - Provides an ephemeral view scoped to the callback.
    * - Writes are committed under a single PU publish.
+   * - The callback is non-transactional: if it mutates the view and throws,
+   *   the partial mutation may remain visible, PU advances, and the error
+   *   propagates. Do not throw after mutating shared state.
    */
   stage<const K extends ArrayParamKeys<S>>(
     key: K,
@@ -729,6 +736,16 @@ export interface ControllerParams<S extends SpecInput> {
   snapshot<const K extends readonly ParamKeys<S>[]>(
     keys: K,
     options?: SnapshotParamsOptions<S, K>,
+  ): SnapshotParamsObject<S, K>;
+
+  /**
+   * Varargs snapshot overload for convenience.
+   *
+   * @remarks
+   * - `snapshot('gain', 'mode')` form.
+   */
+  snapshot<const K extends readonly ParamKeys<S>[]>(
+    ...keys: K
   ): SnapshotParamsObject<S, K>;
 
   /**
@@ -979,6 +996,10 @@ export interface ProcessorMeters<S extends SpecInput> {
    *   - `stage(key, dest => ...)` for array meters.
    *
    * Array meters are stage-only; there is no `set(key, fn)` array overload.
+   * The callback and nested `stage(...)` callbacks are non-transactional. If
+   * user code throws after writing, partial values may remain visible, MU
+   * advances, and the error propagates. Validate before entering `publish` and
+   * do not throw after mutating shared state.
    */
   publish<T>(callback: (writer: MeterWriter<S>) => T): T;
 
@@ -1055,7 +1076,7 @@ export interface ObserverCoherentOptions {
   readonly where?: string;
   readonly spinBudget?: number;
   readonly retryBudget?: number;
-  readonly degrade?: MeterDegradePolicy;
+  readonly degrade?: SnapshotDegradePolicy;
 }
 
 /**
@@ -1068,7 +1089,7 @@ export interface ObserverCoherentOptions {
 export interface ObserverOptions {
   readonly spinBudget?: number;
   readonly retryBudget?: number;
-  readonly degrade?: MeterDegradePolicy;
+  readonly degrade?: SnapshotDegradePolicy;
   readonly params?: ObserverCoherentOptions;
   readonly meters?: ObserverCoherentOptions;
 }
@@ -1129,8 +1150,13 @@ export interface ObserverParams<S extends SpecInput> {
 
   /**
    * Read parameters through a bounded seqlock check.
+   *
+   * @remarks
+   * - The callback receives the full canonical flat-key param snapshot shape.
+   * - Array members are detached copies produced inside the verified attempt.
+   * - Processor-only nested aliases and `Ephemeral<>` views are not exposed.
    */
-  within(callback: (view: ProcessorParamsView<S>) => void): void;
+  within(callback: (view: ParamsSnapshot<S>) => void): void;
 
   /**
    * Current PU sequence number for this observer.

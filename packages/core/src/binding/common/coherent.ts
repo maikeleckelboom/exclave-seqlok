@@ -14,7 +14,7 @@ import { incrementCounter } from "../../diagnostics/counters";
 import { createError } from "../../errors/error";
 import { tryRead, type SeqPair } from "../../primitives/seqlock";
 
-import type { MeterDegradePolicy } from "./types";
+import type { SnapshotDegradePolicy } from "./types";
 import type {
   CoherentDetails,
   SnapshotRetryDetails,
@@ -34,7 +34,7 @@ export interface CoherentReadOptions {
  */
 export interface SnapshotPolicyOptions extends CoherentReadOptions {
   readonly section: "params" | "meters";
-  readonly degrade?: MeterDegradePolicy;
+  readonly degrade?: SnapshotDegradePolicy;
 }
 
 /**

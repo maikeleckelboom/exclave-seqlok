@@ -53,7 +53,39 @@ Role-specific public types include `ControllerBinding`, `ProcessorBinding`,
 `ObserverBinding`, their params and meters interfaces, `ControllerOptions`,
 `ProcessorOptions`, `ObserverOptions`, value and snapshot mapping types, grouped
 meter types, and caller-owned `IntoForParams` / `IntoForMeters` destinations.
+`SnapshotDegradePolicy` names the observer snapshot fallback policy. The root
+`ParamValues`, `MeterValues`, `SnapshotOf`, and `SnapshotMetersOf` aliases are
+the same readonly shapes returned by the corresponding snapshot contracts;
+meter snapshot values are initialized values, not `T | undefined`.
 The generated declaration is the exhaustive type-export inventory.
+
+### Snapshot selection
+
+Controller and observer param/meter snapshots share one selection model:
+
+```ts
+snapshot();
+snapshot(["a", "b"]);
+snapshot("a", "b");
+snapshot({ keys: ["a", "b"] });
+```
+
+Omitting selection means all keys. An explicit empty array, either directly or
+as `{ keys: [] }`, means no keys and returns `{}`. Unknown selected keys throw
+`binding.unknownKey`.
+
+Controller snapshots can additionally reuse caller-owned array destinations:
+
+```ts
+controller.params.snapshot(["curve"], { into: { curve } });
+controller.params.snapshot({ keys: ["curve"], into: { curve } });
+controller.params.snapshot({ into: { curve } });
+```
+
+The `into` forms copy shared values into the supplied buffers and return those
+same buffer objects. This avoids destination allocation; it is not zero-copy.
+Observer snapshots intentionally have no `into` option because their arrays are
+detached copies created by the bounded read attempt.
 
 ### ControllerParams
 
@@ -69,6 +101,12 @@ The generated declaration is the exhaustive type-export inventory.
 | `version()` | Return the current param update sequence. |
 
 `update(...)` does not accept array params. Use `stage(...)` for hot-path array writes or `hydrate(...)` when loading saved state.
+
+`stage(...)` callbacks are non-transactional. Validation failures before the
+write section leave state and PU unchanged. If a callback mutates the shared
+array and then throws, the error propagates, the partial mutation may remain
+visible, PU advances, and lock parity is restored. Do not throw after mutating
+shared state.
 
 ### ControllerMeters
 
@@ -143,6 +181,13 @@ processor.meters.publish((writer) => {
 
 Grouped publishing is for exact schema groups: `publishGroup("runtime", values)` maps every unprefixed key in `values` to canonical meter keys under `runtime.*`. It is not arbitrary object flattening. Derived values, such as enum indices or split frame counters, should still be constructed explicitly before publishing. `publishGroup(...)` is convenience-oriented; benchmark it before using it in a hard hot path.
 
+Meter publish callbacks and nested `writer.stage(...)` callbacks are
+non-transactional. A group/key/shape failure detected before the publish
+section leaves MU unchanged. If user code throws after one or more writes, the
+error propagates, partial values may remain visible, MU advances, and lock
+parity is restored. Keep callbacks bounded and do not throw after mutating
+shared state.
+
 ### Observer reads
 
 Observer param and meter snapshots first attempt a bounded seqlock-verified
@@ -158,7 +203,9 @@ or populate the complete-snapshot cache and fall back directly.
 Set `degrade: "throw"` and retain caller-owned last-good state when an
 unverified fallback is unacceptable. Observer `params.within(...)` never
 degrades: it invokes the callback only with a verified read and otherwise
-throws. Its arrays are detached copies, unlike processor hot-path arrays.
+throws. The callback receives the same canonical flat-key shape as a full param
+snapshot. Its arrays are detached copies, unlike processor hot-path arrays;
+processor-only nested aliases and `Ephemeral<>` branding are not exposed.
 
 ## Handoff
 
@@ -218,6 +265,13 @@ On full, `enqueue(...)` leaves queued entries untouched, increments `dropped`,
 and leaves `writeSeq` unchanged. `drain(...)` processes the finite write-index
 snapshot loaded at call start. It commits consumption after each callback, so a
 callback that throws is not replayed; later entries wait for the next drain.
+If encoding throws, the error propagates and no entry, index, sequence, or drop
+count is published; the slot can be reused by a later enqueue. Reentrant
+`enqueue(...)` or `drain(...)` on the same bound producer/consumer throws
+`primitives.swsrRingReentrant` instead of risking slot reuse or replay. A
+consumer callback may still enqueue through a separate producer. Bind-time
+validation rejects backing objects whose declared layout and shared views do
+not match.
 See the current [SWSR low-level reference](https://github.com/maikeleckelboom/seqwire/blob/main/packages/core/docs/architecture/18-command-ring-swsr.md)
 for the header, ordering, counter, and error contracts.
 

@@ -47,13 +47,10 @@ describe("Make Within: Coherent Read Primitive", () => {
       reader,
     );
 
-    // Note: Seqlock primitives may speculatively execute the reader multiple times.
-    // We validate the final error outcome rather than call counts.
+    const callback = vi.fn();
     let thrownError: unknown;
     try {
-      within(() => {
-        // Unreachable on failure
-      });
+      within(callback);
     } catch (err) {
       thrownError = err;
     }
@@ -64,5 +61,7 @@ describe("Make Within: Coherent Read Primitive", () => {
     const err = thrownError as { code?: string; message?: string };
     expect(err.code).toBe("binding.coherentRetryExhausted");
     expect(err.message).toMatch(/coherent read/i);
+    expect(reader).not.toHaveBeenCalled();
+    expect(callback).not.toHaveBeenCalled();
   });
 });

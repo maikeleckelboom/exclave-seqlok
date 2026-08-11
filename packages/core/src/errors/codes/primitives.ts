@@ -16,7 +16,8 @@ export type PrimitivesErrorKey =
   | "planeUnaligned"
   | "atomicsFailed"
   | "invalidSpinBudget"
-  | "swsrRingInvalidLayout";
+  | "swsrRingInvalidLayout"
+  | "swsrRingReentrant";
 
 interface PrimitivesErrorsMap {
   seqlockTimeout: {
@@ -41,6 +42,11 @@ interface PrimitivesErrorsMap {
   };
   swsrRingInvalidLayout: {
     readonly code: "primitives.swsrRingInvalidLayout";
+    readonly message: string;
+    readonly meta: ErrorMeta;
+  };
+  swsrRingReentrant: {
+    readonly code: "primitives.swsrRingReentrant";
     readonly message: string;
     readonly meta: ErrorMeta;
   };
@@ -92,6 +98,15 @@ const PRIMITIVES_ERRORS_DEF: PrimitivesErrorsMap = {
       boundarySafe: true,
     },
   },
+  swsrRingReentrant: {
+    code: "primitives.swsrRingReentrant",
+    message: "SWSR ring operation is reentrant",
+    meta: {
+      severity: "error",
+      recoverable: true,
+      boundarySafe: true,
+    },
+  },
 } as const;
 
 export const PRIMITIVES_ERRORS: PrimitivesErrorsMap = PRIMITIVES_ERRORS_DEF;
@@ -114,6 +129,11 @@ export interface PrimitivesSeqlockTimeoutDetails extends ErrorDetails {
 export interface PrimitivesSwsrRingInvalidLayoutDetails extends ErrorDetails {
   readonly capacity: number;
   readonly wordsPerSlot: number;
+}
+
+/** Details for a rejected same-binding reentrant SWSR operation. */
+export interface PrimitivesSwsrRingReentrantDetails extends ErrorDetails {
+  readonly operation: "enqueue" | "drain";
 }
 
 type PrimitivesKeysFromMap = keyof PrimitivesErrorsMap;

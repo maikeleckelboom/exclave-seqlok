@@ -22,6 +22,7 @@ import {
   snapshotWithPolicy,
 } from "../common/coherent";
 import { noteBinding, releaseBinding } from "../common/registry";
+import { normalizeSnapshotSelection } from "../common/snapshot-util";
 import {
   type MeterPlane,
   type ParamPlane,
@@ -276,35 +277,8 @@ export function observerImpl<const S extends SpecInput>(
     ) => {
       assertNotDisposed(disposed, "observer.params.snapshot");
 
-      let keys: readonly ParamKeys<S>[] | undefined;
-
-      if (args.length === 0) {
-        // full snapshot
-        keys = undefined;
-      } else if (args.length === 1) {
-        const [arg] = args;
-
-        if (Array.isArray(arg)) {
-          // snapshot(['rate', 'mode'])
-          keys = arg as readonly ParamKeys<S>[];
-        } else if (arg && typeof arg === "object") {
-          // snapshot({ keys: [...] })
-          const fromObject = arg as {
-            readonly keys?: readonly ParamKeys<S>[];
-          };
-          keys = fromObject.keys;
-        } else {
-          // snapshot('rate')
-          keys = args as readonly ParamKeys<S>[];
-        }
-      } else {
-        // snapshot('rate', 'mode', ...)
-        keys = args as readonly ParamKeys<S>[];
-      }
-
-      if (keys?.length === 0) {
-        keys = undefined;
-      }
+      const { keys: normalizedKeys } = normalizeSnapshotSelection(args);
+      const keys = normalizedKeys as readonly ParamKeys<S>[] | undefined;
 
       const reader = () => {
         return (paramsSnapshotRaw as (ks?: readonly ParamKeys<S>[]) => unknown)(
@@ -375,34 +349,8 @@ export function observerImpl<const S extends SpecInput>(
     ) => {
       assertNotDisposed(disposed, "observer.meters.snapshot");
 
-      let keys: readonly MeterKeys<S>[] | undefined;
-
-      if (args.length === 0) {
-        keys = undefined;
-      } else if (args.length === 1) {
-        const [arg] = args;
-
-        if (Array.isArray(arg)) {
-          // snapshot(['pressure', 'counter'])
-          keys = arg as readonly MeterKeys<S>[];
-        } else if (arg && typeof arg === "object") {
-          // snapshot({ keys: [...] })
-          const fromObject = arg as {
-            readonly keys?: readonly MeterKeys<S>[];
-          };
-          keys = fromObject.keys;
-        } else {
-          // snapshot('pressure')
-          keys = args as readonly MeterKeys<S>[];
-        }
-      } else {
-        // snapshot('pressure', 'counter', ...)
-        keys = args as readonly MeterKeys<S>[];
-      }
-
-      if (keys?.length === 0) {
-        keys = undefined;
-      }
+      const { keys: normalizedKeys } = normalizeSnapshotSelection(args);
+      const keys = normalizedKeys as readonly MeterKeys<S>[] | undefined;
 
       const reader = () => {
         return (metersSnapshotRaw as (ks?: readonly MeterKeys<S>[]) => unknown)(

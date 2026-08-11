@@ -400,6 +400,8 @@ function assertNotDisposed(disposed: boolean, where: string): void {
  * - `params.within(...)` exposes seqlock-verified scalar values and ephemeral
  *   shared array views.
  * - `meters.publish(...)` exposes a seqlock-protected writer for meters.
+ * - User callbacks inside meter publication are non-transactional: a throw
+ *   propagates after MU advances, and partial shared writes may remain visible.
  * - `version()` reads PU/MU commit counters via SC atomics.
  * - Lifetime is managed via `noteBinding` / `releaseBinding`.
  */

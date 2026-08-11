@@ -75,21 +75,29 @@ describe("Seqlock Primitives", () => {
     expect(res.status.retries).toBeGreaterThanOrEqual(0);
   });
 
-  it("tryRead returns fallback (ok=false) when writer holds LOCK (odd state)", () => {
+  it("tryRead fails without invoking the reader while a writer holds LOCK", () => {
     const { p, u32, dataIndex } = pair();
     u32[dataIndex] = 7;
+    let readerCalls = 0;
 
     beginWrite(p);
     try {
       // Set 0 retries to fail immediately on lock contention
-      const res = tryRead(p, () => u32[dataIndex], {
-        spinBudget: 1,
-        retryBudget: 0,
-      });
+      const res = tryRead(
+        p,
+        () => {
+          readerCalls += 1;
+          return u32[dataIndex];
+        },
+        {
+          spinBudget: 1,
+          retryBudget: 0,
+        },
+      );
 
       expect(res.ok).toBe(false);
-      // Value is a best-effort capture
-      expect(res.value).toBe(7);
+      expect("value" in res).toBe(false);
+      expect(readerCalls).toBe(0);
       expect(res.status.retries).toBe(0);
     } finally {
       endWrite(p);

@@ -62,11 +62,9 @@ describe("observer binding – coverage edges", () => {
     const paramsVarargs = observer.params.snapshot("rate", "mode");
     expect(paramsVarargs).toEqual(paramsArray);
 
-    // snapshot([]) → current semantics: treated as full snapshot -
+    // An explicit empty selection requests no keys.
     const paramsEmpty = observer.params.snapshot([]);
-    expect(Object.keys(paramsEmpty).sort()).toEqual(
-      Object.keys(paramsFull).sort(),
-    );
+    expect(paramsEmpty).toEqual({});
 
     // meters: exercise all forms; values are defaults (zeroed)
     const metersFull = observer.meters.snapshot();
@@ -85,9 +83,7 @@ describe("observer binding – coverage edges", () => {
     expect(metersVarargs).toEqual(metersArray);
 
     const metersEmpty = observer.meters.snapshot([]);
-    expect(Object.keys(metersEmpty).sort()).toEqual(
-      Object.keys(metersFull).sort(),
-    );
+    expect(metersEmpty).toEqual({});
 
     observer.dispose();
   });

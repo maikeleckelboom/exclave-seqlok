@@ -65,9 +65,9 @@ describe("observer binding – coverage edges", () => {
     });
     expect("active" in paramsVarargs).toBe(false);
 
-    // 3. Empty params subset: by design, [] acts like “no filter” → full snapshot
+    // 3. An explicit empty selection requests no keys.
     const paramsEmpty = observer.params.snapshot([]);
-    expect(paramsEmpty).toEqual(paramsFull);
+    expect(paramsEmpty).toEqual({});
 
     // --- meters ----------------------------------------------------------------
 
@@ -89,7 +89,7 @@ describe("observer binding – coverage edges", () => {
     expect("counter" in metersVarargs).toBe(false);
 
     const metersEmpty = observer.meters.snapshot([]);
-    expect(metersEmpty).toEqual(metersFull);
+    expect(metersEmpty).toEqual({});
 
     observer.dispose();
   });

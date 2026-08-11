@@ -151,18 +151,19 @@ const handoff = buildHandoff(plan, backing);
 const observer = bindObserver(handoff);
 
 observer.params.within((params) => {
-  params.transport.enabled;
-  params.transport.mode;
+  params["transport.enabled"];
+  params["transport.mode"];
 });
 
 observer.params.snapshot(["transport.enabled", "transport.mode"]);
 observer.meters.snapshot("transport.state", "transport.drift");
 ```
 
-The observer receives enum param labels and detached array copies in snapshots,
-including when it binds from a handoff. Snapshot verification is best-effort by
-default; pass `{ degrade: "throw" }` to `bindObserver(...)` when failure must not
-return an unverified fallback.
+The observer receives the canonical flat-key param shape, enum labels, and
+detached array copies in snapshots and `params.within(...)`, including when it
+binds from a handoff. Snapshot verification is best-effort by default; pass
+`{ degrade: "throw" }` to `bindObserver(...)` when failure must not return an
+unverified fallback.
 
 ## SeqWireError Narrowing
 

@@ -29,6 +29,14 @@ arrays are ephemeral shared views. Copy data you need after the callback.
 Observer snapshots and observer `params.within(...)` return detached array
 copies instead.
 
+## What Happens If a Write Callback Throws?
+
+Controller array staging and processor meter publication are
+non-transactional. Validation failures before publication leave state and the
+sequence unchanged. After the callback starts mutating shared state, a throw
+may leave partial writes visible; the error propagates, the sequence advances,
+and the writer lock is released. Validate first and do not throw after writing.
+
 ## Can I Import Internal Modules?
 
 No. Use the root package and diagnostics subpath. Internal modules can change without public compatibility guarantees.

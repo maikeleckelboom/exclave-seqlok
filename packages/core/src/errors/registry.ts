@@ -64,6 +64,7 @@ import {
   type PrimitivesErrorCode,
   type PrimitivesSeqlockTimeoutDetails,
   type PrimitivesSwsrRingInvalidLayoutDetails,
+  type PrimitivesSwsrRingReentrantDetails,
 } from "./codes/primitives";
 import {
   SPEC_ERRORS,
@@ -139,6 +140,7 @@ export interface CodeToPayload {
   "primitives.atomicsFailed": ErrorDetails;
   "primitives.invalidSpinBudget": ErrorDetails;
   "primitives.swsrRingInvalidLayout": PrimitivesSwsrRingInvalidLayoutDetails;
+  "primitives.swsrRingReentrant": PrimitivesSwsrRingReentrantDetails;
 
   // internal.*
   "internal.assertionFailed": InternalAssertionDetails;
@@ -214,6 +216,8 @@ const RAW_META = {
     PRIMITIVES_ERRORS.invalidSpinBudget.meta,
   [PRIMITIVES_ERRORS.swsrRingInvalidLayout.code]:
     PRIMITIVES_ERRORS.swsrRingInvalidLayout.meta,
+  [PRIMITIVES_ERRORS.swsrRingReentrant.code]:
+    PRIMITIVES_ERRORS.swsrRingReentrant.meta,
 
   // backing.*
   [BACKING_ERRORS.allocFailed.code]: BACKING_ERRORS.allocFailed.meta,
@@ -289,6 +293,8 @@ const RAW_MESSAGES = {
     PRIMITIVES_ERRORS.invalidSpinBudget.message,
   [PRIMITIVES_ERRORS.swsrRingInvalidLayout.code]:
     PRIMITIVES_ERRORS.swsrRingInvalidLayout.message,
+  [PRIMITIVES_ERRORS.swsrRingReentrant.code]:
+    PRIMITIVES_ERRORS.swsrRingReentrant.message,
 
   // backing.*
   [BACKING_ERRORS.allocFailed.code]: BACKING_ERRORS.allocFailed.message,

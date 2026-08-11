@@ -60,7 +60,6 @@ describe("Snapshot With Policy: Coherent Snapshot & Fallback Strategies", () => 
     // Simulate a failed read where budgets were fully consumed
     tryReadSpy.mockImplementation((_pair, _reader) => ({
       ok: false as const,
-      value: 0, // Ignored on failure
       status: {
         spins: 5,
         retries: 3,
@@ -103,7 +102,6 @@ describe("Snapshot With Policy: Coherent Snapshot & Fallback Strategies", () => 
 
     tryReadSpy.mockImplementation((_pair, _reader) => ({
       ok: false as const,
-      value: 0,
       status: {
         spins: 1,
         retries: 0,
@@ -157,5 +155,69 @@ describe("Snapshot With Policy: Coherent Snapshot & Fallback Strategies", () => 
     expect(err.details.retries ?? 0).toBeGreaterThanOrEqual(0);
 
     expect(tryReadSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("invokes only the explicit fallback on a writer-active degraded read", () => {
+    const activePair: SeqPair = {
+      u32: new Uint32Array(new SharedArrayBuffer(8)),
+      lockIndex: 0,
+      seqIndex: 1,
+    };
+    Atomics.store(activePair.u32, activePair.lockIndex, 1);
+    const reader = vi.fn(() => 1);
+    const fallback = vi.fn(() => 2);
+
+    const value = snapshotWithPolicy(
+      activePair,
+      {
+        where: "observer.params.snapshot",
+        section: "params",
+        spinBudget: 1,
+        retryBudget: 0,
+        degrade: "returnLatest",
+      },
+      reader,
+      fallback,
+    );
+
+    expect(value).toBe(2);
+    expect(reader).not.toHaveBeenCalled();
+    expect(fallback).toHaveBeenCalledTimes(1);
+  });
+
+  it("invokes neither reader nor fallback on a writer-active strict read", () => {
+    const activePair: SeqPair = {
+      u32: new Uint32Array(new SharedArrayBuffer(8)),
+      lockIndex: 0,
+      seqIndex: 1,
+    };
+    Atomics.store(activePair.u32, activePair.lockIndex, 1);
+    const reader = vi.fn(() => 1);
+    const fallback = vi.fn(() => 2);
+
+    let thrown: unknown;
+    try {
+      snapshotWithPolicy(
+        activePair,
+        {
+          where: "observer.params.snapshot",
+          section: "params",
+          spinBudget: 1,
+          retryBudget: 0,
+          degrade: "throw",
+        },
+        reader,
+        fallback,
+      );
+    } catch (error) {
+      thrown = error;
+    }
+    expect(isSeqWireError(thrown)).toBe(true);
+    if (!isSeqWireError(thrown)) {
+      throw new Error("Expected strict snapshot failure");
+    }
+    expect(thrown.code).toBe("binding.snapshotRetryExhausted");
+    expect(reader).not.toHaveBeenCalled();
+    expect(fallback).not.toHaveBeenCalled();
   });
 });

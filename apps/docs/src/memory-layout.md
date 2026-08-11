@@ -72,6 +72,9 @@ observer `params.within(...)` calls fail when they cannot obtain a coherent
 candidate. Observer snapshots additionally apply their configured degradation
 policy: the default may return a cached verified complete snapshot or a direct
 unverified read. Configure `degrade: "throw"` to prohibit that fallback.
+When a writer never becomes quiescent within the spin budget, strict reads fail
+without invoking the candidate reader. A `returnLatest` observer invokes its
+explicit degraded reader once only after verification fails.
 
 Controller meter snapshots are different: they copy values directly and are
 not seqlock-verified as a multi-field unit. Use a strict observer policy when

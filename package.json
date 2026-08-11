@@ -55,7 +55,7 @@
     "lint:fix": "pnpm -r -F \"@exclave/seqwire\" -F \"@exclave/docs\" run lint:fix",
     "lint:all": "pnpm lint && pnpm lint:md",
     "format": "prettier --ignore-path .prettierignore --write .",
-    "docs": "pnpm docs:build",
+    "docs:check": "pnpm docs:build",
     "docs:dev": "pnpm -F @exclave/docs run docs:dev",
     "docs:build": "pnpm -F @exclave/docs run docs:build",
     "docs:preview": "pnpm -F @exclave/docs run docs:preview",
@@ -66,8 +66,8 @@
     "check:diff-whitespace": "git diff --check origin/main...HEAD",
     "support": "node scripts/support/seqwire-support.ts",
     "fresh": "pnpm clean && pnpm install --frozen-lockfile && pnpm build && pnpm signalsmith:build",
-    "verify": "pnpm clean:artifacts && pnpm build && pnpm lint && pnpm test:types && pnpm test && pnpm signalsmith:check && pnpm run docs && pnpm test:pack && pnpm support --json",
-    "verify:fresh": "pnpm fresh && pnpm lint && pnpm test:types && pnpm test && pnpm signalsmith:check && pnpm run docs && pnpm test:pack && pnpm support --json && pnpm signalsmith:test:browser"
+    "verify": "pnpm clean:artifacts && pnpm build && pnpm lint && pnpm test:types && pnpm test && pnpm signalsmith:check && pnpm run docs:check && pnpm test:pack && pnpm support --json",
+    "verify:fresh": "pnpm fresh && pnpm lint && pnpm test:types && pnpm test && pnpm signalsmith:check && pnpm run docs:check && pnpm test:pack && pnpm support --json && pnpm signalsmith:test:browser"
   },
   "simple-git-hooks": {
     "commit-msg": "pnpm commitlint --edit $1"

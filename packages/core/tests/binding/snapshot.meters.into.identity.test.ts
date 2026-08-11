@@ -54,7 +54,7 @@ describe("Meters Snapshot: Buffer Identity & Allocation", () => {
       });
     });
 
-    // Allocate external buffers to test zero-copy/write-into behavior
+    // Allocate external buffers to test caller-owned destination reuse.
     const f32 = new Float32Array(512);
     const u32 = new Uint32Array(64);
 

@@ -57,9 +57,23 @@ verification but default to best-effort fallback; configure
 `within(...)` calls fail explicitly when their bounded read work is exhausted,
 which lets the caller retain its own last-good state.
 
+Snapshot-capable controller and observer surfaces accept array, varargs, and
+`{ keys }` selection. Omitted selection means all keys; explicit `[]` means no
+keys and returns `{}`. Controller snapshots can reuse caller-owned `into`
+buffers, while observer arrays are always detached copies. Observer
+`params.within(...)` receives that same canonical flat-key detached snapshot
+shape rather than the processor's live nested view.
+
+Controller array-stage and processor meter-publish callbacks are
+non-transactional. A throw after mutation may leave partial values visible;
+the relevant sequence advances and the lock is released. Validation failures
+that occur before publication leave state and version untouched.
+
 For the SWSR ring, `capacity` is the number of usable entries, arbitrary
 positive capacities are supported, and full enqueue attempts reject the newest
-value without modifying queued entries. See the current
+value without modifying queued entries. Binding validates the backing layout,
+encoder failure publishes nothing, and same-binding enqueue/drain reentrancy is
+rejected explicitly. See the current
 [SWSR reference](./docs/architecture/18-command-ring-swsr.md) for drain and
 error semantics.
 

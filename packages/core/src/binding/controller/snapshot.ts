@@ -3,7 +3,7 @@
  * Snapshot utilities for controller bindings.
  *
  * @remarks
- * - Implements zero-copy `into` pattern for efficient param/meter reads.
+ * - Implements caller-owned `into` buffer reuse for param/meter reads.
  * - Handles type-safe conversion from raw memory to public JS values.
  * - Provides both full and partial snapshot capabilities.
  */
@@ -13,6 +13,7 @@ import { paramArrayView } from "../common/array-views";
 import {
   copyMeterArray,
   copyParamArray,
+  normalizeSnapshotSelection,
   readMeterScalar,
   readParamScalar,
 } from "../common/snapshot-util";
@@ -109,29 +110,21 @@ export function createParamSnapshot<S extends SpecInput>(
 ): ControllerParams<S>["snapshot"] {
   const allParamKeys = Object.keys(slots);
 
-  return ((options?: {
-    readonly keys?: readonly string[];
-    readonly into?: Record<string, ParamArray>;
-  }) => {
-    if (!options) {
+  return ((...args: readonly unknown[]) => {
+    const selection = normalizeSnapshotSelection(args);
+    const into = selection.options?.into as
+      | Record<string, ParamArray>
+      | undefined;
+
+    if (selection.keys === undefined && into === undefined) {
       return paramsSnapshotRaw(defs, slots, views, allParamKeys);
     }
 
-    if (options.keys && options.keys.length > 0) {
-      const base = { keys: options.keys };
-      return options.into
-        ? paramsSnapshotRaw(defs, slots, views, allParamKeys, {
-            ...base,
-            into: options.into,
-          })
-        : paramsSnapshotRaw(defs, slots, views, allParamKeys, base);
-    }
-
-    const base = { keys: allParamKeys as readonly string[] };
-    return options.into
+    const base = { keys: selection.keys ?? allParamKeys };
+    return into
       ? paramsSnapshotRaw(defs, slots, views, allParamKeys, {
           ...base,
-          into: options.into,
+          into,
         })
       : paramsSnapshotRaw(defs, slots, views, allParamKeys, base);
   }) as ControllerParams<S>["snapshot"];
@@ -217,61 +210,18 @@ export function createMeterSnapshot<S extends SpecInput>(
   const allMeterKeys = Object.keys(slots);
 
   return ((...args: readonly unknown[]) => {
-    if (args.length === 0) {
+    const selection = normalizeSnapshotSelection(args);
+    const into = selection.options?.into as
+      | Record<string, Float32Array | Float64Array | Uint32Array>
+      | undefined;
+
+    if (selection.keys === undefined && into === undefined) {
       return metersSnapshotRaw(slots, views, allMeterKeys);
     }
 
-    if (Array.isArray(args[0])) {
-      const keys = args[0] as readonly string[];
-      const maybeOptions = (args.length > 1 ? args[1] : undefined) as
-        | {
-            readonly into?: Record<
-              string,
-              Float32Array | Float64Array | Uint32Array
-            >;
-          }
-        | undefined;
-      return maybeOptions?.into
-        ? metersSnapshotRaw(slots, views, allMeterKeys, {
-            keys,
-            into: maybeOptions.into,
-          })
-        : metersSnapshotRaw(slots, views, allMeterKeys, { keys });
-    }
-
-    const allStrings = args.every((x) => typeof x === "string");
-    if (allStrings) {
-      return metersSnapshotRaw(slots, views, allMeterKeys, {
-        keys: args,
-      });
-    }
-
-    if (typeof args[0] === "object" && args[0] !== null) {
-      const object = args[0] as {
-        readonly keys?: readonly string[];
-        readonly into?: Record<
-          string,
-          Float32Array | Float64Array | Uint32Array
-        >;
-      };
-      if (Array.isArray(object.keys)) {
-        const base = { keys: object.keys as readonly string[] };
-        return object.into
-          ? metersSnapshotRaw(slots, views, allMeterKeys, {
-              ...base,
-              into: object.into,
-            })
-          : metersSnapshotRaw(slots, views, allMeterKeys, base);
-      }
-      if (object.into) {
-        return metersSnapshotRaw(slots, views, allMeterKeys, {
-          keys: allMeterKeys as readonly string[],
-          into: object.into,
-        });
-      }
-      return metersSnapshotRaw(slots, views, allMeterKeys);
-    }
-
-    return metersSnapshotRaw(slots, views, allMeterKeys);
+    const base = { keys: selection.keys ?? allMeterKeys };
+    return into
+      ? metersSnapshotRaw(slots, views, allMeterKeys, { ...base, into })
+      : metersSnapshotRaw(slots, views, allMeterKeys, base);
   }) as ControllerMeters<S>["snapshot"];
 }

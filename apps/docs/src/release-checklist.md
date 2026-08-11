@@ -26,7 +26,7 @@ pnpm build
 pnpm lint
 pnpm test:types
 pnpm test
-pnpm run docs
+pnpm run docs:check
 pnpm test:pack
 pnpm signalsmith:check
 pnpm signalsmith:test:browser

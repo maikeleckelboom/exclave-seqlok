@@ -325,7 +325,9 @@ function assertBackingCapacity<S extends SpecInput>(
  *
  * @remarks
  * - One successful commit (set/update/stage/hydrate) → exactly one PU bump.
- * - All validation happens before `publish`, so failures never bump PU.
+ * - Validation failures happen before `publish` and do not bump PU.
+ * - A `stage` callback that throws after mutation is non-transactional: its
+ *   partial write may remain visible, PU advances, and the error propagates.
  * - `version()` reads the commit counter; no parity check is needed on the
  *   controller side.
  */

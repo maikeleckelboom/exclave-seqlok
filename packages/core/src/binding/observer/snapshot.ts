@@ -10,7 +10,6 @@
  * - Scalars are returned as JS numbers/booleans/enum labels.
  * - API surface is intentionally smaller than controller snapshots:
  *   - No `into` support.
- *   - No varargs overloads.
  *   - `snapshot()` → full snapshot
  *   - `snapshot(keys)` → subset snapshot
  *
@@ -91,9 +90,9 @@ function paramsSnapshotRawObserver(
   knownParamKeys: readonly string[],
   keys?: readonly string[],
 ): Record<string, number | boolean | string | ParamArray> {
-  const keysList = keys && keys.length > 0 ? keys : knownParamKeys;
+  const keysList = keys ?? knownParamKeys;
 
-  if (keys && keys.length > 0) {
+  if (keys !== undefined) {
     for (const k of keys) {
       if (!(k in slots)) {
         throwUnknownKey("params", k, knownParamKeys);
@@ -138,9 +137,9 @@ function metersSnapshotRawObserver(
   string,
   number | boolean | Float32Array | Float64Array | Uint32Array
 > {
-  const keysList = keys && keys.length > 0 ? keys : knownMeterKeys;
+  const keysList = keys ?? knownMeterKeys;
 
-  if (keys && keys.length > 0) {
+  if (keys !== undefined) {
     for (const k of keys) {
       if (!(k in slots)) {
         throwUnknownKey("meters", k, knownMeterKeys);

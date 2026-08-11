@@ -68,6 +68,7 @@ export type {
   ControllerOptions,
   ProcessorOptions,
   ObserverOptions,
+  SnapshotDegradePolicy,
   RangePolicy,
 } from "./binding/common/types";
 

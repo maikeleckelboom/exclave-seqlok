@@ -1,8 +1,10 @@
 import type {
+  MetersSnapshot,
   MeterWriter,
-  MeterValueFor,
-  ParamValueFor,
+  ParamsSnapshot,
   ProcessorParamsView,
+  SnapshotMetersObject,
+  SnapshotParamsObject,
 } from "./binding/common/types";
 import type { MeterKeys, ParamKeys, SpecInput } from "./spec/types";
 
@@ -11,7 +13,8 @@ import type { MeterKeys, ParamKeys, SpecInput } from "./spec/types";
  *
  * - Scalars are plain JS numbers/booleans.
  * - Enums are *label unions* (e.g. `'normal' | 'granular'`).
- * - Arrays are readonly views.
+ * - Arrays are readonly views of the exact typed-array class declared by the
+ *   spec.
  *
  * @typeParam S - The spec input produced by {@link defineSpec}.
  *
@@ -24,19 +27,18 @@ import type { MeterKeys, ParamKeys, SpecInput } from "./spec/types";
  * // {
  * //   gain: number;
  * //   mode: 'normal' | 'granular';
- * //   spectrum: readonly number[];
+ * //   spectrum: Readonly<Float32Array>;
  * //   ...
  * // }
  */
-export type ParamValues<S extends SpecInput> = {
-  [K in ParamKeys<S>]: ParamValueFor<S, K>;
-};
+export type ParamValues<S extends SpecInput> = ParamsSnapshot<S>;
 
 /**
  * All controller-visible meter values for a spec.
  *
  * - Scalars are plain JS numbers.
- * - Arrays are readonly views.
+ * - Arrays are readonly views of the exact typed-array class declared by the
+ *   spec.
  *
  * @typeParam S - The spec input produced by {@link defineSpec}.
  *
@@ -49,13 +51,11 @@ export type ParamValues<S extends SpecInput> = {
  * // {
  * //   engineFps: number;
  * //   workMs: number;
- * //   spectrum: readonly number[];
+ * //   spectrum: Readonly<Float32Array>;
  * //   ...
  * // }
  */
-export type MeterValues<S extends SpecInput> = {
-  [K in MeterKeys<S>]: MeterValueFor<S, K>;
-};
+export type MeterValues<S extends SpecInput> = MetersSnapshot<S>;
 
 /**
  * Processor-side parameter view.
@@ -130,18 +130,13 @@ export type ProcessorMeterView<S extends SpecInput> = MeterWriter<S>;
 export type SnapshotOf<
   S extends SpecInput,
   K extends readonly ParamKeys<S>[] = readonly ParamKeys<S>[],
-> = {
-  [P in K[number]]: ParamValueFor<S, P>;
-};
+> = SnapshotParamsObject<S, K>;
 
 /**
  * Shape of a meter snapshot constrained to a key list.
  *
  * When used with a single type parameter, `SnapshotMetersOf<S>` describes
  * the *full* meter snapshot shape for the spec.
- *
- * Values are `T | undefined` because meter snapshots are allowed to be
- * partially populated (e.g. on startup or after resets).
  *
  * When used with an explicit key tuple, `SnapshotMetersOf<S, K>` narrows to
  * just those keys. This mirrors the shape returned by `meters.snapshot({ keys })`.
@@ -159,13 +154,11 @@ export type SnapshotOf<
  * // Partial snapshot for a HUD:
  * type HudMetersSnapshot = SnapshotMetersOf<Spec, ['engineFps', 'workMs']>;
  * // {
- * //   engineFps: number | undefined;
- * //   workMs: number | undefined;
+ * //   engineFps: number;
+ * //   workMs: number;
  * // }
  */
 export type SnapshotMetersOf<
   S extends SpecInput,
   K extends readonly MeterKeys<S>[] = readonly MeterKeys<S>[],
-> = {
-  [P in K[number]]: MeterValueFor<S, P> | undefined;
-};
+> = SnapshotMetersObject<S, K>;

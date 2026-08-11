@@ -126,7 +126,6 @@ export type TryReadResult<T> =
   | { ok: true; value: T; status: ReadStatus }
   | {
       ok: false;
-      value: T;
       status: ReadStatus;
     };
 
@@ -194,9 +193,10 @@ export function publish<T>(p: SeqPair, fn: () => T): T {
  * - Reads `SEQ` (`seq0`), then calls `reader()`, then reads `SEQ` again (`seq1`).
  * - Accepts the snapshot if `seq0 === seq1` and LOCK is still even.
  * - Otherwise, retries up to `retryBudget` times.
- * - If budgets are exhausted, returns `ok: false` with the last best-effort
- *   candidate and a `budgetExhausted` status. Binding policy decides whether
- *   to return a fallback or throw a binding-level error.
+ * - If budgets are exhausted, returns `ok: false` and a failure status.
+ *   Binding policy decides whether to invoke an explicit fallback or throw a
+ *   binding-level error.
+ * - If the writer never becomes quiescent, `reader()` is not invoked.
  */
 export function tryRead<T>(
   pair: SeqPair,
@@ -242,8 +242,7 @@ export function tryRead<T>(
         retries: retriesUsed,
         kind: "writerActive",
       };
-      // Degraded snapshot: reader() is called exactly once in this branch.
-      return { ok: false, value: reader(), status };
+      return { ok: false, status };
     }
 
     totalSpins += spinResult.spins;
@@ -268,7 +267,7 @@ export function tryRead<T>(
         retries: retriesUsed,
         kind: "budgetExhausted",
       };
-      return { ok: false, value, status };
+      return { ok: false, status };
     }
   }
 

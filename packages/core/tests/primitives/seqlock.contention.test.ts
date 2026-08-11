@@ -13,23 +13,30 @@ describe("Seqlock Contention & Fallback Mechanisms", () => {
     return { u32, lockIndex: 0, seqIndex: 1 };
   }
 
-  it("returns fallback value when lock stays held and spin budget is exhausted", () => {
+  it("does not invoke the reader when the writer stays active", () => {
     const pair = makeSeqPair();
 
     // Simulate active writer: Lock is odd, Sequence is 0
     pair.u32[0] = 1;
     pair.u32[1] = 0;
 
-    const fallbackValue = 42;
-    const result = tryRead(pair, () => fallbackValue, {
-      spinBudget: 10,
-      retryBudget: 0,
-    });
+    let readerCalls = 0;
+    const result = tryRead(
+      pair,
+      () => {
+        readerCalls += 1;
+        return 42;
+      },
+      {
+        spinBudget: 10,
+        retryBudget: 0,
+      },
+    );
 
     expect(result.ok).toBe(false);
     expect(result.status.spins).toBe(10);
     expect(result.status.retries).toBe(0);
-    expect(result.value).toBe(fallbackValue);
+    expect(readerCalls).toBe(0);
   });
 
   it("returns budget exhaustion when rapid writes consume the retry budget", () => {
@@ -55,7 +62,7 @@ describe("Seqlock Contention & Fallback Mechanisms", () => {
       retries: 3,
       kind: "budgetExhausted",
     });
-    expect(result.value).toBe(4);
+    expect(readCount).toBe(4);
   });
 
   it("succeeds on first attempt under no contention", () => {
@@ -108,7 +115,7 @@ describe("Seqlock Contention & Fallback Mechanisms", () => {
     expect(pair.u32[0]).toBe(2);
   });
 
-  it("returns the last candidate when no coherent read is possible", () => {
+  it("omits unsuccessful candidates when no coherent read is possible", () => {
     const pair = makeSeqPair();
     let attempts = 0;
 
@@ -126,9 +133,10 @@ describe("Seqlock Contention & Fallback Mechanisms", () => {
 
     expect(result).toMatchObject({
       ok: false,
-      value: "attempt-4",
       status: { retries: 3, kind: "budgetExhausted" },
     });
+    expect("value" in result).toBe(false);
+    expect(attempts).toBe(4);
   });
 
   it("resets spin counter between retries (documented behavior)", () => {

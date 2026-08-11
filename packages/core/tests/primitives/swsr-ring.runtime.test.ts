@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { SeqWireError } from "../../src/errors/error";
+import { isSeqWireError, SeqWireError } from "../../src/errors/error";
 import {
   allocateSwsrRing,
   bindSwsrRingConsumer,
@@ -10,6 +10,11 @@ import {
   SWSR_HEADER_WORDS,
   SWSR_HEADER_WRITE_INDEX,
   SWSR_HEADER_WRITE_SEQ,
+} from "../../src/primitives/swsr-ring";
+
+import type {
+  SwsrRingConsumer,
+  SwsrRingProducer,
 } from "../../src/primitives/swsr-ring";
 
 const encodeNumber = {
@@ -32,6 +37,21 @@ function createNumberRing(capacity: number) {
     producer: bindSwsrRingProducer(backing, encodeNumber),
     consumer: bindSwsrRingConsumer(backing, decodeNumber),
   };
+}
+
+function expectErrorCode(callback: () => unknown, code: string): SeqWireError {
+  let thrown: unknown;
+  try {
+    callback();
+  } catch (error) {
+    thrown = error;
+  }
+  expect(isSeqWireError(thrown)).toBe(true);
+  if (!isSeqWireError(thrown)) {
+    throw new Error(`Expected SeqWireError ${code}`);
+  }
+  expect(thrown.code).toBe(code);
+  return thrown;
 }
 
 describe("SWSR ring primitives", () => {
@@ -96,6 +116,41 @@ describe("SWSR ring primitives", () => {
         capacity: 0,
         wordsPerSlot: 2,
       });
+    }
+  });
+
+  it("rejects malformed structurally constructed backing at bind time", () => {
+    const backing = allocateSwsrRing({ capacity: 2, wordsPerSlot: 2 });
+    const invalidCapacity = { ...backing, capacity: 0 };
+    const invalidWordsPerSlot = { ...backing, wordsPerSlot: 0 };
+    const shortHeader = {
+      ...backing,
+      header: backing.header.subarray(0, SWSR_HEADER_WORDS - 1),
+    };
+    const shortSlots = {
+      ...backing,
+      slots: backing.slots.subarray(0, backing.slots.length - 1),
+    };
+    const detachedHeader = {
+      ...backing,
+      header: new Uint32Array(new SharedArrayBuffer(64)),
+    };
+
+    for (const malformed of [
+      invalidCapacity,
+      invalidWordsPerSlot,
+      shortHeader,
+      shortSlots,
+      detachedHeader,
+    ]) {
+      expectErrorCode(
+        () => bindSwsrRingProducer(malformed, encodeNumber),
+        "primitives.swsrRingInvalidLayout",
+      );
+      expectErrorCode(
+        () => bindSwsrRingConsumer(malformed, decodeNumber),
+        "primitives.swsrRingInvalidLayout",
+      );
     }
   });
 
@@ -247,5 +302,118 @@ describe("SWSR ring primitives", () => {
     const delivered: number[] = [];
     consumer.drain((value) => delivered.push(value));
     expect(delivered).toEqual([7]);
+  });
+
+  it("propagates encoder failure without publishing or losing slot reuse", () => {
+    const backing = allocateSwsrRing({ capacity: 1, wordsPerSlot: 1 });
+    let shouldThrow = true;
+    const producer = bindSwsrRingProducer(backing, {
+      encode(value: number, destination, offset): void {
+        destination[offset] = value;
+        if (shouldThrow) {
+          shouldThrow = false;
+          throw new Error("encode failed");
+        }
+      },
+    });
+    const consumer = bindSwsrRingConsumer(backing, decodeNumber);
+
+    expect(() => producer.enqueue(99)).toThrow("encode failed");
+    expect(backing.header[SWSR_HEADER_WRITE_INDEX]).toBe(0);
+    expect(backing.header[SWSR_HEADER_WRITE_SEQ]).toBe(0);
+    expect(backing.header[SWSR_HEADER_DROPPED]).toBe(0);
+    expect(producer.stats()).toEqual({ dropped: 0 });
+
+    expect(producer.enqueue(7)).toBe(true);
+    const delivered: number[] = [];
+    consumer.drain((value) => delivered.push(value));
+    expect(delivered).toEqual([7]);
+  });
+
+  it("rejects reentrant enqueue on the same producer and restores the guard", () => {
+    const backing = allocateSwsrRing({ capacity: 2, wordsPerSlot: 1 });
+    let shouldReenter = true;
+    const producerRef: { current?: SwsrRingProducer<number> } = {};
+    const producer = bindSwsrRingProducer(backing, {
+      encode(value: number, destination: Uint32Array, offset: number): void {
+        destination[offset] = value;
+        if (shouldReenter) {
+          const activeProducer = producerRef.current;
+          if (!activeProducer) {
+            throw new Error("producer not initialized");
+          }
+          activeProducer.enqueue(value + 1);
+        }
+      },
+    });
+    producerRef.current = producer;
+    const consumer = bindSwsrRingConsumer(backing, decodeNumber);
+
+    const error = expectErrorCode(
+      () => producer.enqueue(1),
+      "primitives.swsrRingReentrant",
+    );
+    expect(error.details).toEqual({ operation: "enqueue" });
+    expect(backing.header[SWSR_HEADER_WRITE_INDEX]).toBe(0);
+    expect(backing.header[SWSR_HEADER_WRITE_SEQ]).toBe(0);
+    expect(backing.header[SWSR_HEADER_DROPPED]).toBe(0);
+
+    shouldReenter = false;
+    expect(producer.enqueue(7)).toBe(true);
+    const delivered: number[] = [];
+    consumer.drain((value) => delivered.push(value));
+    expect(delivered).toEqual([7]);
+  });
+
+  it("rejects reentrant drain from a decoder without consuming the entry", () => {
+    const backing = allocateSwsrRing({ capacity: 1, wordsPerSlot: 1 });
+    const producer = bindSwsrRingProducer(backing, encodeNumber);
+    let shouldReenter = true;
+    const consumerRef: { current?: SwsrRingConsumer<number> } = {};
+    const consumer = bindSwsrRingConsumer(backing, {
+      decode(source, offset): number {
+        if (shouldReenter) {
+          const activeConsumer = consumerRef.current;
+          if (!activeConsumer) {
+            throw new Error("consumer not initialized");
+          }
+          activeConsumer.drain(() => undefined);
+        }
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return source[offset]!;
+      },
+    });
+    consumerRef.current = consumer;
+
+    expect(producer.enqueue(5)).toBe(true);
+    const error = expectErrorCode(() => {
+      consumer.drain(() => undefined);
+    }, "primitives.swsrRingReentrant");
+    expect(error.details).toEqual({ operation: "drain" });
+    expect(backing.header[SWSR_HEADER_READ_INDEX]).toBe(0);
+
+    shouldReenter = false;
+    const delivered: number[] = [];
+    consumer.drain((value) => delivered.push(value));
+    expect(delivered).toEqual([5]);
+  });
+
+  it("rejects handler reentrancy, consumes that delivered entry, and restores the guard", () => {
+    const { backing, producer, consumer } = createNumberRing(1);
+    expect(producer.enqueue(1)).toBe(true);
+
+    expectErrorCode(() => {
+      consumer.drain(() => {
+        consumer.drain(() => undefined);
+      });
+    }, "primitives.swsrRingReentrant");
+    expect(backing.header[SWSR_HEADER_READ_INDEX]).toBe(
+      backing.header[SWSR_HEADER_WRITE_INDEX],
+    );
+
+    expect(producer.enqueue(2)).toBe(true);
+    const delivered: number[] = [];
+    consumer.drain((value) => delivered.push(value));
+    expect(delivered).toEqual([2]);
   });
 });

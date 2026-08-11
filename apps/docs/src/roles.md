@@ -15,6 +15,11 @@ Controller responsibilities:
 - Read meter snapshots, using `snapshot({ into })` when array buffers should be reused.
 - Own parameter range policy.
 
+Controller `params.stage(...)` callbacks are non-transactional. A validation
+failure before the write section leaves PU unchanged; a callback that mutates
+and throws may leave the partial array write visible while PU still advances.
+The writer lock is released in either case.
+
 Controller meter snapshots are direct cold-path copies. They are useful for
 single values and ordinary UI reads, but a multi-field controller snapshot is
 not seqlock-verified as one coherent publication. Bind an observer when that
@@ -71,6 +76,10 @@ flowchart LR
 ```
 
 `publish(...)` writes meters back for the controller or an observer. The realtime section should stay bounded, synchronous, and allocation-conscious.
+User callbacks inside controller array staging and processor meter publication
+are not rollback transactions. Do not throw after mutating their shared views;
+if that happens, partial values may remain visible and the relevant sequence
+advances so readers do not mistake the old version for untouched state.
 
 ## Observer
 
@@ -89,6 +98,10 @@ partial snapshot can fall back to one direct unverified read. Observer snapshot
 arrays are detached copies made during the read attempt. Use
 `degrade: "throw"` and retain caller-owned last-good state when an unverified
 fallback is unacceptable.
+
+Observer `params.within(...)` receives the full canonical flat-key param
+snapshot shape. Its arrays are detached copies. Nested authored aliases and the
+processor's live `Ephemeral<>` array contract remain processor-only.
 
 ## Choosing a Role
 

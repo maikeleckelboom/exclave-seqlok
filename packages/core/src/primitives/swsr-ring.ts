@@ -106,6 +106,11 @@ export interface SwsrRingProducer<T> {
    * not invoke the encoder or modify queued entries; it increments `dropped`
    * and returns `false`. The caller-supplied encoder runs synchronously on a
    * successful enqueue and remains responsible for its own bounded behavior.
+   * If the encoder throws, that error propagates and the slot remains
+   * unpublished: `writeIndex`, `writeSeq`, and `dropped` are unchanged, so a
+   * later enqueue can reuse the slot.
+   * Reentrant `enqueue(...)` on this same producer is rejected with
+   * `primitives.swsrRingReentrant` before it can reuse the outer slot.
    */
   enqueue(value: T): boolean;
 
@@ -138,6 +143,8 @@ export interface SwsrRingConsumer<T> {
    * - If decoding throws, the entry remains queued because `handle` was not
    *   invoked.
    * - It does not block and does not spin or wait for new data.
+   * - Reentrant `drain(...)` on this same consumer is rejected with
+   *   `primitives.swsrRingReentrant`.
    * - Typical usage is "once per audio block" or "once per render tick".
    */
   drain(handle: (value: T) => void): void;
@@ -225,6 +232,42 @@ export function allocateSwsrRing(layout: SwsrRingLayout): SwsrRingBacking {
   };
 }
 
+function assertValidSwsrBacking(backing: SwsrRingBacking): void {
+  const { sab, header, slots, capacity, wordsPerSlot } = backing;
+  const physicalSlotCount = capacity + 1;
+  const slotWords = physicalSlotCount * wordsPerSlot;
+  const expectedBytes =
+    (SWSR_HEADER_WORDS + slotWords) * Uint32Array.BYTES_PER_ELEMENT;
+
+  const layoutIsValid =
+    Number.isSafeInteger(capacity) &&
+    capacity > 0 &&
+    capacity <= 0xffffffff &&
+    Number.isSafeInteger(wordsPerSlot) &&
+    wordsPerSlot > 0 &&
+    Number.isSafeInteger(slotWords) &&
+    Number.isSafeInteger(expectedBytes);
+
+  const viewsAreValid =
+    sab instanceof SharedArrayBuffer &&
+    header instanceof Uint32Array &&
+    slots instanceof Uint32Array &&
+    header.buffer === sab &&
+    slots.buffer === sab &&
+    header.byteOffset === 0 &&
+    header.length === SWSR_HEADER_WORDS &&
+    slots.byteOffset === SWSR_HEADER_WORDS * Uint32Array.BYTES_PER_ELEMENT &&
+    slots.length === slotWords &&
+    sab.byteLength === expectedBytes;
+
+  invariant(
+    layoutIsValid && viewsAreValid,
+    "primitives.swsrRingInvalidLayout",
+    "SwsrRing: backing views do not match the declared layout",
+    { capacity, wordsPerSlot },
+  );
+}
+
 /**
  * Bind a single-writer producer to an existing SWSR ring backing.
  *
@@ -234,6 +277,8 @@ export function allocateSwsrRing(layout: SwsrRingLayout): SwsrRingBacking {
  * @returns A producer that can enqueue values of type `T`.
  *
  * @remarks
+ * - Binding validates that the declared layout and both typed-array views
+ *   exactly describe the supplied shared backing.
  * - This API assumes a single producer thread. Concurrent writers are
  *   undefined behavior.
  * - On a full ring the newest value is dropped; the producer never blocks.
@@ -242,8 +287,10 @@ export function bindSwsrRingProducer<T>(
   backing: SwsrRingBacking,
   encode: SwsrRingEncode<T>,
 ): SwsrRingProducer<T> {
+  assertValidSwsrBacking(backing);
   const { header, slots, capacity, wordsPerSlot } = backing;
   const physicalSlotCount = capacity + 1;
+  let enqueuing = false;
 
   const enqueue = (value: T): boolean => {
     const readIndex = Atomics.load(header, SWSR_HEADER_READ_INDEX);
@@ -258,8 +305,19 @@ export function bindSwsrRingProducer<T>(
       return false;
     }
 
-    const base = writeIndex * wordsPerSlot;
-    encode.encode(value, slots, base);
+    invariant(
+      !enqueuing,
+      "primitives.swsrRingReentrant",
+      "SwsrRing: enqueue cannot reenter the same producer",
+      { operation: "enqueue" },
+    );
+    enqueuing = true;
+    try {
+      const base = writeIndex * wordsPerSlot;
+      encode.encode(value, slots, base);
+    } finally {
+      enqueuing = false;
+    }
 
     // Publish the new writeIndex. JS Atomics are sequentially consistent,
     // which is stronger than the acquire/release pattern we target for C++.
@@ -286,6 +344,8 @@ export function bindSwsrRingProducer<T>(
  * @returns A consumer that can drain values of type `T`.
  *
  * @remarks
+ * - Binding validates that the declared layout and both typed-array views
+ *   exactly describe the supplied shared backing.
  * - This API assumes a single consumer thread. Concurrent readers are
  *   undefined behavior.
  * - `drain` loads its terminal `writeIndex` once, then publishes consumption
@@ -296,25 +356,43 @@ export function bindSwsrRingConsumer<T>(
   backing: SwsrRingBacking,
   decode: SwsrRingDecode<T>,
 ): SwsrRingConsumer<T> {
+  assertValidSwsrBacking(backing);
   const { header, slots, capacity, wordsPerSlot } = backing;
   const physicalSlotCount = capacity + 1;
+  let draining = false;
 
   const drain = (handle: (value: T) => void): void => {
     let readIndex = Atomics.load(header, SWSR_HEADER_READ_INDEX);
     const writeIndex = Atomics.load(header, SWSR_HEADER_WRITE_INDEX);
 
-    while (readIndex !== writeIndex) {
-      const base = readIndex * wordsPerSlot;
-      const value = decode.decode(slots, base);
-      const next = readIndex + 1 === physicalSlotCount ? 0 : readIndex + 1;
+    if (readIndex === writeIndex) {
+      return;
+    }
 
-      try {
-        handle(value);
-      } finally {
-        Atomics.store(header, SWSR_HEADER_READ_INDEX, next);
+    invariant(
+      !draining,
+      "primitives.swsrRingReentrant",
+      "SwsrRing: drain cannot reenter the same consumer",
+      { operation: "drain" },
+    );
+    draining = true;
+
+    try {
+      while (readIndex !== writeIndex) {
+        const base = readIndex * wordsPerSlot;
+        const value = decode.decode(slots, base);
+        const next = readIndex + 1 === physicalSlotCount ? 0 : readIndex + 1;
+
+        try {
+          handle(value);
+        } finally {
+          Atomics.store(header, SWSR_HEADER_READ_INDEX, next);
+        }
+
+        readIndex = next;
       }
-
-      readIndex = next;
+    } finally {
+      draining = false;
     }
   };
 

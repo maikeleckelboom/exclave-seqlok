@@ -16,6 +16,60 @@ import type { MeterPlane, ParamPlane } from "./validate";
 import type { MeterPlaneViews, ParamPlaneViews } from "../../backing/map-views";
 import type { ParamDef } from "../../spec/types";
 
+export interface NormalizedSnapshotSelection {
+  /** `undefined` means the caller omitted an explicit key selection. */
+  readonly keys: readonly string[] | undefined;
+  /** Object-form options, or the second argument after an array selection. */
+  readonly options: Readonly<Record<string, unknown>> | undefined;
+}
+
+/**
+ * Normalize the key-selection forms shared by controller and observer snapshots.
+ *
+ * @remarks
+ * - No arguments means no explicit selection (a full snapshot).
+ * - Arrays, varargs, and `{ keys }` are explicit selections, including `[]`.
+ * - Controller-only options such as `into` remain available to the caller via
+ *   `options`; this helper does not assign role-specific meaning to them.
+ */
+export function normalizeSnapshotSelection(
+  args: readonly unknown[],
+): NormalizedSnapshotSelection {
+  if (args.length === 0) {
+    return { keys: undefined, options: undefined };
+  }
+
+  const first = args[0];
+
+  if (Array.isArray(first)) {
+    const second = args[1];
+    const options =
+      second !== null && typeof second === "object" && !Array.isArray(second)
+        ? (second as Readonly<Record<string, unknown>>)
+        : undefined;
+    return { keys: first as readonly string[], options };
+  }
+
+  if (args.every((argument) => typeof argument === "string")) {
+    return { keys: args, options: undefined };
+  }
+
+  if (
+    args.length === 1 &&
+    first !== null &&
+    typeof first === "object" &&
+    !Array.isArray(first)
+  ) {
+    const options = first as Readonly<Record<string, unknown>>;
+    const keys = Array.isArray(options.keys)
+      ? (options.keys as readonly string[])
+      : undefined;
+    return { keys, options };
+  }
+
+  return { keys: undefined, options: undefined };
+}
+
 /**
  * Load a scalar value from a numeric array, enforcing bounds.
  *
